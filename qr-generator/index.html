@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRコード一括生成ツール</title>
+    <link rel="icon" href="favion.png" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            background: #eef1ff;
+            border-color: #764ba2;
+        }
+        .upload-area.dragover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            transform: scale(1.02);
+        }
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .upload-text {
+            color: #667eea;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .upload-subtext {
+            color: #999;
+            font-size: 14px;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-block;
+            margin: 10px;
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .preview {
+            margin-top: 30px;
+        }
+        .preview-title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .qr-item {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+        }
+        .qr-item img {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+        }
+        .qr-label {
+            font-size: 12px;
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .qr-detail {
+            font-size: 11px;
+            color: #666;
+            word-break: break-all;
+        }
+        .progress {
+            margin: 20px 0;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .instructions {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+        .instructions h3 {
+            color: #f57c00;
+            margin-bottom: 10px;
+        }
+        .instructions ol {
+            margin-left: 20px;
+            color: #666;
+        }
+        .instructions li {
+            margin: 8px 0;
+        }
+        .template-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .template-btn:hover {
+            background: #218838;
+        }
+        .status-message {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            display: none;
+        }
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .format-note {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .format-note h4 {
+            color: #1976d2;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        .format-note code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 QRコード一括生成ツール</h1>
+        <p class="subtitle">CSVファイルから自動的にQRコードを生成します（ブラウザ内で完結）</p>
+
+        <div class="format-note">
+            <h4>💡 日本語対応QRコード生成</h4>
+            <p>ブラウザ内で日本語を正しく読み取れるQRコードを生成します。自動的に最適なサイズのQRコードを選択します。</p>
+            <p style="margin-top: 8px;">CSVの1行目（見出し行）：</p>
+            <p style="margin-top: 8px;">
+                <code>品目コード,品名,仕様</code>
+            </p>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 使い方</h3>
+            <ol>
+                <li>下のボタンでサンプルCSVをダウンロード</li>
+                <li>CSVにデータを入力（UTF-8で保存推奨）</li>
+                <li>CSVファイルをドラッグ&ドロップ</li>
+                <li>QRコードが自動生成されます</li>
+                <li>「全てダウンロード」ボタンでZIPファイルを取得</li>
+            </ol>
+            <button class="template-btn" id="downloadTemplate">📥 サンプルCSVをダウンロード</button>
+            <button class="template-btn btn-success" id="loadSample" style="margin-left: 10px;">✨ サンプルデータで試す</button>
+        </div>
+
+        <div class="status-message" id="statusMessage"></div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">CSVファイルをドラッグ&ドロップ</div>
+            <div class="upload-subtext">または クリックしてファイルを選択</div>
+            <input type="file" id="fileInput" accept=".csv">
+        </div>
+
+        <div class="progress" id="progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn" id="downloadAll" disabled>📦 全てダウンロード（ZIP）</button>
+            <button class="btn btn-secondary" id="reset">🔄 リセット</button>
+        </div>
+
+        <div class="preview" id="preview" style="display: none;">
+            <div class="preview-title">✅ 生成されたQRコード（<span id="count">0</span>個）</div>
+            <div class="preview-grid" id="previewGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        let qrData = [];
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const previewGrid = document.getElementById('previewGrid');
+        const downloadAll = document.getElementById('downloadAll');
+        const resetBtn = document.getElementById('reset');
+        const progress = document.getElementById('progress');
+        const progressFill = document.getElementById('progressFill');
+        const countSpan = document.getElementById('count');
+        const statusMessage = document.getElementById('statusMessage');
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message ' + type;
+            statusMessage.style.display = 'block';
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 5000);
+        }
+
+function parseCSV(text) {
+            const lines = text.trim().split(/\r?\n/);
+            
+            if (lines.length === 0) return [];
+            
+            // 1行目で区切り文字を判定
+            const firstLine = lines[0];
+            let delimiter = ',';
+            
+            // タブが含まれていればタブ区切り
+            if (firstLine.includes('\t')) {
+                delimiter = '\t';
+                console.log('タブ区切りとして解析します');
+            } else {
+                console.log('カンマ区切りとして解析します');
+            }
+            
+            // CSVの1行を正しく解析する関数（ダブルクォート対応）
+            function parseLine(line, delimiter) {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    const nextChar = line[i + 1];
+                    
+                    if (char === '"') {
+                        if (inQuotes && nextChar === '"') {
+                            // エスケープされたダブルクォート
+                            current += '"';
+                            i++;
+                        } else {
+                            // クォートの開始/終了
+                            inQuotes = !inQuotes;
+                        }
+                    } else if (char === delimiter && !inQuotes) {
+                        // 区切り文字（クォート外）
+                        result.push(current);
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current);
+                return result;
+            }
+            
+            const headers = parseLine(firstLine, delimiter).map(h => h.trim());
+            console.log('ヘッダー:', headers);
+            
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line === '') continue;
+                
+                const values = parseLine(line, delimiter);
+                console.log(`行${i}:`, values);
+                
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] ? values[index].trim() : '';
+                });
+                data.push(row);
+            }
+
+            return data;
+        }
+
+        // qrcode-generatorライブラリを使用（バージョン自動選択で大容量対応）
+        function generateQRCode(text) {
+            // ライブラリが読み込まれているか確認
+            if (typeof qrcode === 'undefined') {
+                throw new Error('QRCodeライブラリが読み込まれていません');
+            }
+            
+            // 自動的に最適なバージョンを選択（0=自動）
+            var qr = qrcode(0, 'L');  // タイプ0=自動、エラー訂正L
+            qr.addData(unescape(encodeURIComponent(text)), 'Byte');
+            qr.make();
+            
+            var canvas = document.createElement('canvas');
+            var size = 512;
+            canvas.width = size;
+            canvas.height = size;
+            var ctx = canvas.getContext('2d');
+            
+            var moduleCount = qr.getModuleCount();
+            var cellSize = size / moduleCount;
+            
+            // 白背景
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, size, size);
+            
+            // QRコードを描画
+            ctx.fillStyle = '#000000';
+            for (var row = 0; row < moduleCount; row++) {
+                for (var col = 0; col < moduleCount; col++) {
+                    if (qr.isDark(row, col)) {
+                        ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+            
+            return canvas.toDataURL('image/png');
+        }
+
+        function dataURLtoBlob(dataURL) {
+            const parts = dataURL.split(',');
+            const byteString = atob(parts[1]);
+            const mimeString = parts[0].split(':')[1].split(';')[0];
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+            
+            return new Blob([ab], { type: mimeString });
+        }
+
+        document.getElementById('loadSample').addEventListener('click', () => {
+            // ライブラリチェック
+            if (typeof qrcode === 'undefined') {
+                showStatus('QRCodeライブラリの読み込みに失敗しました。ページを再読み込みしてください。', 'error');
+                return;
+            }
+            
+            const sampleData = [
+                { '品目コード': 'PDA61-01-40', '品名': 'ロードセル 10t(上下金具無)', '仕様': '(上下金具無)KDC-H-10T-C4' },
+                { '品目コード': 'PDA61-01-41', '品名': 'ロードセル 10t(上下金具無)', '仕様': '(上下金具無)KDC-H-10T-C5' },
+                { '品目コード': 'PDA61-01-48', '品名': 'ロードセル 25t(上下金具無)', '仕様': '(上下金具無)KDC-H-25T-C4' }
+            ];
+            showStatus('サンプルデータを読み込みました', 'success');
+            generateQRCodes(sampleData);
+        });
+
+        document.getElementById('downloadTemplate').addEventListener('click', () => {
+            const csvContent = '\ufeff品目コード,品名,仕様\n' +
+                'PDA61-01-40,ロードセル 10t(上下金具無),(上下金具無)KDC-H-10T-C4\n' +
+                'PDA61-01-41,ロードセル 10t(上下金具無),(上下金具無)KDC-H-10T-C5\n' +
+                'PDA61-01-48,ロードセル 25t(上下金具無),(上下金具無)KDC-H-25T-C4';
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'QRコードテンプレート.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+            showStatus('テンプレートをダウンロードしました', 'success');
+        });
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].name.endsWith('.csv')) {
+                processFile(files[0]);
+            } else {
+                showStatus('CSVファイルを選択してください', 'error');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) processFile(e.target.files[0]);
+        });
+
+        function processFile(file) {
+            showStatus('ファイルを読み込んでいます...', 'success');
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                try {
+                    const text = e.target.result;
+                    const jsonData = parseCSV(text);
+                    
+                    if (jsonData.length === 0) {
+                        showStatus('CSVファイルにデータがありません', 'error');
+                        return;
+                    }
+                    
+                    showStatus(`${jsonData.length}件のデータを読み込みました`, 'success');
+                    generateQRCodes(jsonData);
+                } catch (error) {
+                    showStatus('CSVファイルの解析に失敗しました', 'error');
+                    console.error(error);
+                }
+            };
+            
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        async function generateQRCodes(data) {
+            qrData = [];
+            previewGrid.innerHTML = '';
+            progress.style.display = 'block';
+            preview.style.display = 'none';
+            
+            const total = data.length;
+            let processed = 0;
+
+            for (const row of data) {
+                const itemCode = row['品目コード'] || row['品番'] || '';
+                const itemName = row['品名'] || '';
+                const spec = row['仕様'] || '';
+
+                if (!itemCode) {
+                    processed++;
+                    updateProgress(processed, total);
+                    continue;
+                }
+
+                try {
+                    // 在庫管理アプリ用の形式（ラベル付き）
+                    const qrText = `品目コード: ${itemCode}\n品名: ${itemName}\n仕様: ${spec}`;
+                    console.log('生成:', qrText, '文字数:', qrText.length);
+                    
+                    const dataUrl = generateQRCode(qrText);
+                    const blob = dataURLtoBlob(dataUrl);
+                    
+                    qrData.push({
+                        code: itemCode,
+                        name: itemName,
+                        spec: spec,
+                        blob: blob,
+                        dataUrl: dataUrl
+                    });
+
+                    const qrItem = document.createElement('div');
+                    qrItem.className = 'qr-item';
+                    const img = document.createElement('img');
+                    img.src = dataUrl;
+                    img.alt = itemCode;
+                    qrItem.appendChild(img);
+                    qrItem.innerHTML += `
+                        <div class="qr-label">${itemCode}</div>
+                        <div class="qr-detail">${itemName}</div>
+                    `;
+                    previewGrid.appendChild(qrItem);
+
+                    processed++;
+                    updateProgress(processed, total);
+
+                } catch (error) {
+                    console.error('QRコード生成エラー:', itemCode, error);
+                    showStatus(`${itemCode} の生成に失敗しました`, 'error');
+                    processed++;
+                    updateProgress(processed, total);
+                }
+            }
+
+            finishGeneration();
+        }
+
+        function updateProgress(processed, total) {
+            const percent = Math.round((processed / total) * 100);
+            progressFill.style.width = percent + '%';
+            progressFill.textContent = percent + '%';
+        }
+
+        function finishGeneration() {
+            setTimeout(() => {
+                progress.style.display = 'none';
+                preview.style.display = 'block';
+                downloadAll.disabled = qrData.length === 0;
+                countSpan.textContent = qrData.length;
+                if (qrData.length > 0) {
+                    showStatus(`${qrData.length}個のQRコードを生成しました！`, 'success');
+                }
+            }, 300);
+        }
+
+        downloadAll.addEventListener('click', async () => {
+            try {
+                downloadAll.disabled = true;
+                downloadAll.textContent = '📦 ZIPファイル作成中...';
+                
+                const zip = new JSZip();
+                const folder = zip.folder('QRコード');
+
+                qrData.forEach(item => {
+                    const safeName = item.code.replace(/[\\/:*?"<>|]/g, '_');
+                    folder.file(`${safeName}.png`, item.blob);
+                });
+
+                const content = await zip.generateAsync({ 
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 9 }
+                });
+                
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `QRコード一括_${new Date().toISOString().slice(0,10)}.zip`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                showStatus('ZIPファイルをダウンロードしました', 'success');
+                downloadAll.disabled = false;
+                downloadAll.textContent = '📦 全てダウンロード（ZIP）';
+            } catch (error) {
+                showStatus('ダウンロードに失敗しました: ' + error.message, 'error');
+                console.error(error);
+                downloadAll.disabled = false;
+                downloadAll.textContent = '📦 全てダウンロード（ZIP）';
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            qrData = [];
+            previewGrid.innerHTML = '';
+            preview.style.display = 'none';
+            downloadAll.disabled = true;
+            fileInput.value = '';
+            progress.style.display = 'none';
+            progressFill.style.width = '0%';
+            statusMessage.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
