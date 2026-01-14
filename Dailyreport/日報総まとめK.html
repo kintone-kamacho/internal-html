@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日報データ抽出ツール</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'メイリオ', 'Meiryo', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    
+    .content {
+      padding: 30px;
+    }
+    
+    .drop-zone {
+      border: 3px dashed #667eea;
+      border-radius: 12px;
+      padding: 60px 20px;
+      text-align: center;
+      background: #f8f9ff;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      margin-bottom: 30px;
+    }
+    
+    .drop-zone:hover, .drop-zone.drag-over {
+      background: #eef0ff;
+      border-color: #764ba2;
+      transform: scale(1.02);
+    }
+    
+    .drop-zone-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+    
+    .drop-zone-text {
+      font-size: 18px;
+      color: #667eea;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .drop-zone-subtext {
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .status {
+      background: #f0f4f8;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #333;
+    }
+    
+    .status strong {
+      color: #667eea;
+    }
+    
+    .table-container {
+      max-height: 400px;
+      overflow: auto;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    
+    thead {
+      background: #667eea;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    th {
+      font-weight: bold;
+    }
+    
+    tbody tr:hover {
+      background: #f8f9ff;
+    }
+    
+    .buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+    
+    button {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-export {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-export:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-clear {
+      background: #f44336;
+      color: white;
+    }
+    
+    .btn-clear:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 日報データ抽出ツール</h1>
+      <p>Excelファイルをドラッグ&ドロップして、W/C・工番・合計を抽出</p>
+    </div>
+    
+    <div class="content">
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-zone-icon">📁</div>
+        <div class="drop-zone-text">ここにExcelファイルをドロップ</div>
+        <div class="drop-zone-subtext">または、クリックしてファイルを選択</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;" multiple>
+      </div>
+      
+      <div class="status" id="status">
+        処理済みファイル: <strong>0</strong> 件 | 抽出データ: <strong>0</strong> 行
+      </div>
+      
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>W/C</th>
+              <th>工番</th>
+              <th>合計</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr>
+              <td colspan="3" class="empty-state">
+                データがありません。<br>Excelファイルをドロップして開始してください。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="buttons">
+        <button class="btn-export" id="exportBtn" disabled>Excelに出力</button>
+        <button class="btn-clear" id="clearBtn" disabled>データをクリア</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const tableBody = document.getElementById('tableBody');
+    const status = document.getElementById('status');
+    const exportBtn = document.getElementById('exportBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    
+    let extractedData = [];
+    let fileCount = 0;
+
+    // ドラッグ&ドロップイベント
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const files = Array.from(e.dataTransfer.files).filter(f => 
+        f.name.endsWith('.xlsx') || f.name.endsWith('.xls')
+      );
+      if (files.length > 0) {
+        processFiles(files);
+      }
+    });
+
+    dropZone.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        processFiles(Array.from(e.target.files));
+      }
+    });
+
+    async function processFiles(files) {
+      for (const file of files) {
+        await processFile(file);
+      }
+    }
+
+    function processFile(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            
+            extractDataFromSheet(firstSheet);
+            fileCount++;
+            updateUI();
+            resolve();
+          } catch (error) {
+            console.error('ファイル処理エラー:', error);
+            alert(`ファイル ${file.name} の処理中にエラーが発生しました。`);
+            resolve();
+          }
+        };
+        
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function extractDataFromSheet(sheet) {
+      const range = XLSX.utils.decode_range(sheet['!ref']);
+      
+      // A列7行目以降をスキャン
+      for (let row = 6; row <= range.e.r; row++) {
+        const wcCell = sheet[XLSX.utils.encode_cell({ r: row, c: 0 })]; // A列
+        
+        if (!wcCell || !wcCell.v) continue;
+        
+        const wc = String(wcCell.v).trim();
+        if (!wc || wc === 'W/C') continue; // ヘッダー行をスキップ
+        
+        // 工番を取得 (B～D列の結合セル)
+        let koban = '';
+        for (let col = 1; col <= 3; col++) {
+          const cell = sheet[XLSX.utils.encode_cell({ r: row, c: col })];
+          if (cell && cell.v) {
+            koban = String(cell.v).trim();
+            break;
+          }
+        }
+        
+        if (!koban) continue;
+        
+        // 合計を探す（同じ行の右側の列から）
+        let total = null;
+        for (let col = 4; col <= range.e.c; col++) {
+          const cell = sheet[XLSX.utils.encode_cell({ r: row, c: col })];
+          if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') {
+            const value = typeof cell.v === 'number' ? cell.v : parseFloat(cell.v);
+            if (!isNaN(value) && value > 0) {
+              total = value;
+            }
+          }
+        }
+        
+        // 合計が0または空欄の場合はスキップ
+        if (total === null || total === 0) continue;
+        
+        extractedData.push({
+          wc: wc,
+          koban: koban,
+          total: total
+        });
+      }
+    }
+
+    function updateUI() {
+      // ステータス更新
+      status.innerHTML = `処理済みファイル: <strong>${fileCount}</strong> 件 | 抽出データ: <strong>${extractedData.length}</strong> 行`;
+      
+      // テーブル更新
+      if (extractedData.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="3" class="empty-state">
+              データがありません。<br>Excelファイルをドロップして開始してください。
+            </td>
+          </tr>
+        `;
+        exportBtn.disabled = true;
+        clearBtn.disabled = true;
+      } else {
+        tableBody.innerHTML = extractedData.map(item => `
+          <tr>
+            <td>${item.wc}</td>
+            <td>${item.koban}</td>
+            <td>${item.total}</td>
+          </tr>
+        `).join('');
+        exportBtn.disabled = false;
+        clearBtn.disabled = false;
+      }
+    }
+
+
+    exportBtn.addEventListener('click', () => {
+      if (extractedData.length === 0) return;
+      
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}年${String(now.getMonth() + 1).padStart(2, '0')}月${String(now.getDate()).padStart(2, '0')}日`;
+      
+      // CSVデータを作成（ヘッダーなし）
+      const csvContent = extractedData.map(item => 
+        `${item.wc},${item.koban},${item.total}`
+      ).join('\n');
+      
+      // BOM付きでダウンロード（Excelで正しく開けるように）
+      const bom = '\uFEFF';
+      const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `日報まとめ(${dateStr}).csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      if (confirm('すべてのデータをクリアしますか?')) {
+        extractedData = [];
+        fileCount = 0;
+        updateUI();
+      }
+    });
+  </script>
+</body>
+</html>
