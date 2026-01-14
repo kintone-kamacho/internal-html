@@ -1,1 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>発注一覧CSVフィルター</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            display: none;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .info {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .date-info {
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff3e0;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .progress {
+            margin: 20px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 発注一覧CSVフィルター</h1>
+        
+        <div class="info">
+            <strong>抽出条件:</strong><br>
+            ・仮注文書発行日時(AC列)から３週間(21日)経過している<br>
+            ・かつ、注文書発行日時(AB列)が空
+        </div>
 
+        <div class="date-info" id="dateInfo">
+            基準日: <span id="currentDate"></span>
+        </div>
+
+        <div class="input-group">
+            <label for="csvFile">CSVファイルを選択:</label>
+            <input type="file" id="csvFile" accept=".csv">
+        </div>
+
+        <button id="filterBtn" onclick="filterCSV()">フィルター実行</button>
+
+        <div class="progress" id="progress">
+            処理中...
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        // 今日の日付を表示
+        window.onload = function() {
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+            document.getElementById('currentDate').textContent = dateStr;
+        };
+
+        async function filterCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const resultDiv = document.getElementById('result');
+            const progressDiv = document.getElementById('progress');
+            const filterBtn = document.getElementById('filterBtn');
+
+            if (!fileInput.files[0]) {
+                alert('CSVファイルを選択してください');
+                return;
+            }
+
+            filterBtn.disabled = true;
+            progressDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+
+            try {
+                const file = fileInput.files[0];
+                const text = await file.text();
+                const lines = text.split('\n');
+
+                // 区切り文字を自動判定
+                const firstLine = lines[0];
+                let delimiter = '\t';
+                
+                if (firstLine.includes('\t')) {
+                    delimiter = '\t';
+                } else if (firstLine.includes(',')) {
+                    delimiter = ',';
+                }
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // 時刻をリセット
+                const threeWeeksAgo = new Date(today);
+                threeWeeksAgo.setDate(today.getDate() - 21);
+
+                const filtered = [];
+                let headerRow = '';
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    const cols = line.split(delimiter);
+
+                    // ヘッダー行
+                    if (i === 0) {
+                        headerRow = line;
+                        filtered.push(line);
+                        continue;
+                    }
+
+                    if (cols.length < 29) continue;
+
+                    // 列インデックス(0始まり)
+                    const orderIssueDate = cols[27] ? cols[27].trim() : '';      // AB列
+                    const tempOrderIssueDate = cols[28] ? cols[28].trim() : '';  // AC列
+
+                    // 条件1: 仮注文書発行日時が3週間以上前
+                    let dateMatch = false;
+                    if (tempOrderIssueDate) {
+                        const tempDate = parseDate(tempOrderIssueDate);
+                        if (tempDate && tempDate <= threeWeeksAgo) {
+                            dateMatch = true;
+                        }
+                    }
+
+                    // 条件2: 注文書発行日時が空
+                    const emptyMatch = (orderIssueDate === '');
+
+                    // 両方の条件を満たす
+                    if (dateMatch && emptyMatch) {
+                        filtered.push(line);
+                    }
+                }
+
+                const matchCount = filtered.length - 1;
+
+                if (matchCount === 0) {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = '<strong>結果:</strong> 条件に一致するデータはありませんでした。';
+                } else {
+                    // BOM付きUTF-8でダウンロード
+                    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+                    const content = filtered.join('\n');
+                    const blob = new Blob([bom, content], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = file.name.replace('.csv', '_抽出結果.csv');
+                    link.click();
+                    URL.revokeObjectURL(url);
+
+                    resultDiv.className = 'result';
+                    resultDiv.innerHTML = `<strong>✅ 抽出完了！</strong><br><br>一致件数: <strong>${matchCount}</strong> 件<br>ファイルがダウンロードされました。`;
+                }
+
+                resultDiv.style.display = 'block';
+
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>エラー:</strong> ${error.message}`;
+                resultDiv.style.display = 'block';
+            } finally {
+                filterBtn.disabled = false;
+                progressDiv.style.display = 'none';
+            }
+        }
+
+        function parseDate(dateStr) {
+            // YYYY/MM/DD HH:MM:SS または YYYY/MM/DD 形式をパース
+            const match = dateStr.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+            if (!match) return null;
+
+            const date = new Date(match[1], match[2] - 1, match[3]);
+            date.setHours(0, 0, 0, 0);
+            return date;
+        }
+    </script>
+</body>
+</html>
