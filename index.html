@@ -4,7 +4,36 @@
   <meta charset="UTF-8" />
   <title>社内HTMLツール一覧</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      margin: 40px;
+      background: #f7f7f7;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    .note {
+      color: #555;
+      margin-bottom: 24px;
+    }
+
+    .list {
+      max-width: 800px;
+    }
+
+    .item {
+      background: #fff;
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
     .item-title {
       display: flex;
       align-items: center;
@@ -15,47 +44,27 @@
       width: 24px;
       height: 24px;
     }
-  </style>
-</head>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-                   "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-      margin: 40px;
-      background: #f7f7f7;
-    }
-    h1 {
-      margin-bottom: 8px;
-    }
-    .note {
-      color: #555;
-      margin-bottom: 24px;
-    }
-    .list {
-      max-width: 800px;
-    }
-    .item {
-      background: #fff;
-      border-radius: 6px;
-      padding: 16px 20px;
-      margin-bottom: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
+
     .item h2 {
       margin: 0 0 6px;
       font-size: 18px;
     }
+
     .item p {
       margin: 0 0 8px;
       color: #333;
     }
+
     .meta {
       font-size: 12px;
       color: #777;
     }
+
     a {
       color: #0366d6;
       text-decoration: none;
     }
+
     a:hover {
       text-decoration: underline;
     }
@@ -64,6 +73,7 @@
 
 <body>
   <h1>社内HTMLツール一覧</h1>
+
   <div class="note">
     このページは社内向けのHTMLツール一覧です。<br />
     URLは変更せず、各ツールはここからアクセスしてください。
@@ -71,29 +81,20 @@
 
   <div class="list">
 
-  <div class="item">
-    <h2 class="item-title">
-      <img src="./assets/icons/favion.png" alt="" class="item-icon">
-      <a href="./qr-generator/">QRコード作成ツール</a>
-    </h2>
-    <p>URLや文字列からQRコードを生成します。</p>
-    <div class="meta">更新日：2026-01-14</div>
-  </div>
+    <div class="item">
+      <h2 class="item-title">
+        <img src="./assets/icons/favion.png" alt="" class="item-icon">
+        <a href="./qr-generator/">QRコード作成ツール</a>
+      </h2>
+      <p>URLや文字列からQRコードを生成します。</p>
+      <div class="meta">更新日：2026-01-14</div>
+    </div>
 
     <div class="item">
       <h2><a href="./folder-tool/">フォルダ自動生成ツール</a></h2>
       <p>指定ルールに従ってフォルダ構成を自動生成します。</p>
       <div class="meta">更新日：2026-01-14</div>
     </div>
-
-    <!-- ここに追加していく -->
-    <!--
-    <div class="item">
-      <h2><a href="./tool-name/">ツール名</a></h2>
-      <p>ツールの説明</p>
-      <div class="meta">更新日：YYYY-MM-DD</div>
-    </div>
-    -->
 
   </div>
 </body>
