@@ -171,8 +171,8 @@
     <div id="mode2">
       <div class="input-group">
         <label>フォルダ名（月指定）</label>
-        <input type="text" id="monthInput" placeholder="R7.12">
-        <div class="example">例: R7.12 または R6.3</div>
+        <input type="text" id="monthInput" placeholder="202601">
+        <div class="example">例: 202601 または 202512（西暦4桁+月2桁）</div>
       </div>
       <button class="generate-btn" onclick="generateMonthFolders()">📦 フォルダ生成 & ダウンロード</button>
     </div>
@@ -283,22 +283,31 @@
         showResult('フォルダ名を入力してください。', true);
         return;
       }
-
-      const parts = input.split('.');
-      if (parts.length < 2) {
-        showResult('フォルダ名の形式が正しくありません。<br>例: R7.12', true);
+    
+      if (!/^\d{6}$/.test(input)) {
+        showResult('フォルダ名の形式が正しくありません。<br>例: 202601（西暦4桁+月2桁）', true);
         return;
       }
-
-      const month = parts[1];
+    
+      const year = input.substring(0, 4);
+      const month = input.substring(4, 6);
+      const monthNum = parseInt(month);
+      
+      if (monthNum < 1 || monthNum > 12) {
+        showResult('月は01から12の範囲で入力してください。', true);
+        return;
+      }
+    
+      const daysInMonth = getDaysInMonth(parseInt(year), monthNum);
       const zip = new JSZip();
       const rootFolder = zip.folder(input);
-
-      for (let day = 1; day <= 31; day++) {
-        const dayFolder = `${month}.${day}`;
+    
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayStr = day < 10 ? `0${day}` : `${day}`;
+        const dayFolder = `${year}_${month}_${dayStr}`;
         rootFolder.folder(dayFolder);
       }
-
+    
       const blob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -306,8 +315,8 @@
       a.download = `${input}.zip`;
       a.click();
       URL.revokeObjectURL(url);
-
-      showResult(`31個のフォルダを作成しました。<br>ZIPファイルをダウンロード中...`);
+    
+      showResult(`${daysInMonth}個のフォルダを作成しました。<br>ZIPファイルをダウンロード中...`);
     }
   </script>
 </body>
