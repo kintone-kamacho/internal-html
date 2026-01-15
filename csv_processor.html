@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSV処理ツール</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/encoding-japanese/2.0.0/encoding.min.js"></script>
+  <script>
+    // Shift-JIS変換関数
+    function convertToShiftJIS(str) {
+      const unicodeArray = [];
+      for (let i = 0; i < str.length; i++) {
+        unicodeArray.push(str.charCodeAt(i));
+      }
+      const sjisArray = Encoding.convert(unicodeArray, {
+        to: 'SJIS',
+        from: 'UNICODE'
+      });
+      return new Uint8Array(sjisArray);
+    }
+  </script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .file-section {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+    .file-section h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+    }
+    .drop-area {
+      border: 3px dashed #ccc;
+      border-radius: 15px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: white;
+    }
+    .drop-area:hover {
+      border-color: #667eea;
+      background: #f0f0ff;
+    }
+    .drop-area.highlight {
+      border-color: #667eea;
+      background: #e8f0fe;
+      transform: scale(1.02);
+    }
+    .drop-area.loaded {
+      border-color: #28a745;
+      background: #e8f5e9;
+    }
+    .file-input {
+      display: none;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 30px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+    }
+    .btn-process {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      background: #28a745;
+      margin-top: 30px;
+      font-size: 18px;
+    }
+    .btn-process:hover {
+      background: #218838;
+    }
+    .btn-process:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    #progress {
+      display: none;
+      margin: 30px 0;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 30px;
+      background: #e0e0e0;
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      width: 0%;
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    #status {
+      margin-top: 15px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
+    #downloads {
+      margin-top: 30px;
+    }
+    .download-btn {
+      display: block;
+      margin: 10px 0;
+      padding: 15px 25px;
+      background: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .download-btn:hover {
+      background: #218838;
+      transform: translateX(5px);
+    }
+    .info {
+      background: #e7f3ff;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      border-left: 4px solid #2196F3;
+    }
+    .info h3 {
+      color: #2196F3;
+      margin-bottom: 10px;
+    }
+    .error {
+      background: #ffebee;
+      color: #c62828;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #c62828;
+    }
+    .success-badge {
+      display: inline-block;
+      background: #28a745;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .file-info {
+      margin-top: 10px;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 品目マスターCSV処理ツール</h1>
+    
+    <div class="info">
+      <h3>処理内容</h3>
+      <ul style="margin-left: 20px; line-height: 1.8;">
+        <li>指定した品目コードで始まる行のみ抽出</li>
+        <li>必要な列（品目、品名、仕様、メーカー名、手配先名、在庫評価単価、単位、保管場所）を取得</li>
+        <li>データを3等分してCSV出力</li>
+      </ul>
+    </div>
+    
+    <div class="file-section">
+      <h3>① 品目リストファイル (.txt)</h3>
+      <div class="drop-area" id="dropArea1">
+        <p style="margin-bottom: 15px;">📄 品目リストのテキストファイルをドロップ</p>
+        <p style="color: #999; margin-bottom: 15px; font-size: 14px;">例: PDA, PDC, PMA, PMC...</p>
+        <button class="btn" onclick="document.getElementById('fileInput1').click()">ファイルを選択</button>
+        <div class="file-info" id="fileInfo1"></div>
+      </div>
+      <input type="file" id="fileInput1" class="file-input" accept=".txt" />
+    </div>
+    
+    <div class="file-section">
+      <h3>② CSVファイル</h3>
+      <div class="drop-area" id="dropArea2">
+        <p style="margin-bottom: 15px;">📁 品目マスターのCSVファイルをドロップ</p>
+        <button class="btn" onclick="document.getElementById('fileInput2').click()">ファイルを選択</button>
+        <div class="file-info" id="fileInfo2"></div>
+      </div>
+      <input type="file" id="fileInput2" class="file-input" accept=".csv" />
+    </div>
+    
+    <button class="btn btn-process" id="processBtn" disabled>🚀 処理開始</button>
+    
+    <div id="progress">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill">0%</div>
+      </div>
+      <div id="status">準備中...</div>
+    </div>
+    
+    <div id="downloads"></div>
+  </div>
+
+  <script>
+    let prefixList = null;
+    let csvFile = null;
+    
+    const dropArea1 = document.getElementById('dropArea1');
+    const dropArea2 = document.getElementById('dropArea2');
+    const fileInput1 = document.getElementById('fileInput1');
+    const fileInput2 = document.getElementById('fileInput2');
+    const fileInfo1 = document.getElementById('fileInfo1');
+    const fileInfo2 = document.getElementById('fileInfo2');
+    const processBtn = document.getElementById('processBtn');
+    const progressDiv = document.getElementById('progress');
+    const progressFill = document.getElementById('progressFill');
+    const statusDiv = document.getElementById('status');
+    const downloadsDiv = document.getElementById('downloads');
+    
+    // ドラッグ&ドロップ設定
+    function setupDropArea(dropArea, fileInput, handler) {
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, e => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
+      });
+      
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.add('highlight'));
+      });
+      
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.remove('highlight'));
+      });
+      
+      dropArea.addEventListener('drop', e => handler(e.dataTransfer.files));
+      fileInput.addEventListener('change', e => handler(e.target.files));
+    }
+    
+    setupDropArea(dropArea1, fileInput1, handlePrefixFile);
+    setupDropArea(dropArea2, fileInput2, handleCSVFile);
+    
+    async function handlePrefixFile(files) {
+      if (files.length === 0) return;
+      
+      const file = files[0];
+      if (!file.name.endsWith('.txt')) {
+        showError('テキストファイル(.txt)を選択してください。');
+        return;
+      }
+      
+      try {
+        const text = await file.text();
+        // 改行で分割して空行と空白を除去
+        prefixList = text.split('\n')
+          .map(line => line.trim())
+          .filter(line => line && !line.startsWith('【'));
+        
+        dropArea1.classList.add('loaded');
+        fileInfo1.innerHTML = `<span class="success-badge">✓ ${prefixList.length}件の品目コードを読み込み</span>`;
+        checkReady();
+      } catch (error) {
+        showError('品目リストの読み込みに失敗しました: ' + error.message);
+      }
+    }
+    
+    function handleCSVFile(files) {
+      if (files.length === 0) return;
+      
+      const file = files[0];
+      if (!file.name.endsWith('.csv')) {
+        showError('CSVファイルを選択してください。');
+        return;
+      }
+      
+      csvFile = file;
+      dropArea2.classList.add('loaded');
+      fileInfo2.innerHTML = `<span class="success-badge">✓ ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)</span>`;
+      checkReady();
+    }
+    
+    function checkReady() {
+      if (prefixList && csvFile) {
+        processBtn.disabled = false;
+      }
+    }
+    
+    processBtn.addEventListener('click', processFiles);
+    
+    function updateProgress(percent, message) {
+      progressFill.style.width = percent + '%';
+      progressFill.textContent = Math.round(percent) + '%';
+      statusDiv.textContent = message;
+    }
+    
+    async function processFiles() {
+      processBtn.disabled = true;
+      progressDiv.style.display = 'block';
+      downloadsDiv.innerHTML = '';
+      updateProgress(0, 'ファイル読み込み中...');
+      
+      try {
+        const text = await csvFile.text();
+        updateProgress(20, 'CSV解析中...');
+        
+        const lines = text.split('\n');
+        updateProgress(30, `${lines.length.toLocaleString()}行を検出...`);
+        
+        // 必要な列のインデックス
+        const columnIndexes = [0, 1, 2, 3, 6, 21, 24, 45]; // A,B,C,D,G,V,Y,AT
+        const newHeaders = ['品目', '品名', '仕様', 'メーカー名', '手配先名', '在庫評価単価', '単位', '保管場所'];
+        
+        // フィルタリングと抽出
+        updateProgress(40, 'データ抽出中...');
+        const filteredData = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+          if (i % 10000 === 0) {
+            updateProgress(40 + (i / lines.length * 30), `処理中: ${i.toLocaleString()} / ${lines.length.toLocaleString()}行`);
+            await new Promise(resolve => setTimeout(resolve, 0));
+          }
+          
+          const line = lines[i].trim();
+          if (!line) continue;
+          
+          const cells = parseCSVLine(line);
+          if (cells.length > 0) {
+            const firstCell = cells[0].trim();
+            // 品目リストのいずれかで始まるかチェック
+            const matchesPrefix = prefixList.some(prefix => firstCell.startsWith(prefix));
+            
+            if (matchesPrefix) {
+              const row = columnIndexes.map(idx => cells[idx] || '');
+              filteredData.push(row);
+            }
+          }
+        }
+        
+        updateProgress(70, `${filteredData.length.toLocaleString()}件のデータを抽出完了`);
+        
+        if (filteredData.length === 0) {
+          showError('指定された品目コードで始まるデータが見つかりませんでした。');
+          processBtn.disabled = false;
+          return;
+        }
+        
+        // 3等分
+        const totalRows = filteredData.length;
+        const chunkSize = Math.ceil(totalRows / 3);
+        
+        updateProgress(80, 'CSVファイル生成中...');
+        
+        for (let i = 0; i < 3; i++) {
+          const start = i * chunkSize;
+          const end = Math.min(start + chunkSize, totalRows);
+          const chunk = filteredData.slice(start, end);
+          
+          // CSV生成
+          const csvLines = [newHeaders.map(escapeCSV).join(',')];
+          for (const row of chunk) {
+            csvLines.push(row.map(escapeCSV).join(','));
+          }
+          const csvContent = csvLines.join('\n');
+          
+          // Shift-JISに変換してダウンロードリンク作成
+          let blob;
+          try {
+            const sjisArray = convertToShiftJIS(csvContent);
+            blob = new Blob([sjisArray], { type: 'text/csv;charset=shift_jis;' });
+          } catch (e) {
+            // 変換失敗時はUTF-8 BOM付きで出力
+            console.error('Shift-JIS変換エラー:', e);
+            blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+          }
+          
+          const url = URL.createObjectURL(blob);
+          const fileName = `品目マスター_${String(i + 1).padStart(3, '0')}.csv`;
+          
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          link.className = 'download-btn';
+          link.textContent = `📥 ${fileName} をダウンロード (${chunk.length.toLocaleString()}件)`;
+          downloadsDiv.appendChild(link);
+          
+          updateProgress(80 + (i + 1) / 3 * 20, `ファイル${i + 1}/3 生成完了`);
+        }
+        
+        updateProgress(100, `✅ 完了: ${totalRows.toLocaleString()}件を3ファイルに分割`);
+        processBtn.disabled = false;
+        
+      } catch (error) {
+        showError('エラー: ' + error.message);
+        processBtn.disabled = false;
+      }
+    }
+    
+    function parseCSVLine(line) {
+      const result = [];
+      let cell = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+        
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            cell += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          result.push(cell);
+          cell = '';
+        } else {
+          cell += char;
+        }
+      }
+      result.push(cell);
+      return result;
+    }
+    
+    function escapeCSV(cell) {
+      let str = String(cell);
+      
+      // 数値のカンマ区切りを除去（例: "1,234.56" → "1234.56"）
+      if (/^[\d,]+\.?\d*$/.test(str)) {
+        str = str.replace(/,/g, '');
+      }
+      
+      if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+    
+    function showError(message) {
+      progressDiv.style.display = 'none';
+      downloadsDiv.innerHTML = `<div class="error">${message}</div>`;
+    }
+  </script>
+</body>
+</html>
