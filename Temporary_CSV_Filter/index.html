@@ -389,16 +389,23 @@
           }
         }
 
-        // 結果生成
-        const resultRows = [header, ...filtered];
-        const csvContent = generateCSV(resultRows);
-
-        // ファイル名生成
-        const today = new Date();
-        const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-        const startStr = startDate.toISOString().slice(0, 10).replace(/-/g, '');
-        const endStr = endDate.toISOString().slice(0, 10).replace(/-/g, '');
-        const outputFileName = `抽出結果_${dateStr}_${startStr}_${endStr}.csv`;
+      // 結果生成
+      const resultRows = [header, ...filtered];
+      const csvContent = generateCSV(resultRows);
+      
+      // ファイル名生成(ローカル時刻を使用)
+      const formatDateForFilename = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}${m}${d}`;
+      };
+      
+      const today = new Date();
+      const dateStr = formatDateForFilename(today);
+      const startStr = formatDateForFilename(startDate);
+      const endStr = formatDateForFilename(endDate);
+      const outputFileName = `抽出結果_${dateStr}_${startStr}_${endStr}.csv`;
 
         // ダウンロード
         downloadCSV(csvContent, outputFileName);
