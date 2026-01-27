@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ピッキング状況データ統合ツール</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
+            background-color: #f9fafb;
+            height: 100vh;
+            display: flex;
+        }
+        
+        .sidebar {
+            width: 320px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        
+        .header {
+            margin-bottom: 24px;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .file-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .file-item {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        
+        .file-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 8px 16px;
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .file-button:hover {
+            background-color: #dbeafe;
+        }
+        
+        .drop-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .drop-zone:hover {
+            border-color: #2563eb;
+            background-color: #eff6ff;
+        }
+        
+        .drop-zone.drag-over {
+            border-color: #2563eb;
+            background-color: #dbeafe;
+        }
+        
+        .file-selected {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #059669;
+        }
+        
+        .merge-button {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-bottom: 16px;
+        }
+        
+        .merge-button:enabled {
+            background-color: #2563eb;
+            color: white;
+        }
+        
+        .merge-button:enabled:hover {
+            background-color: #1d4ed8;
+        }
+        
+        .merge-button:disabled {
+            background-color: #d1d5db;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+        
+        .alert-error {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        
+        .alert-success {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+        
+        .download-button {
+            width: 100%;
+            padding: 8px 16px;
+            background-color: #059669;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 12px;
+            transition: background-color 0.2s;
+        }
+        
+        .download-button:hover {
+            background-color: #047857;
+        }
+        
+        .main-area {
+            flex: 1;
+            padding: 24px;
+            overflow: auto;
+        }
+        
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: #6b7280;
+        }
+        
+        .empty-state h2 {
+            font-size: 20px;
+            font-weight: 500;
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .result-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background-color: #f9fafb;
+        }
+        
+        th {
+            padding: 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 500;
+            color: #6b7280;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 8px 12px;
+            font-size: 14px;
+            color: #1f2937;
+            white-space: nowrap;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        tbody tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        .table-footer {
+            padding: 12px 24px;
+            background-color: #f9fafb;
+            text-align: center;
+            font-size: 14px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="header">
+            <h1>ピッキング状況データ統合</h1>
+            <p>4つのCSVファイルを読み込んでください</p>
+        </div>
+        
+        <div class="file-section">
+            <div class="file-item">
+                <label class="file-label">ピッキング状況一覧</label>
+                <input type="file" id="file-picking" class="file-input" accept=".csv">
+                <div id="drop-picking" class="drop-zone">
+                    <div style="font-size: 11px;">📤 ここにファイルをドロップ</div>
+                    <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">またはクリックして選択</div>
+                </div>
+                <div id="selected-picking" class="file-selected" style="display: none;">✓ <span></span></div>
+            </div>
+            
+            <div class="file-item">
+                <label class="file-label">工番一覧</label>
+                <input type="file" id="file-workorder" class="file-input" accept=".csv">
+                <div id="drop-workorder" class="drop-zone">
+                    <div style="font-size: 11px;">📤 ここにファイルをドロップ</div>
+                    <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">またはクリックして選択</div>
+                </div>
+                <div id="selected-workorder" class="file-selected" style="display: none;">✓ <span></span></div>
+            </div>
+            
+            <div class="file-item">
+                <label class="file-label">発注一覧</label>
+                <input type="file" id="file-purchase" class="file-input" accept=".csv">
+                <div id="drop-purchase" class="drop-zone">
+                    <div style="font-size: 11px;">📤 ここにファイルをドロップ</div>
+                    <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">またはクリックして選択</div>
+                </div>
+                <div id="selected-purchase" class="file-selected" style="display: none;">✓ <span></span></div>
+            </div>
+            
+            <div class="file-item">
+                <label class="file-label">仮入庫一覧</label>
+                <input type="file" id="file-tempreceipt" class="file-input" accept=".csv">
+                <div id="drop-tempreceipt" class="drop-zone">
+                    <div style="font-size: 11px;">📤 ここにファイルをドロップ</div>
+                    <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">またはクリックして選択</div>
+                </div>
+                <div id="selected-tempreceipt" class="file-selected" style="display: none;">✓ <span></span></div>
+            </div>
+        </div>
+        
+        <button id="merge-button" class="merge-button" disabled>データを統合</button>
+        
+        <div id="error-message" class="alert alert-error" style="display: none;"></div>
+        
+        <div id="success-message" class="alert alert-success" style="display: none;">
+            <div style="font-weight: 500; margin-bottom: 8px;">✓ 処理完了</div>
+            <div id="result-count"></div>
+            <button id="download-button" class="download-button">⬇ Excelをダウンロード</button>
+        </div>
+    </div>
+    
+    <div class="main-area">
+        <div id="empty-state" class="empty-state">
+            <div>
+                <div style="font-size: 64px; margin-bottom: 16px;">📄</div>
+                <h2>データ統合結果がここに表示されます</h2>
+                <p>左のサイドバーからCSVファイルを読み込んでください</p>
+            </div>
+        </div>
+        <div id="result-container" class="result-container" style="display: none;">
+            <div class="table-wrapper">
+                <table id="result-table"></table>
+            </div>
+            <div id="table-footer" class="table-footer" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let files = {
+            picking: null,
+            workOrder: null,
+            purchase: null,
+            tempReceipt: null
+        };
+        let mergedData = null;
+
+        // ファイル選択イベント
+        document.getElementById('file-picking').addEventListener('change', (e) => handleFileSelect('picking', e));
+        document.getElementById('file-workorder').addEventListener('change', (e) => handleFileSelect('workOrder', e));
+        document.getElementById('file-purchase').addEventListener('change', (e) => handleFileSelect('purchase', e));
+        document.getElementById('file-tempreceipt').addEventListener('change', (e) => handleFileSelect('tempReceipt', e));
+
+        // ドロップゾーンの設定
+        setupDropZone('picking');
+        setupDropZone('workorder', 'workOrder');
+        setupDropZone('purchase');
+        setupDropZone('tempreceipt', 'tempReceipt');
+
+        function setupDropZone(id, fileKey) {
+            const key = fileKey || id;
+            const dropZone = document.getElementById(`drop-${id}`);
+            const fileInput = document.getElementById(`file-${id}`);
+
+            // クリックでファイル選択
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // ドラッグオーバー
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            // ドラッグ離脱
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+
+            // ドロップ
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                
+                const droppedFiles = e.dataTransfer.files;
+                if (droppedFiles.length > 0) {
+                    const file = droppedFiles[0];
+                    if (file.name.endsWith('.csv')) {
+                        files[key] = file;
+                        const selectedDiv = document.getElementById(`selected-${id}`);
+                        selectedDiv.style.display = 'flex';
+                        selectedDiv.querySelector('span').textContent = file.name;
+                        checkAllFiles();
+                    } else {
+                        alert('CSVファイルを選択してください');
+                    }
+                }
+            });
+        }
+
+        function handleFileSelect(type, event) {
+            const file = event.target.files[0];
+            if (file) {
+                files[type] = file;
+                const id = event.target.id.replace('file-', '');
+                const selectedDiv = document.getElementById(`selected-${id}`);
+                selectedDiv.style.display = 'flex';
+                selectedDiv.querySelector('span').textContent = file.name;
+                checkAllFiles();
+            }
+        }
+
+        function checkAllFiles() {
+            const allSelected = Object.values(files).every(f => f !== null);
+            document.getElementById('merge-button').disabled = !allSelected;
+        }
+
+        // CSV解析（列番号でアクセスできるように配列も保持）
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(line => line.trim());
+            if (lines.length === 0) return [];
+            
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                const row = {
+                    _columns: values.map(v => v ? v.trim() : '') // 列番号でアクセス用
+                };
+                headers.forEach((header, index) => {
+                    row[header] = values[index] ? values[index].trim() : '';
+                });
+                data.push(row);
+            }
+            
+            return data;
+        }
+
+        // 列番号で値を取得（0始まり）
+        function getColumnByIndex(row, index) {
+            return row._columns && row._columns[index] ? row._columns[index] : '';
+        }
+
+        // ファイル読み込み
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsText(file, 'UTF-8');
+            });
+        }
+
+        // 列名を柔軟に取得する関数（半角/全角対応）
+        function getColumnValue(data, ...possibleNames) {
+            for (const name of possibleNames) {
+                if (data[name] !== undefined) {
+                    return data[name];
+                }
+            }
+            return '';
+        }
+
+        // データ統合
+        document.getElementById('merge-button').addEventListener('click', async () => {
+            document.getElementById('error-message').style.display = 'none';
+            document.getElementById('success-message').style.display = 'none';
+            document.getElementById('merge-button').textContent = '処理中...';
+            document.getElementById('merge-button').disabled = true;
+            
+            try {
+                const pickingText = await readFileAsText(files.picking);
+                const workOrderText = await readFileAsText(files.workOrder);
+                const purchaseText = await readFileAsText(files.purchase);
+                const tempReceiptText = await readFileAsText(files.tempReceipt);
+
+                const pickingData = parseCSV(pickingText);
+                const workOrderData = parseCSV(workOrderText);
+                const purchaseData = parseCSV(purchaseText);
+                const tempReceiptData = parseCSV(tempReceiptText);
+
+                mergedData = pickingData.map(picking => {
+                    const workOrder = workOrderData.find(wo => wo['工番'] === picking['工番']) || {};
+                    const purchase = purchaseData.find(po => po['伝票№'] === picking['発注伝票№']) || {};
+                    
+                    // 仮入庫済チェック：仮入庫一覧の伝票№(B列=index1)が発注伝票№に存在するか
+                    const tempReceipt = tempReceiptData.find(tr => {
+                        const tempDenpyoNo = getColumnByIndex(tr, 1); // B列（0始まりで1）
+                        return tempDenpyoNo && tempDenpyoNo === getColumnByIndex(picking, 12); // M列（発注伝票№）
+                    });
+                    const tempReceiptStatus = tempReceipt ? '〇' : '';
+
+                    return {
+                        '管理': '', // A列
+                        '指示書': getColumnByIndex(picking, 0), // B列 ← ピッキングA列
+                        'レベル': getColumnByIndex(picking, 1), // C列 ← ピッキングB列
+                        '工番': getColumnByIndex(picking, 2), // D列 ← ピッキングC列
+                        '製番': getColumnByIndex(workOrder, 10), // E列 ← 工番K列（品目コード）
+                        '契約先': getColumnByIndex(workOrder, 3), // F列 ← 工番D列（得意先）
+                        '納入先': getColumnByIndex(workOrder, 4), // G列 ← 工番E列
+                        'ピッキングID': getColumnByIndex(picking, 3), // H列 ← ピッキングD列
+                        '品目': getColumnByIndex(picking, 4), // I列 ← ピッキングE列
+                        '品名': getColumnByIndex(picking, 5), // J列 ← ピッキングF列
+                        '仕様': getColumnByIndex(picking, 6), // K列 ← ピッキングG列
+                        'メーカー名': getColumnByIndex(purchase, 20), // L列 ← 発注U列
+                        '単位': getColumnByIndex(picking, 7), // M列 ← ピッキングH列
+                        '指示数': getColumnByIndex(picking, 8), // N列 ← ピッキングI列
+                        '出庫数': getColumnByIndex(picking, 9), // O列 ← ピッキングJ列
+                        'ピ状況': getColumnByIndex(picking, 10), // P列 ← ピッキングK列
+                        'ピ引当': getColumnByIndex(picking, 11), // Q列 ← ピッキングL列
+                        '発注伝票№': getColumnByIndex(picking, 12), // R列 ← ピッキングM列
+                        '発注担当CD': getColumnByIndex(picking, 13), // S列 ← ピッキングN列
+                        '発注担当': getColumnByIndex(picking, 14), // T列 ← ピッキングO列
+                        '発注先': getColumnByIndex(purchase, 16), // U列 ← 発注Q列（発注先名）
+                        '注文書発行日時': getColumnByIndex(purchase, 27), // V列 ← 発注AB列
+                        '仮注文書発行日時': getColumnByIndex(purchase, 28), // W列 ← 発注AC列
+                        '工場納期': getColumnByIndex(picking, 15), // X列 ← ピッキングP列
+                        '注文納期': getColumnByIndex(purchase, 12), // Y列 ← 発注M列（納期）
+                        '回答納期': getColumnByIndex(purchase, 13), // Z列 ← 発注N列
+                        '納期備考': getColumnByIndex(purchase, 14), // AA列 ← 発注O列
+                        '品目備考': getColumnByIndex(purchase, 25), // AB列 ← 発注Z列
+                        '発注備考': getColumnByIndex(purchase, 26), // AC列 ← 発注AA列
+                        '納期ｱﾗｰﾄ': getColumnByIndex(picking, 17), // AD列 ← ピッキングR列（18列目、空欄の可能性あり）
+                        '単価': getColumnByIndex(picking, 18), // AE列 ← ピッキングS列
+                        '工期': getColumnByIndex(picking, 19), // AF列 ← ピッキングT列
+                        '仮入庫済': tempReceiptStatus, // AG列
+                        '出荷予定日1': getColumnByIndex(workOrder, 29), // AH列 ← 工番AD列
+                        '出荷予定日2': getColumnByIndex(workOrder, 30) // AI列 ← 工番AE列
+                    };
+                });
+
+                displayResult();
+                document.getElementById('result-count').textContent = `${mergedData.length}件のデータを統合しました`;
+                document.getElementById('success-message').style.display = 'block';
+            } catch (error) {
+                document.getElementById('error-message').textContent = `エラー: ${error.message}`;
+                document.getElementById('error-message').style.display = 'block';
+            } finally {
+                document.getElementById('merge-button').textContent = 'データを統合';
+                checkAllFiles();
+            }
+        });
+
+        // 結果表示
+        function displayResult() {
+            if (!mergedData || mergedData.length === 0) return;
+
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('result-container').style.display = 'block';
+
+            const table = document.getElementById('result-table');
+            const headers = Object.keys(mergedData[0]);
+            
+            let html = '<thead><tr>';
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            const displayData = mergedData.slice(0, 100);
+            displayData.forEach(row => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${row[header]}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody>';
+            
+            table.innerHTML = html;
+
+            if (mergedData.length > 100) {
+                document.getElementById('table-footer').textContent = `最初の100件を表示しています（全${mergedData.length}件）`;
+                document.getElementById('table-footer').style.display = 'block';
+            }
+        }
+
+        // Excelダウンロード
+        document.getElementById('download-button').addEventListener('click', () => {
+            if (!mergedData || mergedData.length === 0) return;
+
+            const ws = XLSX.utils.json_to_sheet(mergedData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'ピッキング統合データ');
+            
+            const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            XLSX.writeFile(wb, `ピッキング統合データ_${timestamp}.xlsx`);
+        });
+    </script>
+</body>
+</html>
