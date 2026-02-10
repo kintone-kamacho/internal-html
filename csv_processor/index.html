@@ -196,7 +196,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>📊 品目マスター抽出(3等分)</h1>
+    <h1>📊 品目マスター抽出(3等分)＋品目別保管場所</h1>
     
     <div class="info">
       <h3>処理内容</h3>
@@ -204,7 +204,7 @@
         <li>指定した品目コードで始まる行のみ抽出</li>
         <li>必要な列（品目、品名、仕様、メーカー名、手配先名、在庫評価単価、単位、保管場所）を取得</li>
         <li>csvはファイル→名前をつけて保存→CSV UTF-8(コンマ区切り)(*.csv)に変換しておく</li> 
-        <li>データを3等分してCSV出力</li>
+        <li>データを3等分してCSV出力＋品目別保管場所.csvで保管場所がある場合のみのファイル出力</li>
         <li>ファイルは自動でCSV(コンマ区切り)(*.csv)に変換されるので、キントーンで読み込むときは初期設定(Shift-jis形式で読み込む)で字化けせずに読み込み可能</li>
         <li>キントーンでは単価などのセル設定を通貨にしていたらエラーになったため、数字は小数点のみで標準表示になっている</li>
       </ul>
@@ -385,6 +385,51 @@
           showError('指定された品目コードで始まるデータが見つかりませんでした。');
           processBtn.disabled = false;
           return;
+        }
+
+        // 保管場所が有効なデータのみ抽出（品目別保管場所.csv用）
+        updateProgress(75, '保管場所フィルタリング中...');
+        const validLocationData = filteredData
+          .map(row => [row[0], row[7]]) // 品目（A列）と保管場所（AT列）のみ抽出
+          .filter(row => {
+            const location = row[1] ? row[1].trim() : ''; // 保管場所
+            // 0、0000、空欄などを除外
+            if (!location) return false;
+            if (location === '0') return false;
+            if (/^0+$/.test(location)) return false; // 0のみで構成される文字列を除外
+            return true;
+          });
+
+        console.log(`保管場所有効データ: ${validLocationData.length}件`);
+
+        // 品目別保管場所.csvの生成
+        if (validLocationData.length > 0) {
+          const locationHeaders = ['品目', '保管場所'];
+          const csvLines = [locationHeaders.map(escapeCSV).join(',')];
+          for (const row of validLocationData) {
+            csvLines.push(row.map(escapeCSV).join(','));
+          }
+          const csvContent = csvLines.join('\n');
+          
+          let blob;
+          try {
+            const sjisArray = convertToShiftJIS(csvContent);
+            blob = new Blob([sjisArray], { type: 'text/csv;charset=shift_jis;' });
+          } catch (e) {
+            console.error('Shift-JIS変換エラー:', e);
+            blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+          }
+          
+          const url = URL.createObjectURL(blob);
+          const fileName = '品目別保管場所.csv';
+          
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          link.className = 'download-btn';
+          link.textContent = `📥 ${fileName} をダウンロード (${validLocationData.length.toLocaleString()}件)`;
+          link.style.background = '#2196F3'; // 識別用に青色
+          downloadsDiv.appendChild(link);
         }
         
         // 3等分
