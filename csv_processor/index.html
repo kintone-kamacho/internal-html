@@ -515,9 +515,28 @@
           prefixList = JSON.parse(saved);
           updatePrefixDisplay();
           checkReady();
+        } else {
+          // 初期値設定（localStorageにデータがない場合のみ）
+          prefixList = [
+            'GD', 'LC', 'LD', 'MD', 'MM',
+            'PD', 'PF', 'PG', 'PH', 'PM',
+            'PT', 'PW', 'UC', 'UD', 'UF'
+          ];
+          savePrefixList(); // 初期値を保存
+          updatePrefixDisplay();
+          checkReady();
         }
       } catch (error) {
         console.log('保存されたリストがありません:', error);
+        // エラー時も初期値を設定
+        prefixList = [
+          'GD', 'LC', 'LD', 'MD', 'MM',
+          'PD', 'PF', 'PG', 'PH', 'PM',
+          'PT', 'PW', 'UC', 'UD', 'UF'
+        ];
+        savePrefixList();
+        updatePrefixDisplay();
+        checkReady();
       }
     }
     
@@ -672,7 +691,7 @@
     function clearAllPrefixes() {
       if (confirm('すべての品目コードを削除しますか？')) {
         prefixList = [];
-        savePrefixList();
+        localStorage.removeItem('prefixList'); // ← savePrefixList()の代わりにこれ
         updatePrefixDisplay();
         checkReady();
       }
