@@ -1,533 +1,3201 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>品目マスター抽出(3等分)＋品目別保管場所</title>
-    <link rel="icon" href="../assets/icons/matoryoshika.png" type="image/png">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/encoding-japanese/2.0.0/encoding.min.js"></script>
-  <script>
-    // Shift-JIS変換関数
-    function convertToShiftJIS(str) {
-      const unicodeArray = [];
-      for (let i = 0; i < str.length; i++) {
-        unicodeArray.push(str.charCodeAt(i));
-      }
-      const sjisArray = Encoding.convert(unicodeArray, {
-        to: 'SJIS',
-        from: 'UNICODE'
-      });
-      return new Uint8Array(sjisArray);
-    }
-  </script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding: 40px 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-    }
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 20px;
-      padding: 40px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    }
-    h1 {
-      color: #333;
-      margin-bottom: 30px;
-      text-align: center;
-    }
-    .file-section {
-      background: #f8f9fa;
-      border-radius: 15px;
-      padding: 30px;
-      margin-bottom: 20px;
-    }
-    .file-section h3 {
-      color: #667eea;
-      margin-bottom: 15px;
-    }
-    .drop-area {
-      border: 3px dashed #ccc;
-      border-radius: 15px;
-      padding: 40px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s;
-      background: white;
-    }
-    .drop-area:hover {
-      border-color: #667eea;
-      background: #f0f0ff;
-    }
-    .drop-area.highlight {
-      border-color: #667eea;
-      background: #e8f0fe;
-      transform: scale(1.02);
-    }
-    .drop-area.loaded {
-      border-color: #28a745;
-      background: #e8f5e9;
-    }
-    .file-input {
-      display: none;
-    }
-    .btn {
-      display: inline-block;
-      padding: 12px 30px;
-      background: #667eea;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: all 0.3s;
-    }
-    .btn:hover {
-      background: #5568d3;
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102,126,234,0.4);
-    }
-    .btn-process {
-      display: block;
-      width: 100%;
-      padding: 15px;
-      background: #28a745;
-      margin-top: 30px;
-      font-size: 18px;
-    }
-    .btn-process:hover {
-      background: #218838;
-    }
-    .btn-process:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-      transform: none;
-    }
-    #progress {
-      display: none;
-      margin: 30px 0;
-    }
-    .progress-bar {
-      width: 100%;
-      height: 30px;
-      background: #e0e0e0;
-      border-radius: 15px;
-      overflow: hidden;
-      position: relative;
-    }
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #667eea, #764ba2);
-      width: 0%;
-      transition: width 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-    }
-    #status {
-      margin-top: 15px;
-      text-align: center;
-      color: #666;
-      font-size: 14px;
-    }
-    #downloads {
-      margin-top: 30px;
-    }
-    .download-btn {
-      display: block;
-      margin: 10px 0;
-      padding: 15px 25px;
-      background: #28a745;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      text-align: center;
-      transition: all 0.3s;
-    }
-    .download-btn:hover {
-      background: #218838;
-      transform: translateX(5px);
-    }
-    .info {
-      background: #e7f3ff;
-      padding: 20px;
-      border-radius: 10px;
-      margin: 20px 0;
-      border-left: 4px solid #2196F3;
-    }
-    .info h3 {
-      color: #2196F3;
-      margin-bottom: 10px;
-    }
-    .error {
-      background: #ffebee;
-      color: #c62828;
-      padding: 15px;
-      border-radius: 8px;
-      margin: 20px 0;
-      border-left: 4px solid #c62828;
-    }
-    .success-badge {
-      display: inline-block;
-      background: #28a745;
-      color: white;
-      padding: 5px 15px;
-      border-radius: 20px;
-      font-size: 14px;
-      margin-top: 10px;
-    }
-    .file-info {
-      margin-top: 10px;
-      color: #666;
-      font-size: 14px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>📊 品目マスター抽出(3等分)＋品目別保管場所</h1>
-    
-    <div class="info">
-      <h3>処理内容</h3>
-      <ul style="margin-left: 20px; line-height: 1.8;">
-        <li>指定した品目コードで始まる行のみ抽出</li>
-        <li>必要な列（品目、品名、仕様、メーカー名、手配先名、在庫評価単価、単位、保管場所）を取得</li>
-        <li>csvはファイル→名前をつけて保存→CSV UTF-8(コンマ区切り)(*.csv)に変換しておく</li> 
-        <li>データを3等分してCSV出力＋品目別保管場所.csvで保管場所がある場合のみのファイル出力</li>
-        <li>ファイルは自動でCSV(コンマ区切り)(*.csv)に変換されるので、キントーンで読み込むときは初期設定(Shift-jis形式で読み込む)で字化けせずに読み込み可能</li>
-        <li>キントーンでは単価などのセル設定を通貨にしていたらエラーになったため、数字は小数点のみで標準表示になっている</li>
-      </ul>
-    </div>
-    
-    <div class="file-section">
-      <h3>① 品目リストファイル (.txt)</h3>
-      <div class="drop-area" id="dropArea1">
-        <p style="margin-bottom: 15px;">📄 品目リストのテキストファイルをドロップ</p>
-        <p style="color: #999; margin-bottom: 15px; font-size: 14px;">例: PDA, PDC, PMA, PMC...</p>
-        <button class="btn" onclick="document.getElementById('fileInput1').click()">ファイルを選択</button>
-        <div class="file-info" id="fileInfo1"></div>
-      </div>
-      <input type="file" id="fileInput1" class="file-input" accept=".txt" />
-    </div>
-    
-    <div class="file-section">
-      <h3>② CSVファイル</h3>
-      <div class="drop-area" id="dropArea2">
-        <p style="margin-bottom: 15px;">📁 品目マスターのCSVファイルをドロップ</p>
-        <button class="btn" onclick="document.getElementById('fileInput2').click()">ファイルを選択</button>
-        <div class="file-info" id="fileInfo2"></div>
-      </div>
-      <input type="file" id="fileInput2" class="file-input" accept=".csv" />
-    </div>
-    
-    <button class="btn btn-process" id="processBtn" disabled>🚀 処理開始</button>
-    
-    <div id="progress">
-      <div class="progress-bar">
-        <div class="progress-fill" id="progressFill">0%</div>
-      </div>
-      <div id="status">準備中...</div>
-    </div>
-    
-    <div id="downloads"></div>
-  </div>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="QR在庫管理">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>QRコード在庫管理</title> 
+    <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f3f4f6; -webkit-user-select: none; user-select: none; }
+    .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .header h1 { font-size: 20px; font-weight: 600; }
+    .header-user { font-size: 12px; opacity: 0.9; }
+    .nav { display: flex; background: white; border-bottom: 1px solid #e5e7eb; position: sticky; top: 60px; z-index: 99; }
+    .nav-btn { flex: 1; padding: 16px 8px; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; font-size: 13px; }
+    .nav-btn.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 600; }
+    .content { padding: 16px; max-width: 800px; margin: 0 auto; padding-bottom: 80px; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card h3 { margin-bottom: 16px; font-size: 18px; }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 12px; -webkit-tap-highlight-color: transparent; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-secondary { background: #e5e7eb; color: #374151; }
+    .btn-success { background: #059669; color: white; }
+    .btn-disabled { background: #d1d5db; color: #9ca3af; cursor: not-allowed; }
+    .btn-disabled:active { transform: none; }
+    .form-input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; margin-bottom: 12px; }
+    .form-label { display: block; font-size: 14px; margin-bottom: 6px; color: #374151; font-weight: 500; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal.active { display: flex; }
+    .modal-content { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    .modal-content h2 { margin-bottom: 20px; }
+    .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+    .info-value { font-weight: 600; }
+    .action-btns { display: flex; gap: 12px; margin-bottom: 16px; }
+    .action-btn { flex: 1; padding: 16px; border: 2px solid #e5e7eb; border-radius: 8px; background: white; cursor: pointer; font-size: 15px; font-weight: 600; }
+    .action-btn.selected { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+    .action-btn.disabled { opacity: 0.5; cursor: not-allowed; background: #f3f4f6; }
+    .action-btns-extended { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .action-btn-small { padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; background: white; cursor: pointer; font-size: 14px; font-weight: 600; }
+    .action-btn-small.selected { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+    .action-btn-small.cancel { border-color: #f59e0b; }
+    .action-btn-small.cancel.selected { border-color: #f59e0b; background: #fffbeb; color: #f59e0b; }
+    .action-btn-small.disabled { opacity: 0.5; cursor: not-allowed; background: #f3f4f6; }
 
-  <script>
-    let prefixList = null;
-    let csvFile = null;
-    
-    const dropArea1 = document.getElementById('dropArea1');
-    const dropArea2 = document.getElementById('dropArea2');
-    const fileInput1 = document.getElementById('fileInput1');
-    const fileInput2 = document.getElementById('fileInput2');
-    const fileInfo1 = document.getElementById('fileInfo1');
-    const fileInfo2 = document.getElementById('fileInfo2');
-    const processBtn = document.getElementById('processBtn');
-    const progressDiv = document.getElementById('progress');
-    const progressFill = document.getElementById('progressFill');
-    const statusDiv = document.getElementById('status');
-    const downloadsDiv = document.getElementById('downloads');
-    
-    // ドラッグ&ドロップ設定
-    function setupDropArea(dropArea, fileInput, handler) {
-      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, e => {
-          e.preventDefault();
-          e.stopPropagation();
-        });
-      });
-      
-      ['dragenter', 'dragover'].forEach(eventName => {
-        dropArea.addEventListener(eventName, () => dropArea.classList.add('highlight'));
-      });
-      
-      ['dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, () => dropArea.classList.remove('highlight'));
-      });
-      
-      dropArea.addEventListener('drop', e => handler(e.dataTransfer.files));
-      fileInput.addEventListener('change', e => handler(e.target.files));
+    .stock-low { color: #dc2626; }
+    .stock-ok { color: #059669; }
+    .permission-note { background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 14px; color: #92400e; }
+    .permission-note strong { display: block; margin-bottom: 4px; }
+    @media (display-mode: standalone) {
+        .install-prompt { display: none; }
     }
-    
-    setupDropArea(dropArea1, fileInput1, handlePrefixFile);
-    setupDropArea(dropArea2, fileInput2, handleCSVFile);
-    
-    async function handlePrefixFile(files) {
-      if (files.length === 0) return;
-      
-      const file = files[0];
-      if (!file.name.endsWith('.txt')) {
-        showError('テキストファイル(.txt)を選択してください。');
-        return;
-      }
-      
-      try {
-        const text = await file.text();
-        // 改行で分割して空行と空白を除去
-        prefixList = text.split('\n')
-          .map(line => line.trim())
-          .filter(line => line && !line.startsWith('【'));
-        
-        dropArea1.classList.add('loaded');
-        fileInfo1.innerHTML = `<span class="success-badge">✓ ${prefixList.length}件の品目コードを読み込み</span>`;
-        checkReady();
-      } catch (error) {
-        showError('品目リストの読み込みに失敗しました: ' + error.message);
-      }
+    /* PASチェックボックスのカスタムスタイル */
+    .pas-checkbox {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 2px solid #d1d5db;
+        border-radius: 3px;
+        background: white;
+        position: relative;
     }
-    
-    function handleCSVFile(files) {
-      if (files.length === 0) return;
-      
-      const file = files[0];
-      if (!file.name.endsWith('.csv')) {
-        showError('CSVファイルを選択してください。');
-        return;
-      }
-      
-      csvFile = file;
-      dropArea2.classList.add('loaded');
-      fileInfo2.innerHTML = `<span class="success-badge">✓ ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)</span>`;
-      checkReady();
+    .pas-checkbox.checked {
+        background: #1f2937;
+        border-color: #1f2937;
     }
-    
-    function checkReady() {
-      if (prefixList && csvFile) {
-        processBtn.disabled = false;
-      }
+    .pas-checkbox.checked::after {
+        content: '✓';
+        position: absolute;
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
     }
-    
-    processBtn.addEventListener('click', processFiles);
-    
-    function updateProgress(percent, message) {
-      progressFill.style.width = percent + '%';
-      progressFill.textContent = Math.round(percent) + '%';
-      statusDiv.textContent = message;
+    .pas-checkbox:disabled {
+        opacity: 1 !important;
     }
+    .icon {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+    }
+
+    .icon-arrow {
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+    }
+
+    .icon-in {
+        color: #059669; /* 緑 */
+    }
+    .icon-in .icon-arrow {
+        border-top: 10px solid #059669; /* 下向き */
+    }
+
+    .icon-out {
+        color: #dc2626; /* 赤 */
+    }
+    .icon-out .icon-arrow {
+        border-bottom: 10px solid #dc2626; /* 上向き */
+    }
+
+    .icon-cancel { color: #f59e0b; }
+    .filter-section { margin-bottom: 16px; padding: 12px; background: #f9fafb; border-radius: 8px; }
+    .filter-label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 14px; cursor: pointer; }
+    .filter-select { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+    .csv-upload { margin-top: 12px; }
+    .csv-status { margin-top: 8px; padding: 8px; background: #eff6ff; border: 1px solid #2563eb; border-radius: 6px; font-size: 13px; color: #1e40af; }
     
-    async function processFiles() {
-      processBtn.disabled = true;
-      progressDiv.style.display = 'block';
-      downloadsDiv.innerHTML = '';
-      updateProgress(0, 'ファイル読み込み中...');
-      
-      try {
-        const text = await csvFile.text();
-        updateProgress(20, 'CSV解析中...');
+    .work-order-row {
+        position: relative;
+    }
+
+    .btn-remove-work-order {
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: #dc2626;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 18px;
+        margin-top: 20px;
+    }
+
+    .btn-add-work-order:active,
+    .btn-remove-work-order:active {
+        transform: scale(0.95);
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2937;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s;
+        white-space: nowrap;
+    }
+    .toast.show {
+        opacity: 1;
+    }
+    .mode-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.mode-btn {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+.mode-btn.active {
+    border-color: #2563eb;
+    background: #eff6ff;
+    color: #2563eb;
+}
+.fixed-workorder-info {
+    background: #eff6ff;
+    border: 2px solid #2563eb;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+.fixed-workorder-info strong {
+    color: #2563eb;
+    font-size: 16px;
+}
+
+    </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>📱 QR在庫管理</h1>
+            <div class="header-user" id="headerUser"></div>
+        </div>
+        <div class="nav">
+            <button class="nav-btn active" data-view="register">📱 スキャン</button>
+            <button class="nav-btn" data-view="inventory">📦 在庫</button>
+            <button class="nav-btn" data-view="history">📋 履歴</button>
+            <button class="nav-btn" data-view="settings">⚙️ 設定</button>
+        </div>
         
-        const lines = text.split('\n');
-        updateProgress(30, `${lines.length.toLocaleString()}行を検出...`);
+        <div id="registrationModal" class="modal">
+            <div class="modal-content">
+                <h2>ユーザー登録</h2>
+                <label class="form-label">名前(姓と名の間を開けずにフルネームで記載)</label>
+                <input type="text" class="form-input" id="regName" placeholder="山田太郎">
+                <label class="form-label">メールアドレス(@kamacho.co.jpのメールアドレス)</label>
+                <input type="email" class="form-input" id="regEmail" placeholder="yamada@example.com">
+                <label class="form-label">部署</label>
+                <select class="form-input" id="regDept">
+                    <option value="">選択してください</option>
+                    <option value="管理部倉庫G">管理部倉庫G</option>
+                    <option value="製造部1G">製造部1G</option>
+                    <option value="製造部2G">製造部2G</option>
+                    <option value="装備G">装備G</option>
+                    <option value="管理者">管理者(アプリの管理用なので一般登録はしないでください)</option>
+                </select>
+                <button class="btn btn-primary" id="registerBtn">登録</button>
+            </div>
+        </div>
         
-        // 必要な列のインデックス
-        const columnIndexes = [0, 1, 2, 3, 6, 21, 24, 45]; // A,B,C,D,G,V,Y,AT
-        const newHeaders = ['品目', '品名', '仕様', 'メーカー名', '手配先名', '在庫評価単価', '単位', '保管場所'];
+        <div class="content">
+<div id="registerView" class="view active">
+    <div class="card">
+        <h3>データベース状態(接続済み必須)</h3>
+        <div id="fbStatus">接続中...</div>
+    </div>
+    
+    <div class="card">
+        <h3>入出庫登録</h3>
         
-        // フィルタリングと抽出
-        updateProgress(40, 'データ抽出中...');
-        const filteredData = [];
+        <!-- モード選択 -->
+        <div class="mode-selector">
+            <button class="mode-btn active" id="normalModeBtn">
+                📦 通常入出庫<br>
+                <span style="font-size:11px; font-weight:400; color:#6b7280;">部品単位</span>
+            </button>
+            <button class="mode-btn" id="fixedWorkorderModeBtn">
+                🔧 工番固定出庫<br>
+                <span style="font-size:11px; font-weight:400; color:#6b7280;">工番単位</span>
+            </button>
+        </div>
         
-        for (let i = 1; i < lines.length; i++) {
-          if (i % 10000 === 0) {
-            updateProgress(40 + (i / lines.length * 30), `処理中: ${i.toLocaleString()} / ${lines.length.toLocaleString()}行`);
-            await new Promise(resolve => setTimeout(resolve, 0));
-          }
-          
-          const line = lines[i].trim();
-          if (!line) continue;
-          
-          const cells = parseCSVLine(line);
-          if (cells.length > 0) {
-            const firstCell = cells[0].trim();
-            // 品目リストのいずれかで始まるかチェック
-            const matchesPrefix = prefixList.some(prefix => firstCell.startsWith(prefix));
+        <!-- 通常モード -->
+        <div id="normalModeSection">
+            <div id="qr-reader-register" style="display:none; border-radius:8px; overflow:hidden;"></div>
+            <button class="btn btn-primary" id="startRegisterScanBtn">📷 カメラ起動（入出庫登録）</button>
+            <button class="btn btn-secondary" id="stopRegisterScanBtn" style="display:none">⏹️ スキャン停止</button>
+        </div>
+        
+        <!-- 工番固定モード -->
+        <div id="fixedWorkorderModeSection" style="display:none;">
+            <div id="fixedWorkorderInfo" class="fixed-workorder-info" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">現在の工番</div>
+                        <strong id="currentFixedWorkorder">-</strong>
+                    </div>
+                    <button class="btn btn-secondary" id="changeFixedWorkorderBtn" style="width:auto; padding:8px 16px; margin:0; font-size:13px;">工番変更</button>
+                </div>
+            </div>
             
-            if (matchesPrefix) {
-              const row = columnIndexes.map(idx => cells[idx] || '');
-              filteredData.push(row);
-            }
-          }
-        }
-        
-        updateProgress(70, `${filteredData.length.toLocaleString()}件のデータを抽出完了`);
-        
-        if (filteredData.length === 0) {
-          showError('指定された品目コードで始まるデータが見つかりませんでした。');
-          processBtn.disabled = false;
-          return;
-        }
+            <div id="fixedWorkorderInputSection">
+                <label class="form-label">工番を入力</label>
+                <input type="text" class="form-input" id="fixedWorkorderInput" placeholder="例: SK1234-02A" autocomplete="off" pattern="[A-Za-z0-9\-]*" inputmode="latin">
+                <button class="btn btn-primary" id="setFixedWorkorderBtn">✅ 工番を設定してスキャン開始</button>
+            </div>
+            
+            <div id="fixedWorkorderScanSection" style="display:none;">
+                <div id="qr-reader-fixed" style="display:none; border-radius:8px; overflow:hidden;"></div>
+                <button class="btn btn-primary" id="startFixedScanBtn">📷 カメラ起動</button>
+                <button class="btn btn-secondary" id="stopFixedScanBtn" style="display:none">⏹️ スキャン停止</button>
+            </div>
+        </div>
+    </div>
+            
+                <div class="card">
+                    <h3>在庫検索</h3>
+                    <div id="qr-reader-search" style="display:none; border-radius:8px; overflow:hidden;"></div>
+                    <button class="btn btn-primary" id="startSearchScanBtn">📷 カメラ起動（在庫検索）</button>
+                    <button class="btn btn-secondary" id="stopSearchScanBtn" style="display:none">⏹️ スキャン停止</button>
+                    <button class="btn btn-secondary" id="manualSearchBtn">✍️ 手入力</button>
+                </div>
+            </div>
+            
+            <div id="inputView" class="view">
+                <div class="card">
+                    <h3>読み取った商品情報</h3>
+                   <div id="scannedInfo"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>処理選択</h3>
+                    <div id="permissionNote" class="permission-note" style="display:none;">
+                        <strong>⚠️ 入庫権限がありません</strong>
+                        入庫処理は「管理部倉庫G」または「管理者」のみ実行できます。
+                    </div>
+                    <div class="action-btns-extended">
+                        <button class="action-btn-small selected" id="outboundBtn">
+                            <span class="icon icon-out">
+                                <span class="icon-arrow"></span>
+                                出庫
+                            </span>
+                        </button>
+                        
+                        <button class="action-btn-small cancel" id="outboundCancelBtn">
+                            <span class="icon icon-cancel">X 出庫取消</span>
+                        </button>
 
-        // 保管場所が有効なデータのみ抽出（品目別保管場所.csv用）
-        updateProgress(75, '保管場所フィルタリング中...');
-        const validLocationData = filteredData
-          .map(row => [row[0], row[7]]) // 品目（A列）と保管場所（AT列）のみ抽出
-          .filter(row => {
-            const location = row[1] ? row[1].trim() : ''; // 保管場所
-            // 0、0000、空欄などを除外
-            if (!location) return false;
-            if (location === '0') return false;
-            if (/^0+$/.test(location)) return false; // 0のみで構成される文字列を除外
-            return true;
-          });
+                        <button class="action-btn-small" id="inboundBtn">
+                            <span class="icon icon-in">
+                                <span class="icon-arrow"></span>
+                                入庫
+                            </span>
+                        </button>
+                        
+                        <button class="action-btn-small cancel" id="inboundCancelBtn">
+                            <span class="icon icon-cancel">X 入庫取消</span>
+                        </button>
+                    </div>
+                    
+                    <div id="outboundForm">
+                        <label class="form-label">出庫日</label>
+                        <input type="date" class="form-input" id="outboundDate">
+                        
+                        <div id="workOrderList">
+                            <div class="work-order-row" data-index="0">
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+                                    <div style="flex: 2;">
+                                        <label class="form-label" style="margin-bottom: 4px;">工番</label>
+                                        <input type="text" class="form-input work-order-input" style="margin-bottom: 0;" placeholder="例: SK1234-02A" autocomplete="off" pattern="[A-Za-z0-9\-]*" inputmode="latin">
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label class="form-label" style="margin-bottom: 4px;">個数</label>
+                                        <input type="number" class="form-input quantity-input" style="margin-bottom: 0;" value="1" min="0.1" step="0.1">
+                                    </div>
+                                    <button class="btn-add-work-order" style="width: 40px; height: 40px; border: none; background: #2563eb; color: white; border-radius: 8px; cursor: pointer; font-size: 20px; margin-top: 20px;">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary" id="submitOutboundBtn">✅ 出庫処理</button>
+                    </div>
+                    <div id="outboundCancelForm" style="display:none">
+                        <label class="form-label">出庫取消日</label>
+                        <input type="date" class="form-input" id="outboundCancelDate">
+                        <label class="form-label">工番</label>
+                        <input type="text" class="form-input" id="workOrderCancel" placeholder="KJ-2024-XXX" inputmode="latin">
+                        <label class="form-label">個数</label>
+                        <input type="number" class="form-input" id="quantityCancel" value="1" min="0.1" step="0.1">
+                        <button class="btn btn-primary" id="submitOutboundCancelBtn" style="background: #f59e0b;">✅ 出庫取消処理</button>
+                    </div>
+                    <div id="inboundForm" style="display:none">
+                        <label class="form-label">入庫日</label>
+                        <input type="date" class="form-input" id="inboundDate">
+                        <label class="form-label">個数</label>
+                        <input type="number" class="form-input" id="inboundQuantity" value="1" min="0.1" step="0.1">
+                        <button class="btn btn-success" id="submitInboundBtn">✅ 入庫処理</button>
+                    </div>
+                    <div id="inboundCancelForm" style="display:none">
+                        <label class="form-label">入庫取消日</label>
+                        <input type="date" class="form-input" id="inboundCancelDate">
+                        <label class="form-label">個数</label>
+                        <input type="number" class="form-input" id="inboundCancelQuantity" value="1" min="0.1" step="0.1">
+                        <button class="btn btn-success" id="submitInboundCancelBtn" style="background: #f59e0b;">✅ 入庫取消処理</button>
+                    </div>
+                    <button class="btn btn-secondary" id="cancelBtn">❌ 取消</button>
+                </div>
+            </div>
+            
+            <div id="inventoryView" class="view">
+                <div class="card">
+                    <h3>在庫一覧</h3>
+                    <div class="filter-section">
+                        <label class="filter-label">
+                            <input type="checkbox" id="filterByUser">
+                            <span>自分が担当者のもの</span>
+                        </label>
+                        <select class="filter-select" id="categoryFilter">
+                            <option value="">すべての品目</option>
+                        </select>
+                        <select class="filter-select" id="locationFilter" style="margin-top: 8px;">
+                            <option value="">すべての保管場所</option>
+                        </select>
+                    </div>
+                    <div id="inventoryList"></div>
+                </div>
+            </div>
+            
+            <div id="historyView" class="view">
+                <div class="card">
+                    <h3>処理履歴</h3>
+                    <div class="filter-section">
+                        <label class="filter-label">
+                            <input type="checkbox" id="filterHistoryByUser">
+                            <span>自分が担当者の製造出庫品</span>
+                        </label>
+                        <select class="filter-select" id="categoryFilterHistory">
+                            <option value="">すべての品目</option>
+                        </select>
+                        <select class="filter-select" id="locationFilterHistory" style="margin-top: 8px;">
+                            <option value="">すべての保管場所</option>
+                        </select>
+                    </div>
+                    <div id="historyList"></div>
+                </div>
+            </div>
+            
+            <div id="settingsView" class="view">
+                <div class="card">
+                    <h3>ユーザー情報</h3>
+                    <div id="userInfo"></div>
+                    <button class="btn btn-primary" id="editUserBtn">情報を変更</button>
+                </div>
+                <div class="card">
+                    <h3>権限情報</h3>
+                    <div id="permissionInfo"></div>
+                </div>
+                
+                <div class="card" id="csvCard" style="display:none;">
+                    <h3>CSV登録（品番・品名・仕様・担当者・カテゴリー・アラート値）</h3>
+                    <div style="margin-bottom: 12px; font-size: 13px; color: #6b7280;">
+                        必ずUTF-8(コンマ区切り)(*.csv)で保存してください。<br>
+                        形式: 品番,品名,仕様,担当者名,カテゴリー,アラート値<br>
+                        例: PDA61-01-40,ﾛｰﾄﾞｾﾙ 10t(上下金具無),(上下金具無)KDC-H-10T-C4,上村,ロードセル,5<br>
+                        ※PASチェックは倉庫以外の部署が出庫した場合に自動表示されます
+                    </div>
+                    
+                    <div class="csv-upload">
+                        <input type="file" id="csvFile" accept=".csv" class="form-input">
+                        <button class="btn btn-primary" id="uploadCsvBtn">📄 CSVアップロード</button>
+                    </div>
+                    <div id="csvStatus" class="csv-status" style="display:none;"></div>
+                </div>
 
-        console.log(`保管場所有効データ: ${validLocationData.length}件`);
+                <div class="card" id="locationCsvCard" style="display:none;">
+                    <h3>品目別保管場所CSV登録</h3>
+                    <div style="margin-bottom: 12px; font-size: 13px; color: #6b7280;">
+                        必ずUTF-8(コンマ区切り)(*.csv)で保存してください。<br>
+                        形式: 品目,保管場所<br>
+                        例: LD15-02-31,E<br>
+                        ※保管場所は自動的に正規化されます（空白削除、全角→半角変換など）
+                    </div>
+                    
+                    <div class="csv-upload">
+                        <input type="file" id="locationCsvFile" accept=".csv" class="form-input">
+                        <button class="btn btn-primary" id="uploadLocationCsvBtn">📄 保管場所CSVアップロード</button>
+                    </div>
+                    <div id="locationCsvStatus" class="csv-status" style="display:none;"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>アプリ情報</h3>
+                    <div class="info-row">
+                        <span>バージョン</span>
+                        <span class="info-value">2.0.0</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Firebase接続</span>
+                        <span class="info-value" id="fbStatusSettings">-</span>
+                    </div>
+                </div>
+                <div class="card" id="testDataCard" style="display:none;">
+                    <h3>テストデータ削除</h3>
+                    <div style="margin-bottom: 12px; font-size: 13px; color: #6b7280;">
+                        カテゴリーが「テスト」の品番の履歴と在庫をすべて削除します
+                    </div>
+                    <button class="btn btn-secondary" id="deleteTestDataBtn" style="background: #dc2626; color: white;">🗑️ テストカテゴリーのデータを削除</button>
+                    <div id="testDeleteStatus" style="display:none; margin-top:12px; padding:8px; background:#fee2e2; border:1px solid #dc2626; border-radius:6px; font-size:13px; color:#dc2626;"></div>
+                </div>
+                <div class="card" id="backupCard" style="display:none;">
+                    <h3>バックアップ管理</h3>
+                    
+                    <!-- Firebaseバックアップ -->
+                     <h4 style="margin-bottom: 12px; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Firebaseバックアップ</h4>
+                     <button class="btn btn-primary" id="manualBackupBtn">💾 今すぐバックアップ</button>
+                     
+                     <div style="margin-top: 20px;">
+                        <h4 style="margin-bottom: 12px; font-size: 16px;">自動バックアップから復元</h4>
+                        <select class="form-input" id="hourlyBackupSelect">
+                            <option value="">時間を選択...</option>
+                        </select>
+                        <button class="btn btn-secondary" id="restoreHourlyBtn">⏮️ 復元</button>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h4 style="margin-bottom: 12px; font-size: 16px;">手動バックアップから復元</h4>
+                        <select class="form-input" id="manualBackupSelect">
+                            <option value="">バックアップを選択...</option>
+                        </select>
+                        <button class="btn btn-secondary" id="restoreManualBtn">⏮️ 復元</button>
+                    </div>
+                    
+                    <!-- CSVバックアップ -->
+                     <h4 style="margin-top: 32px; margin-bottom: 12px; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">CSVバックアップ</h4>
+                     <button class="btn btn-primary" id="exportBackupCsvBtn">📥 CSVでバックアップ</button>
+                     
+                     <div style="margin-top: 20px;">
+                        <h4 style="margin-bottom: 12px; font-size: 16px;">CSVから復元</h4>
+                        <input type="file" id="importBackupCsv" accept=".csv" class="form-input">
+                        <button class="btn btn-secondary" id="importBackupCsvBtn">📤 CSVから復元</button>
+                        <div style="margin-top: 8px; font-size: 12px; color: #6b7280;">
+                            ⚠️ CSVから復元すると、現在のデータは完全に上書きされます
+                        </div>
+                    </div>
+                    <div id="backupStatus" style="display:none; margin-top:12px; padding:8px; background:#eff6ff; border:1px solid #2563eb; border-radius:6px; font-size:13px; color:#1e40af;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- QRコードスキャナー -->
+        <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+        <!-- CSV Parser -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+        <!-- Firebase SDK -->
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+           
+    <script>
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyAOt5HqGpALO5A74WrzE2xlkcEWcJfRfn4",
+            authDomain: "qr-inventory-4cb2b.firebaseapp.com",
+            databaseURL: "https://qr-inventory-4cb2b-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "qr-inventory-4cb2b",
+            storageBucket: "qr-inventory-4cb2b.firebasestorage.app",
+            messagingSenderId: "696913639354",
+            appId: "1:696913639354:web:4294458cff22d108a98f83",
+            measurementId: "G-XZYZKBH8GV"
+        };
 
-        // 品目別保管場所.csvの生成
-        if (validLocationData.length > 0) {
-          const locationHeaders = ['品目', '保管場所'];
-          const csvLines = [locationHeaders.map(escapeCSV).join(',')];
-          for (const row of validLocationData) {
-            csvLines.push(row.map(escapeCSV).join(','));
-          }
-          const csvContent = csvLines.join('\n');
-          
-          let blob;
-          try {
-            const sjisArray = convertToShiftJIS(csvContent);
-            blob = new Blob([sjisArray], { type: 'text/csv;charset=shift_jis;' });
-          } catch (e) {
-            console.error('Shift-JIS変換エラー:', e);
-            blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-          }
-          
-          const url = URL.createObjectURL(blob);
-          const fileName = '品目別保管場所.csv';
-          
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          link.className = 'download-btn';
-          link.textContent = `📥 ${fileName} をダウンロード (${validLocationData.length.toLocaleString()}件)`;
-          link.style.background = '#2196F3'; // 識別用に青色
-          downloadsDiv.appendChild(link);
-        }
-        
-        // 3等分
-        const totalRows = filteredData.length;
-        const chunkSize = Math.ceil(totalRows / 3);
-        
-        updateProgress(80, 'CSVファイル生成中...');
-        
-        for (let i = 0; i < 3; i++) {
-          const start = i * chunkSize;
-          const end = Math.min(start + chunkSize, totalRows);
-          const chunk = filteredData.slice(start, end);
-          
-          // CSV生成
-          const csvLines = [newHeaders.map(escapeCSV).join(',')];
-          for (const row of chunk) {
-            csvLines.push(row.map(escapeCSV).join(','));
-          }
-          const csvContent = csvLines.join('\n');
-          
-          // Shift-JISに変換してダウンロードリンク作成
-          let blob;
-          try {
-            const sjisArray = convertToShiftJIS(csvContent);
-            blob = new Blob([sjisArray], { type: 'text/csv;charset=shift_jis;' });
-          } catch (e) {
-            // 変換失敗時はUTF-8 BOM付きで出力
-            console.error('Shift-JIS変換エラー:', e);
-            blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-          }
-          
-          const url = URL.createObjectURL(blob);
-          const fileName = `品目マスター_${String(i + 1).padStart(3, '0')}.csv`;
-          
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          link.className = 'download-btn';
-          link.textContent = `📥 ${fileName} をダウンロード (${chunk.length.toLocaleString()}件)`;
-          downloadsDiv.appendChild(link);
-          
-          updateProgress(80 + (i + 1) / 3 * 20, `ファイル${i + 1}/3 生成完了`);
-        }
-        
-        updateProgress(100, `✅ 完了: ${totalRows.toLocaleString()}件を3ファイルに分割`);
-        processBtn.disabled = false;
-        
-      } catch (error) {
-        showError('エラー: ' + error.message);
-        processBtn.disabled = false;
-      }
-    }
+        const app = {
+            user: null,
+            db: null,
+            scannerRegister: null,
+            scannerSearch: null,
+            scannerFixed: null,
+            inventory: {},
+            history: [],
+            scannedData: null,
+            actionType: 'outbound',
+            csvData: {},
+            locationData: {},
+            pasChecks: {},
+            registrationMode: 'normal',
+            fixedWorkorder: null,
+            lastSearchResults: null,  // 検索結果を保持
+            lastSearchKeyword: null,  // 検索キーワードを保持
+            
+            // 入庫権限を持つ部署
+            INBOUND_DEPARTMENTS: ['管理部倉庫G', '管理者'],
+            CSV_DEPARTMENTS: ['管理者'],
+            BACKUP_DEPARTMENTS: ['管理者'],
+            
+            init() {
+                this.loadUser();              // ①ユーザー読み込み
+                this.setupEvents();           // ②イベント設定
+                this.updateUI();              // ③UI更新
+                this.initFirebase();          // ④Firebase接続
+                this.loadBackupLists(); // バックアップリスト読み込み
+                // ユーザー登録チェック
+                if (!this.user) {
+                    document.getElementById('registrationModal').classList.add('active');
+                } else {
+                    document.getElementById('headerUser').textContent = this.user.name;
+                }
+                
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('outboundDate').value = today;
+                document.getElementById('outboundCancelDate').value = today;
+                document.getElementById('inboundDate').value = today;
+                document.getElementById('inboundCancelDate').value = today;
+
+                this.startAutoBackup();
+                this.loadPasChecks(); // PASチェック状態読み込み
+            },
     
-    function parseCSVLine(line) {
-      const result = [];
-      let cell = '';
-      let inQuotes = false;
-      
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        const nextChar = line[i + 1];
+            // 入庫権限チェック
+            canInbound() {
+                if (!this.user) return false;
+                return this.INBOUND_DEPARTMENTS.includes(this.user.department);
+            },
+    
+            //CSV管理権限チェック
+            canManageCsv() {
+                if (!this.user) return false;
+                return this.CSV_DEPARTMENTS.includes(this.user.department);
+            },
+            //バックアップ管理権限チェック
+            canManageBackup() {
+                if (!this.user) return false;
+                return this.BACKUP_DEPARTMENTS.includes(this.user.department);
+            },
+            //担当者の品番かチェック
+            isUserItem(itemCode) {
+                if (!this.user || !this.csvData[itemCode]) return false;
+                return this.csvData[itemCode].manager === this.user.name;
+            },
+            //品番のアラート値取得
+            getThreshold(itemCode) {
+                if (this.csvData[itemCode] && this.csvData[itemCode].threshold) {
+                    return parseFloat(this.csvData[itemCode].threshold);
+                }
+                return 5;
+            },
+            //品目カテゴリ取得
+            getCategory(itemCode) {
+                if (this.csvData[itemCode] && this.csvData[itemCode].category) {
+                    return this.csvData[itemCode].category;
+                }
+                return null;
+            },
+            // PASチェック表示判定（部署による）
+            shouldShowPasCheck(record) {
+                // 出庫または出庫取消以外は表示しない
+                if (record.type !== 'outbound' && record.type !== 'outbound_cancel') {
+                    return false;
+                }
+                
+                // 倉庫部署（管理部倉庫G、管理者）は表示しない
+                const warehouseDepts = ['管理部倉庫G', '管理者'];
+                if (warehouseDepts.includes(record.userDept)) {
+                    return false;
+                }
+                
+                // それ以外の部署（製造部1G、製造部2G、装備G）は表示する
+                return true;
+            },
+            //整数か小数点かの判断(整数の場合は小数点不要のため)
+            formatNumber(num) {
+                return num % 1 === 0 ? num.toString() : num.toFixed(1);
+            },
+
+            // 保管場所名を正規化する関数
+            normalizeLocation(location) {
+                if (!location) return '';
+                
+                let normalized = location;
+                
+                // 1. 前後の空白を削除
+                normalized = normalized.trim();
+                
+                // 2. 連続する空白を単一スペースに
+                normalized = normalized.replace(/\s+/g, ' ');
+                
+                // 3. 全角英数字を半角に変換
+                normalized = normalized.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => {
+                    return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+                });
+                
+                // 4. 全角ハイフン（ー）を半角ハイフン（-）に変換
+                normalized = normalized.replace(/ー/g, '-');
+                
+                // 5. 半角カタカナを全角カタカナに変換
+                const kanaMap = {
+                    'ｶﾞ': 'ガ', 'ｷﾞ': 'ギ', 'ｸﾞ': 'グ', 'ｹﾞ': 'ゲ', 'ｺﾞ': 'ゴ',
+                    'ｻﾞ': 'ザ', 'ｼﾞ': 'ジ', 'ｽﾞ': 'ズ', 'ｾﾞ': 'ゼ', 'ｿﾞ': 'ゾ',
+                    'ﾀﾞ': 'ダ', 'ﾁﾞ': 'ヂ', 'ﾂﾞ': 'ヅ', 'ﾃﾞ': 'デ', 'ﾄﾞ': 'ド',
+                    'ﾊﾞ': 'バ', 'ﾋﾞ': 'ビ', 'ﾌﾞ': 'ブ', 'ﾍﾞ': 'ベ', 'ﾎﾞ': 'ボ',
+                    'ﾊﾟ': 'パ', 'ﾋﾟ': 'ピ', 'ﾌﾟ': 'プ', 'ﾍﾟ': 'ペ', 'ﾎﾟ': 'ポ',
+                    'ｳﾞ': 'ヴ', 'ﾜﾞ': 'ヷ', 'ｦﾞ': 'ヺ',
+                    'ｱ': 'ア', 'ｲ': 'イ', 'ｳ': 'ウ', 'ｴ': 'エ', 'ｵ': 'オ',
+                    'ｶ': 'カ', 'ｷ': 'キ', 'ｸ': 'ク', 'ｹ': 'ケ', 'ｺ': 'コ',
+                    'ｻ': 'サ', 'ｼ': 'シ', 'ｽ': 'ス', 'ｾ': 'セ', 'ｿ': 'ソ',
+                    'ﾀ': 'タ', 'ﾁ': 'チ', 'ﾂ': 'ツ', 'ﾃ': 'テ', 'ﾄ': 'ト',
+                    'ﾅ': 'ナ', 'ﾆ': 'ニ', 'ﾇ': 'ヌ', 'ﾈ': 'ネ', 'ﾉ': 'ノ',
+                    'ﾊ': 'ハ', 'ﾋ': 'ヒ', 'ﾌ': 'フ', 'ﾍ': 'ヘ', 'ﾎ': 'ホ',
+                    'ﾏ': 'マ', 'ﾐ': 'ミ', 'ﾑ': 'ム', 'ﾒ': 'メ', 'ﾓ': 'モ',
+                    'ﾔ': 'ヤ', 'ﾕ': 'ユ', 'ﾖ': 'ヨ',
+                    'ﾗ': 'ラ', 'ﾘ': 'リ', 'ﾙ': 'ル', 'ﾚ': 'レ', 'ﾛ': 'ロ',
+                    'ﾜ': 'ワ', 'ｦ': 'ヲ', 'ﾝ': 'ン',
+                    'ｧ': 'ァ', 'ｨ': 'ィ', 'ｩ': 'ゥ', 'ｪ': 'ェ', 'ｫ': 'ォ',
+                    'ｯ': 'ッ', 'ｬ': 'ャ', 'ｭ': 'ュ', 'ｮ': 'ョ',
+                    'ｰ': 'ー', '｡': '。', '､': '、', '･': '・', '｢': '「', '｣': '」'
+                };
+                
+                // 濁点・半濁点付き文字を先に変換
+                Object.keys(kanaMap).sort((a, b) => b.length - a.length).forEach(half => {
+                    normalized = normalized.split(half).join(kanaMap[half]);
+                });
+                
+                return normalized;
+            },
+
+            // 品番の保管場所取得
+            getLocation(itemCode) {
+                if (this.locationData[itemCode]) {
+                    return this.locationData[itemCode];
+                }
+                return null;
+            },
+                    
+            loadUser() {
+                const stored = localStorage.getItem('qr_inventory_user');
+                if (stored) {
+                    try {
+                        this.user = JSON.parse(stored);
+                    } catch (e) {
+                        console.error('ユーザーデータ読み込みエラー:', e);
+                    }
+                }
+            },
+            
+            saveUser() {
+                if (this.user) {
+                    localStorage.setItem('qr_inventory_user', JSON.stringify(this.user));
+                }
+            },
+                    
+            updateUI() {
+                if (this.user) {
+                    document.getElementById('userInfo').innerHTML = 
+                        `<div class="info-row"><span>名前</span><span class="info-value">${this.user.name}</span></div>
+                            <div class="info-row"><span>メール</span><span class="info-value">${this.user.email}</span></div>
+                            <div class="info-row"><span>部署</span><span class="info-value">${this.user.department}</span></div>`;
+                    
+                    // 権限情報を表示
+                    const canInbound = this.canInbound();
+                    const inboundStatus = canInbound ? 
+                        '<span style="color:#059669">✅ 可能</span>' : 
+                        '<span style="color:#dc2626">❌ 不可</span>';
+
+                    const canCsv = this.canManageCsv();
+                    const csvStatus = canCsv ?
+                        '<span style="color:#059669">✅ 可能</span>' :
+                        '<span style="color:#dc2626">❌ 不可</span>';
+                    
+                    document.getElementById('permissionInfo').innerHTML = 
+                        `<div class="info-row"><span>出庫処理</span><span class="info-value" style="color:#059669">✅ 可能</span></div>
+                            <div class="info-row"><span>入庫処理</span><span class="info-value">${inboundStatus}</span></div>
+                            <div style="margin-top:12px; font-size:13px; color:#6b7280;">
+                            ※入庫処理は「管理部倉庫G」「管理部」のみ可能です。
+                            </div>`;
+
+                    // CSV管理カード表示
+                    if (canCsv) {
+                        document.getElementById('csvCard').style.display = 'block';
+                        document.getElementById('locationCsvCard').style.display = 'block';
+                    } else {
+                        document.getElementById('csvCard').style.display = 'none';
+                        document.getElementById('locationCsvCard').style.display = 'none';
+                    }
+                    // バックアップ管理カード表示
+                    const canBackup = this.canManageBackup();
+                    if (canBackup) {
+                        document.getElementById('backupCard').style.display = 'block';
+                        document.getElementById('testDataCard').style.display = 'block';
+                    } else {
+                        document.getElementById('backupCard').style.display = 'none';
+                        document.getElementById('testDataCard').style.display = 'none';
+                    }
+                }
+            },
+                    
+            setupEvents() {
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        const view = e.target.dataset.view;
+                        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                        document.getElementById(view + 'View').classList.add('active');  
+                        
+                        if (view === 'inventory') this.renderInventory();
+                        if (view === 'history') this.renderHistory();                        
+                    });
+                });
+                
+                document.getElementById('registerBtn').addEventListener('click', () => {
+                    let name = document.getElementById('regName').value.trim();
+                    const email = document.getElementById('regEmail').value.trim();
+                    const dept = document.getElementById('regDept').value;
+                    
+                    if (!name || !email || !dept) {
+                        alert('すべての項目を入力してください');
+                        return;
+                    }
+                    
+                    // 名前の自動修正：全角・半角スペースを削除
+                    name = name.replace(/\s+/g, '');
+                    
+                    // 修正後の名前を入力欄に反映
+                    document.getElementById('regName').value = name;
+                    
+                    this.user = { name, email, department: dept };
+                    this.saveUser();
+                    document.getElementById('registrationModal').classList.remove('active');
+                    document.getElementById('headerUser').textContent = name;
+                    this.updateUI();
+                    alert('登録完了しました！');
+                });
+                
+                document.getElementById('editUserBtn').addEventListener('click', () => {
+                    if (this.user) {
+                        document.getElementById('regName').value = this.user.name;
+                        document.getElementById('regEmail').value = this.user.email;
+                        document.getElementById('regDept').value = this.user.department;
+                        document.getElementById('registrationModal').classList.add('active');
+                    }
+                });
+                const manualBackupBtn = document.getElementById('manualBackupBtn');
+                if (manualBackupBtn) {
+                    manualBackupBtn.addEventListener('click', () => this.createManualBackup());
+                }
+
+                const restoreHourlyBtn = document.getElementById('restoreHourlyBtn');
+                if (restoreHourlyBtn) {
+                    restoreHourlyBtn.addEventListener('click', () => this.restoreHourlyBackup());
+                }
+
+                const restoreManualBtn = document.getElementById('restoreManualBtn');
+                if (restoreManualBtn) {
+                    restoreManualBtn.addEventListener('click', () => this.restoreManualBackup());
+                }
+
+                const exportBackupCsvBtn = document.getElementById('exportBackupCsvBtn');
+                if (exportBackupCsvBtn) {
+                    exportBackupCsvBtn.addEventListener('click', () => this.exportBackupToCsv());
+                }
+
+                const importBackupCsvBtn = document.getElementById('importBackupCsvBtn');
+                if (importBackupCsvBtn) {
+                    importBackupCsvBtn.addEventListener('click', () => this.importBackupFromCsv());
+                }
+
+                const deleteTestDataBtn = document.getElementById('deleteTestDataBtn');
+                if (deleteTestDataBtn) {
+                    deleteTestDataBtn.addEventListener('click', () => this.deleteTestData());
+                }
+
+                const uploadCsvBtn = document.getElementById('uploadCsvBtn');
+                if (uploadCsvBtn) {
+                    uploadCsvBtn.addEventListener('click', () => this.uploadCsv());
+                }
+                const uploadLocationCsvBtn = document.getElementById('uploadLocationCsvBtn');
+                if (uploadLocationCsvBtn) {
+                    uploadLocationCsvBtn.addEventListener('click', () => this.uploadLocationCsv());
+                }
+
+                document.getElementById('locationFilter').addEventListener('change', () => this.renderInventory());
+                document.getElementById('locationFilterHistory').addEventListener('change', () => this.renderHistory());
+
+                document.getElementById('startRegisterScanBtn').addEventListener('click', () => this.startRegisterScan());
+                document.getElementById('stopRegisterScanBtn').addEventListener('click', () => this.stopRegisterScan());
+                document.getElementById('startSearchScanBtn').addEventListener('click', () => this.startSearchScan());
+                document.getElementById('stopSearchScanBtn').addEventListener('click', () => this.stopSearchScan());
+                document.getElementById('manualSearchBtn').addEventListener('click', () => this.showSearchInput());
+                
+                document.getElementById('outboundBtn').addEventListener('click', () => this.selectAction('outbound'));
+                document.getElementById('outboundCancelBtn').addEventListener('click', () => this.selectAction('outbound_cancel'));
+                document.getElementById('inboundBtn').addEventListener('click', () => this.selectAction('inbound'));
+                document.getElementById('inboundCancelBtn').addEventListener('click', () => this.selectAction('inbound_cancel'));
+
+                document.getElementById('workOrderList').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('btn-add-work-order')) {
+                        this.addWorkOrderRow();
+                    } else if (e.target.classList.contains('btn-remove-work-order')) {
+                        this.removeWorkOrderRow(e.target.closest('.work-order-row'));
+                    }
+                });
+
+                document.getElementById('submitOutboundBtn').addEventListener('click', () => this.submitOutbound());
+                document.getElementById('submitOutboundCancelBtn').addEventListener('click', () => this.submitOutboundCancel());
+                document.getElementById('submitInboundBtn').addEventListener('click', () => this.submitInbound());
+                document.getElementById('submitInboundCancelBtn').addEventListener('click', () => this.submitInboundCancel());
+
+                document.getElementById('cancelBtn').addEventListener('click', () => this.backToScan());
+
+                document.getElementById('filterByUser').addEventListener('change', () => this.renderInventory());
+                // カテゴリーフィルター変更時（新しい実装）
+                document.getElementById('categoryFilter').addEventListener('change', () => {
+                    this.updateLocationFiltersForInventory();
+                    this.renderInventory();
+                });
+
+                document.getElementById('categoryFilterHistory').addEventListener('change', () => {
+                    this.updateLocationFiltersForHistory();
+                    this.renderHistory();
+                });
+
+                // 担当者フィルター変更時も追加
+                document.getElementById('filterByUser').addEventListener('change', () => {
+                    this.updateLocationFiltersForInventory();
+                    this.renderInventory();
+                });
+
+                document.getElementById('filterHistoryByUser').addEventListener('change', () => {
+                    this.updateLocationFiltersForHistory();
+                    this.renderHistory();
+                });
+                document.getElementById('categoryFilterHistory').addEventListener('change', () => this.renderHistory());
+
+                document.getElementById('workOrderList').addEventListener('input', (e) => {
+                    if (e.target.classList.contains('work-order-input')) {
+                        let value = e.target.value;
+                        let cursorPos = e.target.selectionStart;
+                        
+                        // 英数字とハイフン以外をすべて削除（日本語など）
+                        value = value.replace(/[^A-Za-z0-9\-]/g, '');
+                        
+                        // 全角英数字を半角に変換
+                        value = value.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => {
+                            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+                        });
+                        
+                        // 英字を大文字に変換
+                        value = value.toUpperCase();
+                        
+                        // ハイフンを除いた文字列を取得
+                        const withoutHyphen = value.replace(/-/g, '');
+                        
+                        // 英字2桁 + 数字4桁の後に自動でハイフンを挿入
+                        if (withoutHyphen.length > 6 && !value.includes('-')) {
+                            value = withoutHyphen.substring(0, 6) + '-' + withoutHyphen.substring(6);
+                            cursorPos++; // ハイフン分カーソル位置を調整
+                        }
+                        
+                        e.target.value = value;
+
+                        // カーソル位置を復元
+                        e.target.setSelectionRange(cursorPos, cursorPos);
+                    }
+                });
+                // モード切り替え
+                document.getElementById('normalModeBtn').addEventListener('click', () => this.switchRegistrationMode('normal'));
+                document.getElementById('fixedWorkorderModeBtn').addEventListener('click', () => this.switchRegistrationMode('fixed'));
+
+                // 工番固定モード
+                document.getElementById('setFixedWorkorderBtn').addEventListener('click', () => this.setFixedWorkorder());
+                document.getElementById('changeFixedWorkorderBtn').addEventListener('click', () => this.changeFixedWorkorder());
+                document.getElementById('startFixedScanBtn').addEventListener('click', () => this.startFixedScan());
+                document.getElementById('stopFixedScanBtn').addEventListener('click', () => this.stopFixedScan());
+
+                // 工番入力の自動整形
+                document.getElementById('fixedWorkorderInput').addEventListener('input', (e) => {
+                    let value = e.target.value;
+                    let cursorPos = e.target.selectionStart;
+                    
+                    value = value.replace(/[^A-Za-z0-9\-]/g, '');
+                    value = value.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => {
+                        return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+                    });
+                    value = value.toUpperCase();
+                    
+                    const withoutHyphen = value.replace(/-/g, '');
+                    if (withoutHyphen.length > 6 && !value.includes('-')) {
+                        value = withoutHyphen.substring(0, 6) + '-' + withoutHyphen.substring(6);
+                        cursorPos++;
+                    }
+                    
+                    e.target.value = value;
+                    e.target.setSelectionRange(cursorPos, cursorPos);
+                });
+            },
+                    
+            initFirebase() {
+                const statusEl = document.getElementById('fbStatus');
+                
+                // デバッグ情報を表示
+                if (typeof firebase === 'undefined') {
+                    statusEl.textContent = 'Firebaseライブラリ読み込み中... (リトライ中)';
+                    statusEl.style.color = '#f59e0b';
+                    
+                    // 最大10秒待つ
+                    let retryCount = 0;
+                    const maxRetries = 20;
+                    const retryInterval = setInterval(() => {
+                        retryCount++;
+                        if (typeof firebase !== 'undefined') {
+                            clearInterval(retryInterval);
+                            this.initFirebase();
+                        } else if (retryCount >= maxRetries) {
+                            clearInterval(retryInterval);
+                            statusEl.textContent = '❌ Firebaseライブラリの読み込みに失敗しました。ページを再読み込みしてください。';
+                            statusEl.style.color = '#dc2626';
+                        }
+                    }, 500);
+                    return;
+                }
+                
+                try {
+                    statusEl.textContent = 'Firebase接続中...';
+                    statusEl.style.color = '#f59e0b';
+                    
+                    firebase.initializeApp(FIREBASE_CONFIG);
+                    this.db = firebase.database();
+                    
+                    // 接続テスト
+                    this.db.ref('.info/connected').on('value', (snap) => {
+                        if (snap.val() === true) {
+                            statusEl.textContent = '接続済み ✅';
+                            statusEl.style.color = '#059669';
+                            if (document.getElementById('fbStatusSettings')) {
+                                document.getElementById('fbStatusSettings').textContent = '接続済み ✅';
+                            }
+                        } else {
+                            statusEl.textContent = '接続待機中...';
+                            statusEl.style.color = '#f59e0b';
+                        }
+                    });
+                    
+                    this.loadInventory();
+                    this.loadHistory();
+                    this.loadCsvData();
+                } catch (e) {
+                    statusEl.textContent = '❌ エラー: ' + e.message;
+                    statusEl.style.color = '#dc2626';
+                    if (document.getElementById('fbStatusSettings')) {
+                        document.getElementById('fbStatusSettings').textContent = 'エラー ❌';
+                    }
+                    console.error('Firebase初期化エラー:', e);
+                }
+            },
+    
+            loadInventory() {
+                if (!this.db) return;
+                this.db.ref('inventory').on('value', (snap) => {
+                    this.inventory = snap.val() || {};
+                });
+            },
+            
+            loadHistory() {
+                if (!this.db) return;
+                
+                // 5年前の日付を計算
+                const fiveYearsAgo = new Date();
+                fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+                const cutoffTimestamp = fiveYearsAgo.toISOString();
+                
+                this.db.ref('history').limitToLast(200).on('value', (snap) => {
+                    this.history = [];
+                    const toDelete = [];
+                    
+                    snap.forEach(child => {
+                        const record = child.val();
+                        record.id = child.key;
+                        
+                        // 5年以上前のデータは削除対象
+                        if (record.timestamp && record.timestamp < cutoffTimestamp) {
+                            toDelete.push(child.key);
+                        } else {
+                            this.history.unshift(record);
+                        }
+                    });
+                    
+                    // 古いデータを削除
+                    toDelete.forEach(key => {
+                        this.db.ref('history/' + key).remove();
+                    });
+                });
+            },
+
+            loadCsvData() {
+                if (!this.db) return;
+                this.db.ref('csvData').on('value', (snap) => {
+                    this.csvData = snap.val() || {};
+                    this.updateCategoryFilters();
+                });
+                this.db.ref('locationData').on('value', (snap) => {
+                    this.locationData = snap.val() || {};
+                    this.updateLocationFiltersForInventory();
+                    this.updateLocationFiltersForHistory();
+                });
+            },
+
+            updateCategoryFilters() {
+                const categories = new Set();
+                Object.values(this.csvData).forEach(data => {
+                    if (data.category && data.category !== 'ﾃｽﾄ') {
+                        categories.add(data.category);
+                    }
+                });
+
+                const sortedCategories = Array.from(categories).sort();
+
+                const invFilter = document.getElementById('categoryFilter');
+                invFilter.innerHTML = '<option value="">すべての品目</option>';
+                sortedCategories.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.textContent = cat;
+                    invFilter.appendChild(opt);
+                });
+
+                const histFilter = document.getElementById('categoryFilterHistory');
+                histFilter.innerHTML = '<option value="">すべての品目</option>';
+                sortedCategories.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.textContent = cat;
+                    histFilter.appendChild(opt);
+                });
+            },
+
+            // 在庫ビュー用の保管場所フィルター更新
+            updateLocationFiltersForInventory() {
+                const filterByUser = document.getElementById('filterByUser').checked;
+                const categoryFilter = document.getElementById('categoryFilter').value;
+                
+                // 現在のフィルター条件に合致する品目を取得
+                let keys = Object.keys(this.inventory);
+                
+                if (filterByUser) {
+                    keys = keys.filter(code => this.isUserItem(code));
+                }
+                
+                if (categoryFilter) {
+                    keys = keys.filter(code => this.getCategory(code) === categoryFilter);
+                }
+                
+                // これらの品目の保管場所を収集
+                const locations = new Set();
+                keys.forEach(code => {
+                    const location = this.getLocation(code);
+                    if (location) {
+                        locations.add(location);
+                    }
+                });
+                
+                const sortedLocations = Array.from(locations).sort();
+                
+                const filter = document.getElementById('locationFilter');
+                if (filter) {
+                    const currentValue = filter.value;
+                    filter.innerHTML = '<option value="">すべての保管場所</option>';
+                    sortedLocations.forEach(loc => {
+                        const opt = document.createElement('option');
+                        opt.value = loc;
+                        opt.textContent = loc;
+                        filter.appendChild(opt);
+                    });
+                    // 選択値を復元（存在する場合のみ）
+                    if (currentValue && sortedLocations.includes(currentValue)) {
+                        filter.value = currentValue;
+                    } else {
+                        filter.value = '';
+                    }
+                }
+            },
+
+            // 履歴ビュー用の保管場所フィルター更新
+            updateLocationFiltersForHistory() {
+                const filterByUser = document.getElementById('filterHistoryByUser').checked;
+                const categoryFilter = document.getElementById('categoryFilterHistory').value;
+                
+                // 現在のフィルター条件に合致する履歴から品目を取得
+                let filteredHistory = this.history;
+                
+                if (filterByUser) {
+                    if (!this.user || !this.user.name) return;
+                    
+                    filteredHistory = filteredHistory.filter(rec => {
+                        const csvInfo = this.csvData[rec.itemCode];
+                        if (!csvInfo) return false;
+                        const isUserItem = csvInfo.manager === this.user.name;
+                        const isManufacturingOutbound = this.shouldShowPasCheck(rec);
+                        const isOutboundType = rec.type === 'outbound' || rec.type === 'outbound_cancel';
+                        return isUserItem && isManufacturingOutbound && isOutboundType;
+                    });
+                }
+                
+                if (categoryFilter) {
+                    filteredHistory = filteredHistory.filter(rec => this.getCategory(rec.itemCode) === categoryFilter);
+                }
+                
+                // これらの品目の保管場所を収集
+                const locations = new Set();
+                filteredHistory.forEach(rec => {
+                    const location = this.getLocation(rec.itemCode);
+                    if (location) {
+                        locations.add(location);
+                    }
+                });
+                
+                const sortedLocations = Array.from(locations).sort();
+                
+                const filter = document.getElementById('locationFilterHistory');
+                if (filter) {
+                    const currentValue = filter.value;
+                    filter.innerHTML = '<option value="">すべての保管場所</option>';
+                    sortedLocations.forEach(loc => {
+                        const opt = document.createElement('option');
+                        opt.value = loc;
+                        opt.textContent = loc;
+                        filter.appendChild(opt);
+                    });
+                    // 選択値を復元（存在する場合のみ）
+                    if (currentValue && sortedLocations.includes(currentValue)) {
+                        filter.value = currentValue;
+                    } else {
+                        filter.value = '';
+                    }
+                }
+            },
+
+            loadPasChecks() {
+                if (!this.db) return;
+                this.db.ref('pasChecks').on('value', (snap) => {
+                    this.pasChecks = snap.val() || {};
+                    // 履歴表示を更新
+                    if (document.getElementById('historyView').classList.contains('active')) {
+                        this.renderHistory();
+                    }
+                });
+            },
+
+            togglePasCheck(historyId) {
+                // 権限チェック
+                if (!this.canInbound()) {
+                    alert('PAS済チェックの編集は「管理部倉庫G」「管理部」のみ可能です。');
+                    return;
+                }
+                
+                if (!this.db) {
+                    alert('Firebaseに接続されていません');
+                    return;
+                }
+                
+                // 履歴から該当レコードを取得
+                const record = this.history.find(rec => rec.id === historyId);
+                if (!record) {
+                    alert('履歴データが見つかりません');
+                    return;
+                }
+                
+                // 担当者チェック
+                const isManager = this.isUserItem(record.itemCode);
+                
+                const currentState = this.pasChecks[historyId] || false;
+                const newState = !currentState;
+
+                // チェックを外す場合は確認
+                if (currentState && !newState) {
+                    if (!confirm('PAS済チェックを外しますか？')) {
+                        // キャンセルされた場合は元に戻す
+                        this.renderHistory();
+                        return;
+                    }
+                }
+                
+                // 担当者以外がチェックを入れる場合は確認
+                if (!isManager && !currentState && newState) {
+                    if (!confirm('あなたはこの品番の担当者ではありません。\nPAS済チェックを入れますか？')) {
+                        // キャンセルされた場合は元に戻す
+                        this.renderHistory();
+                        return;
+                    }
+                }
+                
+                this.db.ref(`pasChecks/${historyId}`).set(newState).then(() => {
+                    this.pasChecks[historyId] = newState;
+                    this.renderHistory();
+                }).catch(err => {
+                    alert('チェック状態の保存に失敗しました: ' + err.message);
+                });
+            },
+            
+            uploadCsv() {
+                const fileInput = document.getElementById('csvFile');
+                const file = fileInput.files[0];
+
+                if (!file) {
+                    alert('CSVファイルを選択してください');
+                    return;
+                }
+
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    encoding: 'UTF-8',
+                    complete: (results) => {
+                        try {
+                            const newCsvData = {};
+                            let count = 0;
+                            let errors = [];
+                
+                            results.data.forEach((row, index) => {
+                                const itemCode = row['品番'] ? row['品番'].trim() : '';
+                                const itemName = row['品名'] ? row['品名'].trim() : '';
+                                const spec = row['仕様'] ? row['仕様'].trim() : '';
+                                const manager = row['担当者'] ? row['担当者'].trim() : '';
+                                const category = row['カテゴリー'] ? row['カテゴリー'].trim() : '';
+                                const threshold = row['アラート値'] ? row['アラート値'].trim() : '';
+                    
+                                if (itemCode && manager && category) {
+                                    newCsvData[itemCode] = {
+                                        itemName: itemName,
+                                        spec: spec,
+                                        manager: manager,
+                                        category: category,
+                                        threshold: parseFloat(threshold) || 5,
+                                    };
+                                    count++;
+                                } else if (itemCode) {
+                                    errors.push(`${index + 2}行目: 必須項目不足（品番: ${itemCode}）`);
+                                }
+                            });
+                
+                            if (count === 0) {
+                                alert('有効なデータが見つかりませんでした。\nCSVの形式を確認してください。');
+                                return;
+                            }
+                
+                            this.db.ref('csvData').set(newCsvData).then(() => {
+                                const statusEl = document.getElementById('csvStatus');
+                                let message = `✅ ${count}件の品番を登録しました（全員に共有済み）`;
+                                if (errors.length > 0) {
+                                    message += `\n⚠️ ${errors.length}件のエラーがありました`;
+                                }
+                                statusEl.textContent = message;
+                                statusEl.style.display = 'block';
+                    
+                                let alertMsg = `CSV登録完了！\n${count}件の品番を登録しました。\n全員に共有されました。`;
+                                if (errors.length > 0 && errors.length <= 5) {
+                                    alertMsg += '\n\nエラー:\n' + errors.join('\n');
+                                } else if (errors.length > 5) {
+                                    alertMsg += `\n\n${errors.length}件のエラーがありました。`;
+                                }
+                                alert(alertMsg);
+                                
+                                // ファイル選択をクリア
+                                fileInput.value = '';
+                            }).catch(err => {
+                                alert('Firebaseへの保存に失敗しました: ' + err.message);
+                            });
+                
+                        } catch (err) {
+                            alert('CSVの処理に失敗しました: ' + err.message);
+                        }
+                    },
+                    error: (error) => {
+                        alert('CSVの読み込みに失敗しました: ' + error.message);
+                    }
+                });
+            },
+
+            uploadLocationCsv() {
+                const fileInput = document.getElementById('locationCsvFile');
+                const file = fileInput.files[0];
+
+                if (!file) {
+                    alert('CSVファイルを選択してください');
+                    return;
+                }
+
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    encoding: 'UTF-8',
+                    complete: (results) => {
+                        try {
+                            const newLocationData = {};
+                            let count = 0;
+                            let normalizedCount = 0;
+                            let errors = [];
+                
+                            results.data.forEach((row, index) => {
+                                const itemCode = row['品目'] ? row['品目'].trim() : '';
+                                const location = row['保管場所'] ? row['保管場所'] : '';
+                                
+                                if (itemCode && location) {
+                                    const normalizedLocation = this.normalizeLocation(location);
+                                    newLocationData[itemCode] = normalizedLocation;
+                                    count++;
+                                    
+                                    // 正規化前後で変更があった場合
+                                    if (location !== normalizedLocation) {
+                                        normalizedCount++;
+                                    }
+                                } else if (itemCode) {
+                                    errors.push(`${index + 2}行目: 保管場所が空です（品目: ${itemCode}）`);
+                                }
+                            });
+                
+                            if (count === 0) {
+                                alert('有効なデータが見つかりませんでした。\nCSVの形式を確認してください。');
+                                return;
+                            }
+                
+                            this.db.ref('locationData').set(newLocationData).then(() => {
+                                const statusEl = document.getElementById('locationCsvStatus');
+                                let message = `✅ ${count}件の保管場所を登録しました（全員に共有済み）`;
+                                if (normalizedCount > 0) {
+                                    message += `\n📝 ${normalizedCount}件の保管場所を正規化しました`;
+                                }
+                                if (errors.length > 0) {
+                                    message += `\n⚠️ ${errors.length}件のエラーがありました`;
+                                }
+                                statusEl.textContent = message;
+                                statusEl.style.display = 'block';
+                    
+                                let alertMsg = `保管場所CSV登録完了！\n${count}件の保管場所を登録しました。\n全員に共有されました。`;
+                                if (normalizedCount > 0) {
+                                    alertMsg += `\n\n${normalizedCount}件の保管場所を正規化しました（空白削除、全角→半角変換など）。`;
+                                }
+                                if (errors.length > 0 && errors.length <= 5) {
+                                    alertMsg += '\n\nエラー:\n' + errors.join('\n');
+                                } else if (errors.length > 5) {
+                                    alertMsg += `\n\n${errors.length}件のエラーがありました。`;
+                                }
+                                alert(alertMsg);
+                                
+                                // ファイル選択をクリア
+                                fileInput.value = '';
+                            }).catch(err => {
+                                alert('Firebaseへの保存に失敗しました: ' + err.message);
+                            });
+                
+                        } catch (err) {
+                            alert('CSVの処理に失敗しました: ' + err.message);
+                        }
+                    },
+                    error: (error) => {
+                        alert('CSVの読み込みに失敗しました: ' + error.message);
+                    }
+                });
+            },
+
+            startAutoBackup() {
+                setTimeout(() => { this.createBackup(); }, 5000);
+                setInterval(() => { this.createBackup(); }, 3600000);
+                this.scheduleWeeklyExport();
+            },
+
+            scheduleWeeklyExport() {
+                const checkAndExport = () => {
+                    const now = new Date();
+                    const day = now.getDay();
+                    const hour = now.getHours();
+                    const minute = now.getMinutes();
+                    if (day === 5 && hour === 17 && minute < 5) {
+                        const lastExport = localStorage.getItem('lastWeeklyExport');
+                        const today = now.toISOString().split('T')[0];
+                        if (lastExport !== today) {
+                            this.autoExportToCSV();
+                            localStorage.setItem('lastWeeklyExport', today);
+                        }
+                    }
+                };
+                setTimeout(checkAndExport, 5000);
+                setInterval(checkAndExport, 3600000);
+            },
+
+            autoExportToCSV() {
+                if (!this.inventory || Object.keys(this.inventory).length === 0) return;
+                try {
+                    let csvContent = '\uFEFF品番,品名,仕様,担当者,カテゴリー,現在庫,アラート値\n';
+                    Object.keys(this.inventory).sort().forEach(code => {
+                        const qty = this.inventory[code];
+                        const csvData = this.csvData[code] || {};
+                        const manager = csvData.manager || '';
+                        const category = csvData.category || '';
+                        const threshold = csvData.threshold || 5;
+                        let itemName = '', spec = '';
+                        const historyItem = this.history.find(h => h.itemCode === code);
+                        if (historyItem) {
+                            itemName = historyItem.itemName || '';
+                            spec = historyItem.spec || '';
+                        }
+                        csvContent += `${code},${itemName},${spec},${manager},${category},${qty},${threshold}\n`;
+                    });
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `在庫エクスポート_${new Date().toISOString().split('T')[0]}.csv`;
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    console.log('✅ エクスポート完了');
+                } catch (err) {
+                    console.error('エクスポートエラー:', err);
+                }
+            },
+
+            manualExportToCSV() {
+                this.autoExportToCSV();
+                const statusEl = document.getElementById('exportStatus');
+                statusEl.textContent = `✅ エクスポート完了: ${new Date().toLocaleString('ja-JP')}`;
+                statusEl.style.display = 'block';
+                setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
+            },
+
+            createBackup() {
+                if (!this.db) return;
+                const now = new Date();
+                const hour = now.getHours();
+                const backupData = {
+                    inventory: this.inventory,
+                    history: this.history,
+                    pasChecks: this.pasChecks,
+                    csvData: this.csvData,
+                    timestamp: now.toISOString(),
+                    hour: hour
+                };
+                this.db.ref(`backup/hourly/${hour}`).set(backupData)
+                    .then(() => { console.log(`✅ バックアップ完了: ${hour}時台`); })
+                    .catch(err => { console.error('バックアップエラー:', err); });
+            },
+
+            restoreFromBackup(hour) {
+                if (!this.db) {
+                    alert('Firebaseに接続されていません');
+                    return;
+                }
+                if (!confirm(`${hour}時台のバックアップから復元しますか？\n現在のデータは上書きされます。`)) return;
+                this.db.ref(`backup/hourly/${hour}`).once('value', (snap) => {
+                    const backup = snap.val();
+                    if (!backup) {
+                        alert('バックアップが見つかりません');
+                        return;
+                    }
+                    this.db.ref('inventory').set(backup.inventory);
+
+                    // 履歴を正しい順序（新しい順）で保存
+                    const historyRef = this.db.ref('history');
+                    Promise.all([
+                        historyRef.remove()
+                    ]).then(() => {
+                        // backup.historyはすでに新しい順なので、そのまま逆順でpush
+                        // Firebaseのpushは古いキーが先になるため、逆順にする
+                        const reversedHistory = [...backup.history].reverse();
+                        reversedHistory.forEach(record => {
+                            historyRef.push(record);
+                        });
+                    });
+                    // PASチェック状態も復元
+                    if (backup.pasChecks) {
+                        this.db.ref('pasChecks').set(backup.pasChecks);
+                    }
+                    // CSVマスターデータも復元
+                    if (backup.csvData) {
+                        this.db.ref('csvData').set(backup.csvData);
+                    }
+                    alert(`復元完了！\nバックアップ日時: ${backup.timestamp}`);
+                    location.reload();
+                }).catch(err => { alert('復元エラー: ' + err.message); });
+            },
+                        
+            renderInventory() {
+                // 検索結果をクリア（フィルター変更時など）
+                this.lastSearchResults = null;
+                this.lastSearchKeyword = null;
+                
+                const list = document.getElementById('inventoryList');
+                const filterByUser = document.getElementById('filterByUser').checked;
+                const categoryFilter = document.getElementById('categoryFilter').value;
+                const locationFilter = document.getElementById('locationFilter').value;
+                
+                let keys = Object.keys(this.inventory).sort();
+                
+                // デバッグ用
+                console.log('在庫品目数:', keys.length);
+                console.log('CSVデータ:', this.csvData);
+                
+                // 担当者フィルター
+                if (filterByUser) {
+                    keys = keys.filter(code => this.isUserItem(code));
+                }
+                
+                // 品目フィルター
+                if (categoryFilter) {
+                    keys = keys.filter(code => this.getCategory(code) === categoryFilter);
+                }
+                
+                // 保管場所フィルター
+                if (locationFilter) {
+                    keys = keys.filter(code => this.getLocation(code) === locationFilter);
+                }
+                
+                if (keys.length === 0) {
+                    list.innerHTML = '<p style="text-align:center; color:#9ca3af; padding:20px;">在庫データなし</p>';
+                    return;
+                }
+                
+                list.innerHTML = keys.map(code => {
+                    const qty = this.inventory[code];
+                    const threshold = this.getThreshold(code);
+                    const cls = qty < 0 ? 'stock-low' : (qty <= threshold ? 'stock-low' : 'stock-ok');
+                    
+                    // CSVデータまたは履歴から情報取得
+                    const csvInfo = this.csvData[code] || {};
+                    let itemName = csvInfo.itemName || '';
+                    let spec = csvInfo.spec || '';
+                    const category = csvInfo.category || '';
+                    const manager = csvInfo.manager || '';
+                    
+                    // デバッグ用
+                    console.log(`品番:${code}, カテゴリー:${category}, 担当者:${manager}`);
+                    
+                    // CSVデータがない場合は履歴から取得
+                    if (!itemName || !spec) {
+                        const historyItem = this.history.find(h => h.itemCode === code);
+                        if (historyItem) {
+                            itemName = itemName || historyItem.itemName || '';
+                            spec = spec || historyItem.spec || '';
+                        }
+                    }
+                    
+                    const itemNameHtml = itemName ? `<div style="font-size:12px; color:#4b5563; margin-top:2px;">${itemName}</div>` : '';
+                    const specHtml = spec ? `<div style="font-size:12px; color:#4b5563;">${spec}</div>` : '';
+                    const location = this.getLocation(code);
+                    const categoryHtml = category ? `<span style="font-size:12px; color:#6b7280; background:#f3f4f6; padding:2px 6px; borderconst categoryOnly = !pasCheckbox && category ? -radius:4px;">${category}</span>` : '';
+                    const locationHtml = location ? `<span style="font-size:12px; color:#059669; background:#f0fdf4; padding:2px 6px; border-radius:4px; margin-left:4px;">📍${location}</span>` : '';
+                    const managerHtml = manager ? `<span style="font-size:12px; color:#2563eb; margin-left:8px;">担当:${manager}</span>` : '';
+
+                    return `<div class="info-row" onclick="app.copyItemCode('${code}')" style="cursor:pointer;">
+                        <div>
+                            <div style="font-weight:600; font-size:15px;">${code}</div>
+                            ${itemNameHtml}
+                            ${specHtml}
+                            ${(categoryHtml || locationHtml || managerHtml) ? `<div style="margin-top:4px;">${categoryHtml}${locationHtml}${managerHtml}</div>` : ''}
+                        </div>
+                        <span class="info-value ${cls}">${this.formatNumber(qty)} 個</span>
+                    </div>`;
+                }).join('');
+            },
+                        
+            renderHistory() {
+                const list = document.getElementById('historyList');
+                const filterByUser = document.getElementById('filterHistoryByUser').checked;
+                const categoryFilter = document.getElementById('categoryFilterHistory').value;
+                const locationFilter = document.getElementById('locationFilterHistory').value;
+                
+                let filteredHistory = this.history;
+                
+                if (filterByUser) {
+                    // ユーザーがログインしていない場合は空配列を返す
+                    if (!this.user || !this.user.name) {
+                        list.innerHTML = '<p style="text-align:center; color:#9ca3af; padding:20px;">ユーザー情報が見つかりません</p>';
+                        return;
+                    }
+                    
+                    // 担当者の品番 かつ 倉庫以外の部署が出庫したもの かつ 出庫または出庫取消のもののみ表示
+                    filteredHistory = filteredHistory.filter(rec => {
+                        // CSVデータから担当者情報を取得
+                        const csvInfo = this.csvData[rec.itemCode];
+                        
+                        // CSVデータが存在しない場合はスキップ
+                        if (!csvInfo) {
+                            return false;
+                        }
+                        
+                        // 自分が担当者である
+                        const isUserItem = csvInfo.manager === this.user.name;
+                        
+                        const isManufacturingOutbound = this.shouldShowPasCheck(rec); // 製造部署の出庫かチェック
+                        const isOutboundType = rec.type === 'outbound' || rec.type === 'outbound_cancel';
+                        
+                        return isUserItem && isManufacturingOutbound && isOutboundType;
+                    });
+                }
+                
+                if (categoryFilter) {
+                    filteredHistory = filteredHistory.filter(rec => this.getCategory(rec.itemCode) === categoryFilter);
+                }
+
+                if (locationFilter) {
+                    filteredHistory = filteredHistory.filter(rec => this.getLocation(rec.itemCode) === locationFilter);
+                }
+                
+                if (filteredHistory.length === 0) {
+                    list.innerHTML = '<p style="text-align:center; color:#9ca3af; padding:20px;">履歴なし</p>';
+                    return;
+                }
+                
+                list.innerHTML = filteredHistory.map(rec => {
+                    let icon = '';
+                    let typeText = '';
+                    let qtyText = '';
+                    
+                    if (rec.type === 'inbound') {
+                        icon = '<span class="icon icon-in"><span class="icon-arrow"></span>入庫</span>';
+                        typeText = '入庫';
+                        qtyText = `+${this.formatNumber(rec.quantity)}個`; // 入庫
+                    } else if (rec.type === 'outbound') {
+                        icon = '<span class="icon icon-out"><span class="icon-arrow"></span>出庫</span>';
+                        typeText = '出庫';
+                        qtyText = `-${this.formatNumber(rec.quantity)}個`; // 出庫
+                    } else if (rec.type === 'inbound_cancel') {
+                        icon = '<span class="icon icon-cancel">X 入庫取消</span>';
+                        typeText = '入庫取消';
+                        qtyText = `-${this.formatNumber(rec.quantity)}個`; // 入庫取消
+                    } else if (rec.type === 'outbound_cancel') {
+                        icon = '<span class="icon icon-cancel">X 出庫取消</span>';
+                        typeText = '出庫取消';
+                        qtyText = `+${this.formatNumber(rec.quantity)}個`; // 出庫取消
+                    }
+                    
+                    // 履歴にない場合はCSVデータから取得
+                    const csvInfo = this.csvData[rec.itemCode] || {};
+                    const itemName = rec.itemName || csvInfo.itemName || '';
+                    const spec = rec.spec || csvInfo.spec || '';
+                    const category = csvInfo.category || '';
+                    const manager = csvInfo.manager || '';
+                    const location = this.getLocation(rec.itemCode);
+
+                    const itemNameHtml = itemName ? `<div style="font-size:13px; color:#4b5563;">${itemName}</div>` : '';
+                    const specHtml = spec ? `<div style="font-size:13px; color:#4b5563;">${spec}</div>` : '';
+
+                    // カテゴリーを在庫表示と同じスタイルに
+                    const categoryHtml = category ? `<span style="font-size:12px; color:#6b7280; background:#f3f4f6; padding:2px 6px; border-radius:4px;">${category}</span>` : '';
+                    const locationHtml = location ? `<span style="font-size:12px; color:#059669; background:#f0fdf4; padding:2px 6px; border-radius:4px; margin-left:4px;">📍${location}</span>` : '';
+
+                    // 工番情報（出庫・出庫取消のみ）
+                    const workOrderInfo = (rec.type === 'outbound' || rec.type === 'outbound_cancel') && rec.workOrder ? 
+                    `<div style="font-size:12px; color:#2563eb; margin-top:2px; cursor:pointer;" onclick="app.copyItemCode('${rec.workOrder}', event)">工番: ${rec.workOrder}　${qtyText}</div>` : '';
+
+                    // 個数情報（入庫・入庫取消の場合）
+                    const quantityInfo = (rec.type === 'inbound' || rec.type === 'inbound_cancel') ? 
+                    `<div style="font-size:12px; color:#2563eb; margin-top:2px;">${qtyText}</div>` : '';
+
+                    // PASチェック（品目と担当者名を追加）
+                    const isPasChecked = this.pasChecks[rec.id] || false;
+                    const canEditPas = this.canInbound();
+                    const shouldShowPas = this.shouldShowPasCheck(rec);  // ← 部署で判定
+                    const pasCheckbox = shouldShowPas ?
+                        `<label style="display:flex; align-items:center; gap:6px; margin-top:6px; ${canEditPas ? 'cursor:pointer;' : 'cursor:not-allowed;'} user-select:none;">
+                            <input type="checkbox" ${isPasChecked ? 'checked' : ''} 
+                                ${canEditPas ? `onchange="app.togglePasCheck('${rec.id}')"` : 'disabled'}
+                                class="pas-checkbox ${isPasChecked ? 'checked' : ''}" 
+                                style="width:16px; height:16px; ${canEditPas ? 'cursor:pointer;' : 'cursor:not-allowed;'}">
+                            <span style="font-size:12px; color:#059669; font-weight:600;">PAS出庫</span>
+                            ${categoryHtml || '<span style="font-size:12px; color:#6b7280;">-</span>'}
+                            ${locationHtml}
+                            <span style="font-size:12px; color:#4b5563;">${manager || '-'}</span>
+                        </label>` : '';
+
+                    // PAS出庫がない場合は品目と保管場所を表示
+                    const categoryOnly = !pasCheckbox && (category || location) ? 
+                        `<div style="margin-top:6px;">
+                            ${categoryHtml}
+                            ${locationHtml}
+                        </div>` : '';
+
+                    return `<div style="background:#f9fafb; padding:12px; border-radius:8px; margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                            <strong onclick="app.copyItemCode('${rec.itemCode}', event)" style="cursor:pointer;">${icon} ${rec.itemCode}</strong>
+                            <span style="color:#6b7280; font-size:13px;">${rec.date}</span>
+                        </div>
+                        ${itemNameHtml}
+                        ${specHtml}
+                        ${workOrderInfo}
+                        ${quantityInfo}
+                        <div style="font-size:12px; color:#2563eb; margin-top:4px;">
+                            ${rec.userName} (${rec.userDept})
+                        </div>
+                        ${pasCheckbox}
+                        ${categoryOnly}
+                    </div>`;
+                }).join('');
+            },
+
+            createManualBackup() {
+                // 権限チェック
+                if (!this.canManageCsv()) {
+                    alert('バックアップ機能は「管理者」のみ使用できます。');
+                    return;
+                }
+                if (!this.db) {
+                    alert('Firebaseに接続されていません');
+                    return;
+                }
+                
+                const now = new Date();
+                const backupData = {
+                    inventory: this.inventory,
+                    history: this.history,
+                    pasChecks: this.pasChecks,
+                    csvData: this.csvData,
+                    timestamp: now.toISOString(),
+                    createdBy: this.user.name
+                };
+                
+                // 新しいバックアップを追加
+                this.db.ref('backup/manual').push(backupData)
+                    .then(() => {
+                        // 古いバックアップを削除（20件を超えた分）
+                        return this.db.ref('backup/manual').once('value');
+                    })
+                    .then((snap) => {
+                        const backups = [];
+                        snap.forEach(child => {
+                            backups.push({ key: child.key, timestamp: child.val().timestamp });
+                        });
+                        
+                        // タイムスタンプでソート（古い順）
+                        backups.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                        
+                        // 20件を超えた古いものを削除
+                        const toDelete = backups.slice(0, Math.max(0, backups.length - 20));
+                        const deletePromises = toDelete.map(backup => 
+                            this.db.ref(`backup/manual/${backup.key}`).remove()
+                        );
+                        
+                        return Promise.all(deletePromises);
+                    })
+                    .then(() => {
+                        const statusEl = document.getElementById('backupStatus');
+                        statusEl.textContent = `✅ バックアップ完了: ${now.toLocaleString('ja-JP')}`;
+                        statusEl.style.display = 'block';
+                        setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
+                        this.loadBackupLists(); // リスト更新
+                    })
+                    .catch(err => {
+                        alert('バックアップエラー: ' + err.message);
+                    });
+            },
+
+            restoreHourlyBackup() {
+                // 権限チェック
+                if (!this.canManageCsv()) {
+                    alert('バックアップ機能は「管理者」のみ使用できます。');
+                    return;
+                }
+                const hour = document.getElementById('hourlyBackupSelect').value;
+                if (!hour) {
+                    alert('復元する時間を選択してください');
+                    return;
+                }
+                this.restoreFromBackup(parseInt(hour));
+            },
+
+            restoreManualBackup() {
+                // 権限チェック
+                if (!this.canManageCsv()) {
+                    alert('バックアップ機能は「管理者」のみ使用できます。');
+                    return;
+                }
+                const key = document.getElementById('manualBackupSelect').value;
+                if (!key) {
+                    alert('復元するバックアップを選択してください');
+                    return;
+                }
+                
+                if (!this.db) {
+                    alert('Firebaseに接続されていません');
+                    return;
+                }
+                
+                this.db.ref(`backup/manual/${key}`).once('value', (snap) => {
+                    const backup = snap.val();
+                    if (!backup) {
+                        alert('バックアップが見つかりません');
+                        return;
+                    }
+                    
+                    if (!confirm(`このバックアップから復元しますか？\n作成日時: ${new Date(backup.timestamp).toLocaleString('ja-JP')}\n作成者: ${backup.createdBy}\n\n現在のデータは上書きされます。`)) {
+                        return;
+                    }
+                    
+                    Promise.all([
+                        this.db.ref('inventory').set(backup.inventory),
+                        this.db.ref('pasChecks').set(backup.pasChecks || {}),
+                        this.db.ref('csvData').set(backup.csvData || {})
+                    ]).then(() => {
+                        return this.db.ref('history').remove();
+                    }).then(() => {
+                        const historyObj = {};
+                        backup.history.forEach(record => {
+                            const id = record.id;
+                            const recordCopy = {...record};
+                            delete recordCopy.id;
+                            historyObj[id] = recordCopy;
+                        });
+                        return this.db.ref('history').set(historyObj);
+                    }).then(() => {
+                        alert('復元完了！');
+                        location.reload();
+                    }).catch(err => {
+                        alert('復元エラー: ' + err.message);
+                    });
+                }).catch(err => {
+                    alert('復元エラー: ' + err.message);
+                });
+            },
+
+            loadBackupLists() {
+                if (!this.db) return;
+                
+                // 自動バックアップリスト（0～23時）
+                const hourlySelect = document.getElementById('hourlyBackupSelect');
+                hourlySelect.innerHTML = '<option value="">時間を選択...</option>';
+                for (let h = 0; h < 24; h++) {
+                    const opt = document.createElement('option');
+                    opt.value = h;
+                    opt.textContent = `${h}時台の自動バックアップ`;
+                    hourlySelect.appendChild(opt);
+                }
+                
+                // 手動バックアップリスト（最新20件）
+                this.db.ref('backup/manual').limitToLast(20).once('value', (snap) => {
+                    const manualSelect = document.getElementById('manualBackupSelect');
+                    manualSelect.innerHTML = '<option value="">バックアップを選択...</option>';
+                    
+                    const backups = [];
+                    snap.forEach(child => {
+                        backups.push({ key: child.key, data: child.val() });
+                    });
+                    
+                    // 新しい順にソート
+                    backups.sort((a, b) => new Date(b.data.timestamp) - new Date(a.data.timestamp));
+                    
+                    backups.forEach(backup => {
+                        const opt = document.createElement('option');
+                        opt.value = backup.key;
+                        const date = new Date(backup.data.timestamp).toLocaleString('ja-JP');
+                        const creator = backup.data.createdBy || '不明';
+                        opt.textContent = `${date} (${creator})`;
+                        manualSelect.appendChild(opt);
+                    });
+                });
+            },
+
+            exportBackupToCsv() {
+                // 権限チェック
+                if (!this.canManageCsv()) {
+                    alert('バックアップ機能は「管理者」のみ使用できます。');
+                    return;
+                }
+                if (!this.inventory || !this.history) {
+                    alert('バックアップするデータがありません');
+                    return;
+                }
+                
+                try {
+                    const now = new Date();
+                    const timestamp = now.toISOString();
+                    
+                    // メタデータ
+                    let csvContent = '\uFEFF# バックアップメタデータ\n';
+                    csvContent += `バックアップ日時,${timestamp}\n`;
+                    csvContent += `作成者,${this.user.name}\n`;
+                    csvContent += `バージョン,2.0.0\n\n`;
+                    
+                    // 在庫データ
+                    csvContent += '# 在庫データ\n';
+                    csvContent += '品番,在庫数\n';
+                    Object.keys(this.inventory).sort().forEach(code => {
+                        csvContent += `${code},${this.inventory[code]}\n`;
+                    });
+                    csvContent += '\n';
+                    
+                    // 履歴データ
+                    csvContent += '# 履歴データ\n';
+                    csvContent += 'ID,処理種別,品番,品名,仕様,日付,工番,個数,担当者名,担当者部署,タイムスタンプ\n';
+                    this.history.forEach(rec => {
+                        const id = rec.id || '';
+                        const type = rec.type || '';
+                        const itemCode = (rec.itemCode || '').replace(/,/g, '，'); // カンマをエスケープ
+                        const itemName = (rec.itemName || '').replace(/,/g, '，');
+                        const spec = (rec.spec || '').replace(/,/g, '，');
+                        const date = rec.date || '';
+                        const workOrder = rec.workOrder || '';
+                        const quantity = rec.quantity || 0;
+                        const userName = (rec.userName || '').replace(/,/g, '，');
+                        const userDept = (rec.userDept || '').replace(/,/g, '，');
+                        const timestamp = rec.timestamp || '';
+                        
+                        csvContent += `${id},${type},${itemCode},${itemName},${spec},${date},${workOrder},${quantity},${userName},${userDept},${timestamp}\n`;
+                    });
+                    csvContent += '\n';
+                    
+                    // PASチェックデータ
+                    csvContent += '# PASチェックデータ\n';
+                    csvContent += '履歴ID,チェック状態\n';
+                    Object.keys(this.pasChecks).forEach(id => {
+                        csvContent += `${id},${this.pasChecks[id] ? '1' : '0'}\n`;
+                    });
+                    csvContent += '\n';
+                    
+                    // CSVマスターデータ
+                    csvContent += '# CSVマスターデータ\n';
+                    csvContent += '品番,品名,仕様,担当者,カテゴリー,アラート値\n';
+                    Object.keys(this.csvData).sort().forEach(code => {
+                        const data = this.csvData[code];
+                        const itemName = (data.itemName || '').replace(/,/g, '，');
+                        const spec = (data.spec || '').replace(/,/g, '，');
+                        const manager = (data.manager || '').replace(/,/g, '，');
+                        const category = (data.category || '').replace(/,/g, '，');
+                        const threshold = data.threshold || 5;
+                        csvContent += `${code},${itemName},${spec},${manager},${category},${threshold}\n`;
+                    });
+                    
+                    // CSVダウンロード
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `バックアップ_${now.toISOString().split('T')[0]}_${now.getHours()}${now.getMinutes()}.csv`;
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    const statusEl = document.getElementById('backupStatus');
+                    statusEl.textContent = `✅ CSVバックアップ完了: ${now.toLocaleString('ja-JP')}`;
+                    statusEl.style.display = 'block';
+                    setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
+                    
+                } catch (err) {
+                    alert('CSVエクスポートエラー: ' + err.message);
+                    console.error(err);
+                }
+            },
+
+            importBackupFromCsv() {
+                // 権限チェック
+                if (!this.canManageCsv()) {
+                    alert('バックアップ機能は「管理者」のみ使用できます。');
+                    return;
+                }
+                const fileInput = document.getElementById('importBackupCsv');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    alert('CSVファイルを選択してください');
+                    return;
+                }
+                
+                if (!confirm('CSVから復元すると、現在のすべてのデータ（在庫・履歴・PASチェック・CSVマスター）が上書きされます。\n本当に実行しますか？')) {
+                    return;
+                }
+                
+                Papa.parse(file, {
+                    encoding: 'UTF-8',
+                    complete: (results) => {
+                        try {
+                            const lines = results.data;
+                            let mode = '';
+                            const newInventory = {};
+                            const newHistory = [];
+                            const newPasChecks = {};
+                            const newCsvData = {};
+                            
+                            for (let i = 0; i < lines.length; i++) {
+                                const line = lines[i];
+                                
+                                // セクション判定
+                                if (line[0] === '# 在庫データ') {
+                                    mode = 'inventory';
+                                    i++; // ヘッダー行スキップ
+                                    continue;
+                                } else if (line[0] === '# 履歴データ') {
+                                    mode = 'history';
+                                    i++; // ヘッダー行スキップ
+                                    continue;
+                                } else if (line[0] === '# PASチェックデータ') {
+                                    mode = 'pas';
+                                    i++; // ヘッダー行スキップ
+                                    continue;
+                                } else if (line[0] === '# CSVマスターデータ') {
+                                    mode = 'csvData';
+                                    i++; // ヘッダー行スキップ
+                                    continue;
+                                } else if (line[0] && line[0].startsWith('#')) {
+                                    mode = '';
+                                    continue;
+                                }
+                                
+                                // 空行スキップ
+                                if (!line[0]) continue;
+                                
+                                // データ読み込み
+                                if (mode === 'inventory') {
+                                    const code = line[0].trim();
+                                    const qty = parseInt(line[1]);
+                                    if (code && !isNaN(qty)) {
+                                        newInventory[code] = qty;
+                                    }
+                                } else if (mode === 'history') {
+                                    const record = {
+                                        id: line[0] || '',  // ← IDを保持
+                                        type: line[1] || '',
+                                        itemCode: (line[2] || '').replace(/，/g, ','),
+                                        itemName: (line[3] || '').replace(/，/g, ','),
+                                        spec: (line[4] || '').replace(/，/g, ','),
+                                        date: line[5] || '',
+                                        workOrder: line[6] || '',
+                                        quantity: parseInt(line[7]) || 0,
+                                        userName: (line[8] || '').replace(/，/g, ','),
+                                        userDept: (line[9] || '').replace(/，/g, ','),
+                                        timestamp: line[10] || ''
+                                    };
+                                    newHistory.push(record);
+                                } else if (mode === 'pas') {
+                                    const id = line[0].trim();
+                                    const checked = line[1] === '1';
+                                    if (id) {
+                                        newPasChecks[id] = checked;
+                                    }
+                                } else if (mode === 'csvData') {
+                                    const code = line[0] ? line[0].trim() : '';
+                                    if (code) {
+                                        newCsvData[code] = {
+                                            itemName: (line[1] || '').replace(/，/g, ','),
+                                            spec: (line[2] || '').replace(/，/g, ','),
+                                            manager: (line[3] || '').replace(/，/g, ','),
+                                            category: (line[4] || '').replace(/，/g, ','),
+                                            threshold: parseInt(line[5]) || 5
+                                        };
+                                    }
+                                }
+                            }
+                            
+                            // データ検証
+                            if (Object.keys(newInventory).length === 0 && newHistory.length === 0) {
+                                alert('有効なバックアップデータが見つかりませんでした');
+                                return;
+                            }
+                            
+                            // Firebaseに保存
+                            if (!this.db) {
+                                alert('Firebaseに接続されていません');
+                                return;
+                            }
+                            
+                        // 在庫とPASチェックとCSVマスターを先に保存
+                        Promise.all([
+                            this.db.ref('inventory').set(newInventory),
+                            this.db.ref('pasChecks').set(newPasChecks),
+                            this.db.ref('csvData').set(newCsvData)
+                        ]).then(() => {
+                            // 履歴を元のIDで復元（順序を保持）
+                            return this.db.ref('history').remove();
+                        }).then(() => {
+                            // 元のIDを使って復元
+                            const historyObj = {};
+                            newHistory.forEach(record => {
+                                const id = record.id;
+                                const recordCopy = {...record};
+                                delete recordCopy.id; // idフィールドは除外
+                                historyObj[id] = recordCopy;
+                            });
+                            return this.db.ref('history').set(historyObj);
+                        }).then(() => {
+                            alert(`復元完了！\n在庫: ${Object.keys(newInventory).length}件\n履歴: ${newHistory.length}件\nPASチェック: ${Object.keys(newPasChecks).length}件\nCSVマスター: ${Object.keys(newCsvData).length}件`);
+                            fileInput.value = '';
+                            location.reload();
+                        }).catch(err => {
+                            alert('Firebaseへの保存に失敗しました: ' + err.message);
+                        });
+                            
+                        } catch (err) {
+                            alert('CSVの読み込みに失敗しました: ' + err.message);
+                            console.error(err);
+                        }
+                    },
+                    error: (error) => {
+                        alert('CSVファイルの解析に失敗しました: ' + error.message);
+                    }
+                });
+            },
+                        
+            startRegisterScan() {
+                document.getElementById('qr-reader-register').style.display = 'block';
+                this.scannerRegister = new Html5Qrcode("qr-reader-register");
+                this.scannerRegister.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    (text) => {
+                        this.stopRegisterScan();
+                        this.parseQRData(text);
+                    }
+                ).catch(err => {
+                    alert('カメラエラー: ' + err);
+                    this.stopRegisterScan();
+                });
+                document.getElementById('stopRegisterScanBtn').style.display = 'block';
+                document.getElementById('startRegisterScanBtn').style.display = 'none';
+            },
+
+            stopRegisterScan() {
+                if (this.scannerRegister) {
+                    this.scannerRegister.stop();
+                    document.getElementById('qr-reader-register').style.display = 'none';
+                    document.getElementById('stopRegisterScanBtn').style.display = 'none';
+                    document.getElementById('startRegisterScanBtn').style.display = 'block';
+                }
+            },
+
+            startSearchScan() {
+                document.getElementById('qr-reader-search').style.display = 'block';
+                this.scannerSearch = new Html5Qrcode("qr-reader-search");
+                this.scannerSearch.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    (text) => {
+                        this.stopSearchScan();
+                        // QRコードから品目コードのみ抽出
+                        const lines = text.split('\n');
+                        let itemCode = null;
+                        lines.forEach(line => {
+                            const idx = line.indexOf(':');
+                            if (idx > -1) {
+                                const key = line.substring(0, idx).trim();
+                                const val = line.substring(idx + 1).trim();
+                                if (key === '品目コード') itemCode = val;
+                            }
+                        });
+                        if (itemCode) {
+                            this.searchItemCode(itemCode);
+                        } else {
+                            alert('品目コードが見つかりませんでした');
+                        }
+                    }
+                ).catch(err => {
+                    alert('カメラエラー: ' + err);
+                    this.stopSearchScan();
+                });
+                document.getElementById('stopSearchScanBtn').style.display = 'block';
+                document.getElementById('startSearchScanBtn').style.display = 'none';
+            },
+
+            stopSearchScan() {
+                if (this.scannerSearch) {
+                    this.scannerSearch.stop();
+                    document.getElementById('qr-reader-search').style.display = 'none';
+                    document.getElementById('stopSearchScanBtn').style.display = 'none';
+                    document.getElementById('startSearchScanBtn').style.display = 'block';
+                }
+            },
+                    
+            showSearchInput() {
+                const input = prompt('品目コードを入力してください（例: PDA61-01-48 または pda610148）\n曖昧検索も可能(例:PDA または 02-02などのみ)');
+                if (input && input.trim()) {
+                    let code = input.trim().toUpperCase(); // すべて大文字に変換
+                    
+                    // ハイフンがない場合のみ、自動で挿入
+                    if (!code.includes('-')) {
+                        // 英字部分と数字部分を分離
+                        const match = code.match(/^([A-Z]+)(\d+)$/);
+                        if (match) {
+                            const letters = match[1];
+                            const numbers = match[2];
+                            
+                            // 数字部分が6桁以上の場合、2桁-2桁-残り の形式に変換
+                            // 例: PDA610148 → PDA61-01-48
+                            //     PDA6104458 → PDA61-04-458
+                            //     PDA6104111111 → PDA61-04-111111
+                            if (numbers.length >= 4) {
+                                const part1 = numbers.substring(0, 2);
+                                const part2 = numbers.substring(2, 4);
+                                const part3 = numbers.substring(4);
+                                code = `${letters}${part1}-${part2}-${part3}`;
+                            }
+                        }
+                    }
+                    
+                    this.searchItemCode(code);
+                }
+            },
+
+            searchItemCode(code) {
+                if (!this.db) {
+                    alert('Firebaseに接続されていません');
+                    return;
+                }
+                
+                // 検索キーワードを大文字に統一
+                const searchKeyword = code.toUpperCase();
+                
+                // 1. CSVデータから部分一致する品目を検索
+                const matchedItems = [];
+                Object.keys(this.csvData).forEach(itemCode => {
+                    if (itemCode.toUpperCase().includes(searchKeyword)) {
+                        matchedItems.push(itemCode);
+                    }
+                });
+                
+                // 2. 在庫データからも検索（CSVにない品目も含める）
+                Object.keys(this.inventory).forEach(itemCode => {
+                    if (itemCode.toUpperCase().includes(searchKeyword) && !matchedItems.includes(itemCode)) {
+                        matchedItems.push(itemCode);
+                    }
+                });
+                
+                // 3. 履歴からも検索（在庫もCSVもない品目を含める）
+                const historyItems = new Set();
+                this.history.forEach(rec => {
+                    if (rec.itemCode.toUpperCase().includes(searchKeyword) && !matchedItems.includes(rec.itemCode)) {
+                        historyItems.add(rec.itemCode);
+                    }
+                });
+                historyItems.forEach(item => matchedItems.push(item));
+                
+                // 検索結果がない場合
+                if (matchedItems.length === 0) {
+                    alert(`「${code}」に一致する品目が見つかりませんでした`);
+                    return;
+                }
+                
+                // ソート（品番順）
+                matchedItems.sort();
+                
+                // 検索結果が1件の場合は詳細表示
+                if (matchedItems.length === 1) {
+                    this.showItemDetail(matchedItems[0]);
+                    return;
+                }
+                
+                // 複数件の場合は一覧表示
+                this.showSearchResults(matchedItems, searchKeyword);
+            },
+
+            // 検索結果一覧を表示
+            showSearchResults(matchedItems, searchKeyword) {
+                // 検索結果を保存
+                this.lastSearchResults = matchedItems;
+                this.lastSearchKeyword = searchKeyword;
+                
+                const resultHtml = `
+                    <div class="card">
+                        <h3 style="margin-bottom:8px;">検索結果: "${searchKeyword}" (${matchedItems.length}件)</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <div style="font-size:13px; color:#6b7280;">
+                                品目をタップすると詳細が表示されます
+                            </div>
+                            <button onclick="app.clearSearchResults()" style="padding:6px 12px; background:#e5e7eb; border:none; border-radius:6px; cursor:pointer; font-size:13px; white-space:nowrap; flex-shrink:0;">在庫一覧に戻る</button>
+                        </div>
+                        ${matchedItems.map(code => {
+                            const stock = this.inventory[code];
+                            const threshold = this.getThreshold(code);
+                            const csvInfo = this.csvData[code] || {};
+                            const itemName = csvInfo.itemName || '';
+                            const spec = csvInfo.spec || '';
+                            const category = csvInfo.category || '';
+                            const manager = csvInfo.manager || '';
+                            const location = this.getLocation(code);
+                            
+                            // 在庫がない場合の表示
+                            let stockDisplay = '';
+                            let stockClass = '';
+                            if (stock !== undefined) {
+                                stockClass = stock <= threshold ? 'stock-low' : 'stock-ok';
+                                stockDisplay = `${this.formatNumber(stock)}個`;
+                            } else {
+                                stockClass = 'stock-ok';
+                                stockDisplay = '<span style="color:#9ca3af;">0個</span>';
+                            }
+                            
+                            const itemNameHtml = itemName ? `<div style="font-size:12px; color:#4b5563; margin-top:2px;">${itemName}</div>` : '';
+                            const specHtml = spec ? `<div style="font-size:12px; color:#4b5563;">${spec}</div>` : '';
+                            const categoryHtml = category ? `<span style="font-size:12px; color:#6b7280; background:#f3f4f6; padding:2px 6px; border-radius:4px;">${category}</span>` : '';
+                            const locationHtml = location ? `<span style="font-size:12px; color:#059669; background:#f0fdf4; padding:2px 6px; border-radius:4px; margin-left:4px;">📍${location}</span>` : '';
+                            const managerHtml = manager ? `<span style="font-size:12px; color:#2563eb; margin-left:8px;">担当:${manager}</span>` : '';
+                            
+                            return `<div class="info-row" onclick="app.showItemDetail('${code}')" style="cursor:pointer; transition: background 0.2s;">
+                                <div style="flex: 1;">
+                                    <div style="font-weight:600; font-size:15px;">${code}</div>
+                                    ${itemNameHtml}
+                                    ${specHtml}
+                                    ${(categoryHtml || locationHtml || managerHtml) ? `<div style="margin-top:4px;">${categoryHtml}${locationHtml}${managerHtml}</div>` : ''}
+                                </div>
+                                <span class="info-value ${stockClass}">${stockDisplay}</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                `;
+                
+                // 在庫ビューに表示
+                document.getElementById('inventoryList').innerHTML = resultHtml;
+                
+                // 在庫タブに切り替え
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector('[data-view="inventory"]').classList.add('active');
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById('inventoryView').classList.add('active');
+            },
+
+            // 品目の詳細を表示
+            showItemDetail(code) {
+                if (!this.db) {
+                    alert('Firebaseに接続されていません');
+                    return;
+                }
+                
+                // 在庫取得
+                const stock = this.inventory[code];
+                const threshold = this.getThreshold(code);
+                
+                // 該当品目の全履歴を取得
+                this.db.ref('history').orderByChild('itemCode').equalTo(code).once('value', (snap) => {
+                    const allHistory = [];
+                    snap.forEach(child => {
+                        allHistory.push(child.val());
+                    });
+                    
+                    // timestampで降順ソート（新しい順）
+                    allHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    
+                    // CSVデータまたは履歴から情報取得
+                    const csvInfo = this.csvData[code] || {};
+                    let itemName = csvInfo.itemName || '';
+                    let spec = csvInfo.spec || '';
+                    const category = csvInfo.category || '';
+                    const manager = csvInfo.manager || '';
+                    const location = this.getLocation(code);
+                    
+                    // CSVデータがない場合は履歴から取得
+                    if ((!itemName || !spec) && allHistory.length > 0) {
+                        itemName = itemName || allHistory[0].itemName || '';
+                        spec = spec || allHistory[0].spec || '';
+                    }
+                    
+                    // 在庫表示
+                    let stockDisplay = '';
+                    let stockClass = '';
+                    if (stock !== undefined) {
+                        stockClass = stock <= threshold ? '#dc2626' : '#059669';
+                        stockDisplay = `${this.formatNumber(stock)}個`;
+                    } else {
+                        stockClass = '#9ca3af';
+                        stockDisplay = '0個 <span style="font-size:12px; color:#6b7280;">(未入出庫)</span>';
+                    }
+                    
+                    // 詳細情報を表示
+                    const categoryHtml = category ? `<span style="font-size:12px; color:#6b7280; background:#f3f4f6; padding:2px 6px; border-radius:4px;">${category}</span>` : '';
+                    const locationHtml = location ? `<span style="font-size:12px; color:#059669; background:#f0fdf4; padding:2px 6px; border-radius:4px; margin-left:4px;">📍${location}</span>` : '';
+                    const managerHtml = manager ? `<div style="font-size:13px; color:#2563eb; margin-top:8px;">担当者: ${manager}</div>` : '';
+                    
+                    const resultHtml = `
+                        <div class="card">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <h3 style="margin:0;">品目詳細</h3>
+                                <button onclick="app.backToSearchResults()" style="padding:6px 12px; background:#e5e7eb; border:none; border-radius:6px; cursor:pointer; font-size:13px;">← 一覧に戻る</button>
+                            </div>
+                            <div style="font-weight:600; font-size:16px; margin-bottom:4px; cursor:pointer; display:inline-block; padding:4px 8px; border-radius:6px; transition:background 0.2s;" 
+                                onclick="app.copyItemCode('${code}', event)" 
+                                onmouseover="this.style.background='#f3f4f6'" 
+                                onmouseout="this.style.background='transparent'">
+                                ${code}  🐾︎
+                            </div>
+                            ${itemName ? `<div style="font-size:13px; color:#4b5563; margin-bottom:2px;">${itemName}</div>` : ''}
+                            ${spec ? `<div style="font-size:13px; color:#4b5563; margin-bottom:8px;">${spec}</div>` : ''}
+                            ${(categoryHtml || locationHtml) ? `<div style="margin-bottom:8px;">${categoryHtml}${locationHtml}</div>` : ''}
+                            ${managerHtml}
+                            <div style="margin-top:16px; margin-bottom:20px; padding-top:16px; border-top:1px solid #e5e7eb;">
+                                <div style="font-size:16px; font-weight:600; display:inline-block;">現在庫</div>
+                                <span style="font-size:20px; font-weight:bold; color:${stockClass}; margin-left:8px;">
+                                    ${stockDisplay}
+                                </span>
+                            </div>
+
+                            ${allHistory.length > 0 ? `
+                            <div>
+                                <div style="font-size:16px; font-weight:600; margin-bottom:12px;">履歴</div>
+                                ${allHistory.map(rec => {
+                                    let icon = '';
+                                    let type = '';
+                                    let color = '';
+                                    let qtyText = '';
+                                    
+                                    if (rec.type === 'inbound') {
+                                        icon = '●';
+                                        color = '#059669';
+                                        type = '入庫';
+                                        qtyText = `+${this.formatNumber(rec.quantity)}個`;
+                                    } else if (rec.type === 'outbound') {
+                                        icon = '▲';
+                                        color = '#dc2626';
+                                        type = '出庫';
+                                        qtyText = `-${this.formatNumber(rec.quantity)}個`;
+                                    } else if (rec.type === 'inbound_cancel') {
+                                        icon = 'X';
+                                        color = '#f59e0b';
+                                        type = '入庫取消';
+                                        qtyText = `-${this.formatNumber(rec.quantity)}個`;
+                                    } else if (rec.type === 'outbound_cancel') {
+                                        icon = 'X';
+                                        color = '#f59e0b';
+                                        type = '出庫取消';
+                                        qtyText = `+${this.formatNumber(rec.quantity)}個`;
+                                    }
+                                    
+                                    return `<div style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px;">
+                                        <span style="color: ${color}; font-weight: bold;">${icon}${type}</span>
+                                        <span style="margin-left: 8px;">${rec.date}</span>
+                                        <span style="margin-left: 8px; font-weight: 600;">${qtyText}</span>
+                                        <span style="margin-left: 8px;">${rec.userName}</span>
+                                        <span style="margin-left: 8px; color: #6b7280;">${rec.userDept}</span>
+                                        ${(rec.type === 'outbound' || rec.type === 'outbound_cancel') && rec.workOrder ? `<div style="margin-left: 20px; margin-top: 2px; color: #2563eb; font-size: 12px;">工番: ${rec.workOrder}</div>` : ''}
+                                    </div>`;
+                                }).join('')}
+                            </div>
+                            ` : '<div style="color: #9ca3af; text-align: center; padding: 20px;">履歴なし</div>'}
+                        </div>
+                    `;
+                    
+                    // 在庫ビューに表示
+                    document.getElementById('inventoryList').innerHTML = resultHtml;
+                    
+                    // 在庫タブに切り替え
+                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelector('[data-view="inventory"]').classList.add('active');
+                    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                    document.getElementById('inventoryView').classList.add('active');
+                });
+            },
+
+            // 検索結果一覧に戻る
+            backToSearchResults() {
+                if (this.lastSearchResults && this.lastSearchKeyword) {
+                    // 保存された検索結果を再表示
+                    this.showSearchResults(this.lastSearchResults, this.lastSearchKeyword);
+                } else {
+                    // 検索結果がない場合は通常の在庫一覧を表示
+                    this.renderInventory();
+                }
+            },
+
+            // 検索結果をクリアして在庫一覧に戻る
+            clearSearchResults() {
+                this.lastSearchResults = null;
+                this.lastSearchKeyword = null;
+                this.renderInventory();
+            },
+                    
+            parseQRData(text) {
+                const lines = text.split('\n');
+                const data = {};
+                
+                lines.forEach(line => {
+                    const idx = line.indexOf(':');
+                    if (idx > -1) {
+                        const key = line.substring(0, idx).trim();
+                        const val = line.substring(idx + 1).trim();
+                        if (key === '品目コード') data.itemCode = val;
+                        if (key === '品名') data.itemName = val;
+                        if (key === '仕様') data.spec = val;
+                    }
+                });
+                
+                if (data.itemCode) {
+                    this.scannedData = data;
+                    this.showInputView();
+                } else {
+                    alert('QRコード形式エラー');
+                }
+            },
+                    
+            showInputView() {
+                const stock = this.inventory[this.scannedData.itemCode] || 0;
+                const threshold = this.getThreshold(this.scannedData.itemCode);
+                const cls = stock <= threshold ? 'stock-low' : 'stock-ok';
+                
+                document.getElementById('scannedInfo').innerHTML = `
+                    <div class="info-row"><span>品目コード</span><span class="info-value">${this.scannedData.itemCode}</span></div>
+                    <div class="info-row"><span>品名</span><span class="info-value">${this.scannedData.itemName}</span></div>
+                    <div class="info-row"><span>仕様</span><span class="info-value">${this.scannedData.spec}</span></div>
+                    <div class="info-row"><span>現在庫</span><span class="info-value ${cls}">${this.formatNumber(stock)} 個</span></div>
+                `;
+                
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById('inputView').classList.add('active');
+                
+                // 入庫ボタンの権限チェック
+                const inboundBtn = document.getElementById('inboundBtn');
+                const inboundCancelBtn = document.getElementById('inboundCancelBtn');
+                const permissionNote = document.getElementById('permissionNote');
+                
+                if (!this.canInbound()) {
+                    inboundBtn.classList.add('disabled');
+                    inboundCancelBtn.classList.add('disabled');
+                    permissionNote.style.display = 'block';
+                } else {
+                    inboundBtn.classList.remove('disabled');
+                    inboundCancelBtn.classList.remove('disabled');
+                    permissionNote.style.display = 'none';
+                }
+                
+                this.selectAction('outbound');
+            },
+                    
+            selectAction(type) {
+                // 入庫権限がない場合は入庫を選択できない
+                if ((type === 'inbound' || type === 'inbound_cancel') && !this.canInbound()) {
+                    alert('入庫処理は「管理部倉庫G」または「管理者」のみ実行できます。');
+                    return;
+                }
+                
+                this.actionType = type;
+                document.getElementById('outboundBtn').classList.remove('selected');
+                document.getElementById('outboundCancelBtn').classList.remove('selected');
+                document.getElementById('inboundBtn').classList.remove('selected');
+                document.getElementById('inboundCancelBtn').classList.remove('selected');
+                
+                document.getElementById('outboundForm').style.display = 'none';
+                document.getElementById('outboundCancelForm').style.display = 'none';
+                document.getElementById('inboundForm').style.display = 'none';
+                document.getElementById('inboundCancelForm').style.display = 'none';
+                
+                if (type === 'outbound') {
+                    document.getElementById('outboundBtn').classList.add('selected');
+                    document.getElementById('outboundForm').style.display = 'block';
+                } else if (type === 'outbound_cancel') {
+                    document.getElementById('outboundCancelBtn').classList.add('selected');
+                    document.getElementById('outboundCancelForm').style.display = 'block';
+                } else if (type === 'inbound') {
+                    document.getElementById('inboundBtn').classList.add('selected');
+                    document.getElementById('inboundForm').style.display = 'block';
+                } else if (type === 'inbound_cancel') {
+                    document.getElementById('inboundCancelBtn').classList.add('selected');
+                    document.getElementById('inboundCancelForm').style.display = 'block';
+                }
+            },
+
+            addWorkOrderRow() {
+                const container = document.getElementById('workOrderList');
+                const rows = container.querySelectorAll('.work-order-row');
+                
+                if (rows.length >= 10) {
+                    alert('工番は最大10件まで追加できます');
+                    return;
+                }
+                
+                const newIndex = rows.length;
+                const newRow = document.createElement('div');
+                newRow.className = 'work-order-row';
+                newRow.dataset.index = newIndex;
+                newRow.innerHTML = `
+                    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+                        <div style="flex: 2;">
+                            <label class="form-label" style="margin-bottom: 4px;">工番</label>
+                            <input type="text" class="form-input work-order-input" style="margin-bottom: 0;" placeholder="例: SK1234-02A" autocomplete="off" pattern="[A-Za-z0-9\-]*" inputmode="latin">
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="form-label" style="margin-bottom: 4px;">個数</label>
+                            <input type="number" class="form-input quantity-input" style="margin-bottom: 0;" value="1" min="0.1" step="0.1">
+                        </div>
+                        <button class="btn-remove-work-order" style="margin-top: 20px;">−</button>
+                    </div>
+                `;
+                
+                container.appendChild(newRow);
+                
+                // 新しい入力欄にフォーカス
+                newRow.querySelector('.work-order-input').focus();
+            },
+
+            removeWorkOrderRow(row) {
+                const container = document.getElementById('workOrderList');
+                const rows = container.querySelectorAll('.work-order-row');
+                
+                // 最後の1行は削除できない
+                if (rows.length <= 1) {
+                    alert('最低1つの工番は必要です');
+                    return;
+                }
+                
+                row.remove();
+            },
+
+            deleteTestData() {
+                // 権限チェック
+                if (!this.canManageBackup()) {
+                    alert('削除機能は管理者のみ使用できます');
+                    return;
+                }
+                
+                if (!this.csvData || Object.keys(this.csvData).length === 0) {
+                    alert('CSVデータが読み込まれていません');
+                    return;
+                }
+                
+                // カテゴリーが「ﾃｽﾄ」の品番を収集
+                const testItems = [];
+                Object.keys(this.csvData).forEach(code => {
+                    if (this.csvData[code].category === 'ﾃｽﾄ') {
+                        testItems.push(code);
+                    }
+                });
+                
+                if (testItems.length === 0) {
+                    alert('カテゴリー「ﾃｽﾄ」の品番が見つかりません');
+                    return;
+                }
+                
+                if (!confirm(`カテゴリー「ﾃｽﾄ」の品番 ${testItems.length}件のデータを削除しますか？\n\n削除される品番:\n${testItems.join(', ')}\n\nこの操作は取り消せません。`)) {
+                    return;
+                }
+                
+                const statusEl = document.getElementById('testDeleteStatus');
+                statusEl.textContent = '削除中...';
+                statusEl.style.display = 'block';
+                
+                let historyDeleteCount = 0;
+                let inventoryDeleteCount = 0;
+                
+                // 各品番の履歴を削除
+                const deletePromises = testItems.map(itemCode => {
+                    return this.db.ref('history').orderByChild('itemCode').equalTo(itemCode).once('value')
+                        .then(snap => {
+                            const updates = {};
+                            snap.forEach(child => {
+                                updates[child.key] = null;
+                                historyDeleteCount++;
+                            });
+                            
+                            if (Object.keys(updates).length > 0) {
+                                return this.db.ref('history').update(updates);
+                            }
+                        })
+                        .then(() => {
+                            // 在庫も削除
+                            if (this.inventory[itemCode] !== undefined) {
+                                inventoryDeleteCount++;
+                                return this.db.ref(`inventory/${itemCode}`).remove();
+                            }
+                        });
+                });
+                
+                Promise.all(deletePromises)
+                    .then(() => {
+                        statusEl.textContent = `✅ 削除完了！ 履歴${historyDeleteCount}件、在庫${inventoryDeleteCount}件を削除しました`;
+                        statusEl.style.background = '#d1fae5';
+                        statusEl.style.borderColor = '#059669';
+                        statusEl.style.color = '#059669';
+                        
+                        setTimeout(() => {
+                            statusEl.style.display = 'none';
+                        }, 5000);
+                        
+                        // データ再読み込み
+                        this.loadInventory();
+                        this.loadHistory();
+                    })
+                    .catch(err => {
+                        statusEl.textContent = '❌ 削除エラー: ' + err.message;
+                        alert('削除エラー: ' + err.message);
+                    });
+            },
+                    
+            submitOutbound() {
+                if (!this.db) {
+                    alert('Firebaseに接続されていません');
+                    return;
+                }
+                
+                const date = document.getElementById('outboundDate').value;
+                const rows = document.querySelectorAll('.work-order-row');
+                
+                // 全ての工番と個数を収集
+                const workOrders = [];
+                let hasError = false;
+                
+                rows.forEach((row, index) => {
+                    const woInput = row.querySelector('.work-order-input');
+                    const qtyInput = row.querySelector('.quantity-input');
+                    const wo = woInput.value.trim().toUpperCase();
+                    const qty = parseFloat(qtyInput.value);
+                    
+                    if (!wo || qty <= 0 || isNaN(qty)) {
+                        hasError = true;
+                        woInput.style.borderColor = !wo ? '#dc2626' : '';
+                        qtyInput.style.borderColor = qty <= 0 ? '#dc2626' : '';
+                    } else {
+                        workOrders.push({ workOrder: wo, quantity: qty });
+                        woInput.style.borderColor = '';
+                        qtyInput.style.borderColor = '';
+                    }
+                });
+                
+                if (hasError) {
+                    alert('すべての工番と個数を正しく入力してください');
+                    return;
+                }
+                
+                // 在庫チェック
+                const totalQty = workOrders.reduce((sum, item) => sum + item.quantity, 0);
+                const currentStock = this.inventory[this.scannedData.itemCode] || 0;
+                
+                if (totalQty > currentStock) {
+                    if (!confirm(`在庫(${this.formatNumber(currentStock)}個)より多い数量(${this.formatNumber(totalQty)}個)を出庫しようとしています。\n続行しますか？`)) {
+                        return;
+                    }
+                }
+                
+                // 複数の履歴レコードを作成
+                const promises = workOrders.map(item => {
+                    const record = {
+                        type: 'outbound',
+                        itemCode: this.scannedData.itemCode,
+                        itemName: this.scannedData.itemName,
+                        spec: this.scannedData.spec,
+                        date: date,
+                        workOrder: item.workOrder,
+                        quantity: item.quantity,
+                        userName: this.user.name,
+                        userDept: this.user.department,
+                        timestamp: new Date().toISOString()
+                    };
+                    return this.db.ref('history').push(record);
+                });
+                
+                // 在庫更新（マイナスを許可）
+                this.inventory[this.scannedData.itemCode] = Math.round((currentStock - totalQty) * 10) / 10;
+                                
+                Promise.all([
+                    this.db.ref('inventory').set(this.inventory),
+                    ...promises
+                ]).then(() => {
+                    alert(`出庫処理完了\n${workOrders.length}件の工番で合計${this.formatNumber(totalQty)}個を出庫しました`);
+                    this.resetForm();
+                    this.backToScan();
+                }).catch(err => {
+                    alert('出庫処理エラー: ' + err.message);
+                });
+            },
+
+            submitInbound() {
+                // 権限チェック
+                if (!this.canInbound()) {
+                    alert('入庫処理は「管理部倉庫G」または「管理者」のみ実行できます。');
+                    return;
+                }
+                
+                if (!this.db) {
+                    alert('Firebaseに接続されていません');
+                    return;
+                }
+                
+                const date = document.getElementById('inboundDate').value;
+                const qty = parseFloat(document.getElementById('inboundQuantity').value);
+                
+                if (qty <= 0 || isNaN(qty)) { 
+                    alert('個数を入力してください');
+                    return;
+                }
+                
+                const record = {
+                    type: 'inbound',
+                    itemCode: this.scannedData.itemCode,
+                    itemName: this.scannedData.itemName,
+                    spec: this.scannedData.spec,
+                    date: date,
+                    quantity: qty,
+                    userName: this.user.name,
+                    userDept: this.user.department,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const currentStock = this.inventory[this.scannedData.itemCode] || 0;
+                this.inventory[this.scannedData.itemCode] = Math.round((currentStock + qty) * 10) / 10;
+                
+                this.db.ref('inventory').set(this.inventory);
+                this.db.ref('history').push(record);
+                
+                alert('入庫処理完了');
+                this.resetForm();
+                this.backToScan();
+            },
+
+            submitOutboundCancel() {
+                if (!this.db) {
+                alert('Firebaseに接続されていません');
+                return;
+                }
+
+                const date = document.getElementById('outboundCancelDate').value;
+                const wo = document.getElementById('workOrderCancel').value.trim().toUpperCase();
+                const qty = parseFloat(document.getElementById('quantityCancel').value);
+
+                if (!wo || qty <= 0 || isNaN(qty)) { 
+                alert('工番と個数を入力してください');
+                return;
+                }
+
+                const record = {
+                type: 'outbound_cancel',
+                itemCode: this.scannedData.itemCode,
+                itemName: this.scannedData.itemName,
+                spec: this.scannedData.spec,
+                date: date,
+                workOrder: wo,
+                quantity: qty,
+                userName: this.user.name,
+                userDept: this.user.department,
+                timestamp: new Date().toISOString()
+                };
+
+                const currentStock = this.inventory[this.scannedData.itemCode] || 0;
+                this.inventory[this.scannedData.itemCode] = Math.round((currentStock + qty) * 10) / 10;
+
+                this.db.ref('inventory').set(this.inventory);
+                this.db.ref('history').push(record);
+
+                alert('出庫取消処理完了');
+                this.resetForm();
+                this.backToScan();
+            },
+
+            submitInboundCancel() {
+                if (!this.canInbound()) {
+                    alert('入庫取消処理は「管理部倉庫G」または「管理者」のみ可能です。');
+                    return;
+                }
+
+                if (!this.db) {
+                    alert('Firebaseに接続されていません');
+                    return;
+                }
+
+                const date = document.getElementById('inboundCancelDate').value;
+                const qty = parseFloat(document.getElementById('inboundCancelQuantity').value);
+
+                if (qty <= 0 || isNaN(qty)) {
+                    alert('個数を正しく入力してください');
+                    return;
+                }
+
+                const record = {
+                    type: 'inbound_cancel',
+                    itemCode: this.scannedData.itemCode,
+                    itemName: this.scannedData.itemName,
+                    spec: this.scannedData.spec,
+                    date: date,
+                    quantity: qty,
+                    userName: this.user.name,
+                    userDept: this.user.department,
+                    timestamp: new Date().toISOString()
+                };
+
+                const currentStock = this.inventory[this.scannedData.itemCode] || 0;
+                this.inventory[this.scannedData.itemCode] = Math.round((currentStock - qty) * 10) / 10;
+
+                this.db.ref('inventory').set(this.inventory);
+                this.db.ref('history').push(record);
+
+                alert('入庫取消処理完了');
+                this.resetForm();
+                this.backToScan();
+            },
+
+            resetForm() {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('outboundDate').value = today;
+                document.getElementById('outboundCancelDate').value = today;
+                document.getElementById('inboundDate').value = today;
+                document.getElementById('inboundCancelDate').value = today;
+                
+                // 工番リストをリセット（1行目のみ残す）
+                const container = document.getElementById('workOrderList');
+                const rows = container.querySelectorAll('.work-order-row');
+                rows.forEach((row, index) => {
+                    if (index === 0) {
+                        row.querySelector('.work-order-input').value = '';
+                        row.querySelector('.quantity-input').value = '1';
+                    } else {
+                        row.remove();
+                    }
+                });
+                
+                document.getElementById('workOrderCancel').value = '';
+                document.getElementById('quantityCancel').value = '1';
+                document.getElementById('inboundQuantity').value = '1';
+                document.getElementById('inboundCancelQuantity').value = '1';
+                this.scannedData = null;
+            },
+                    
+            backToScan() {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById('registerView').classList.add('active');
+                
+                // ナビゲーションボタンも更新
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector('[data-view="register"]').classList.add('active');
+            },
+
+            // 品番をクリップボードにコピー
+            copyItemCode(code, event) {
+                // PASチェックボックスのクリックは無視
+                if (event && event.target.type === 'checkbox') {
+                    return;
+                }
+                
+                // イベント伝播を停止（チェックボックスのラベルクリックを防ぐ）
+                if (event && event.target.closest('label')) {
+                    return;
+                }
+                navigator.clipboard.writeText(code).then(() => {
+                    // トースト表示
+                    this.showToast(code);
+                        
+                    // 背景色変化も残す
+                    const target = event ? event.currentTarget : null;
+                    if (target) {
+                        const originalBg = target.style.background;
+                        target.style.background = '#dbeafe';
+                        setTimeout(() => {
+                            target.style.background = originalBg;
+                        }, 200);
+                    }
+                }).catch(err => {
+                    console.error('コピー失敗:', err);
+                });
+            },
+                        
+            showToast(code) {
+                const existingToast = document.querySelector('.toast');
+                if (existingToast) {
+                    existingToast.remove();
+                }
+                
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.innerHTML = `<img src="icon-paw.png" style="width:24px; height:24px; vertical-align:middle; margin-right:8px;">${code} コピー`;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => toast.classList.add('show'), 10);
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 1500);
+            },
+            
+            // モード切り替え
+            switchRegistrationMode(mode) {
+                this.registrationMode = mode;
+                
+                document.getElementById('normalModeBtn').classList.toggle('active', mode === 'normal');
+                document.getElementById('fixedWorkorderModeBtn').classList.toggle('active', mode === 'fixed');
+                
+                document.getElementById('normalModeSection').style.display = mode === 'normal' ? 'block' : 'none';
+                document.getElementById('fixedWorkorderModeSection').style.display = mode === 'fixed' ? 'block' : 'none';
+                
+                // モード切り替え時にスキャナーを停止
+                if (mode === 'normal') {
+                    this.stopFixedScan();
+                } else {
+                    this.stopRegisterScan();
+                }
+            },
+
+            // 工番を設定
+            setFixedWorkorder() {
+                const input = document.getElementById('fixedWorkorderInput');
+                const wo = input.value.trim().toUpperCase();
+                
+                if (!wo) {
+                    alert('工番を入力してください');
+                    return;
+                }
+                
+                this.fixedWorkorder = wo;
+                document.getElementById('currentFixedWorkorder').textContent = wo;
+                document.getElementById('fixedWorkorderInfo').style.display = 'block';
+                document.getElementById('fixedWorkorderInputSection').style.display = 'none';
+                document.getElementById('fixedWorkorderScanSection').style.display = 'block';
+                
+                // 自動的にスキャン開始
+                this.startFixedScan();
+            },
+
+            // 工番を変更
+            changeFixedWorkorder() {
+                if (!confirm('工番を変更しますか？\nスキャンを中断します。')) {
+                    return;
+                }
+                
+                this.stopFixedScan();
+                this.fixedWorkorder = null;
+                document.getElementById('fixedWorkorderInput').value = '';
+                document.getElementById('fixedWorkorderInfo').style.display = 'none';
+                document.getElementById('fixedWorkorderInputSection').style.display = 'block';
+                document.getElementById('fixedWorkorderScanSection').style.display = 'none';
+                
+                // 少し遅延させてからフォーカス
+                setTimeout(() => {
+                    const input = document.getElementById('fixedWorkorderInput');
+                    input.focus();
+                    // モバイルでキーボードを確実に表示
+                    input.click();
+                }, 100);
+            },
+
+            // 工番固定スキャン開始
+            startFixedScan() {
+                document.getElementById('qr-reader-fixed').style.display = 'block';
+                this.scannerFixed = new Html5Qrcode("qr-reader-fixed");
+                this.scannerFixed.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    (text) => {
+                        this.parseFixedQRData(text);
+                    }
+                ).catch(err => {
+                    alert('カメラエラー: ' + err);
+                    this.stopFixedScan();
+                });
+                document.getElementById('stopFixedScanBtn').style.display = 'block';
+                document.getElementById('startFixedScanBtn').style.display = 'none';
+            },
+
+            // 工番固定スキャン停止
+            stopFixedScan() {
+                if (this.scannerFixed) {
+                    this.scannerFixed.stop();
+                    document.getElementById('qr-reader-fixed').style.display = 'none';
+                    document.getElementById('stopFixedScanBtn').style.display = 'none';
+                    document.getElementById('startFixedScanBtn').style.display = 'block';
+                }
+            },
+
+            // 工番固定モードのQRデータ処理
+            parseFixedQRData(text) {
+                const lines = text.split('\n');
+                const data = {};
+                
+                lines.forEach(line => {
+                    const idx = line.indexOf(':');
+                    if (idx > -1) {
+                        const key = line.substring(0, idx).trim();
+                        const val = line.substring(idx + 1).trim();
+                        if (key === '品目コード') data.itemCode = val;
+                        if (key === '品名') data.itemName = val;
+                        if (key === '仕様') data.spec = val;
+                    }
+                });
+                
+                if (!data.itemCode) {
+                    alert('QRコード形式エラー');
+                    return;
+                }
+                
+                // 数量入力を促す
+                const currentStock = this.inventory[data.itemCode] || 0;
+                const defaultQty = 1;
+                
+                const qty = prompt(
+                    `品番: ${data.itemCode}\n品名: ${data.itemName || '-'}\n現在庫: ${this.formatNumber(currentStock)}個\n\n工番: ${this.fixedWorkorder}\n\n出庫する数量を入力してください:`,
+                    defaultQty
+                );
+                
+                if (qty === null) {
+                    // キャンセル - スキャン継続
+                    return;
+                }
+                
+                const quantity = parseFloat(qty);
+                if (isNaN(quantity) || quantity <= 0) {
+                    alert('正しい数量を入力してください');
+                    return;
+                }
+                
+                // 在庫チェック
+                if (quantity > currentStock) {
+                    if (!confirm(`在庫(${this.formatNumber(currentStock)}個)より多い数量(${this.formatNumber(quantity)}個)を出庫しようとしています。\n続行しますか？`)) {
+                        return;
+                    }
+                }
+                
+                // 出庫処理
+                this.processFixedOutbound(data, quantity);
+            },
+
+            // 工番固定モードの出庫処理
+            processFixedOutbound(data, quantity) {
+                if (!this.db) {
+                    alert('Firebaseに接続されていません');
+                    return;
+                }
+                
+                const today = new Date().toISOString().split('T')[0];
+                const record = {
+                    type: 'outbound',
+                    itemCode: data.itemCode,
+                    itemName: data.itemName,
+                    spec: data.spec,
+                    date: today,
+                    workOrder: this.fixedWorkorder,
+                    quantity: quantity,
+                    userName: this.user.name,
+                    userDept: this.user.department,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const currentStock = this.inventory[data.itemCode] || 0;
+                this.inventory[data.itemCode] = Math.round((currentStock - quantity) * 10) / 10;
+                
+                Promise.all([
+                    this.db.ref('inventory').set(this.inventory),
+                    this.db.ref('history').push(record)
+                ]).then(() => {
+                    alert(`出庫処理完了\n\n品番: ${data.itemCode}\n品名: ${data.itemName || '-'}\n工番: ${this.fixedWorkorder}\n数量: ${this.formatNumber(quantity)}個`);
+                    // スキャン継続（カメラは起動したまま）
+                }).catch(err => {
+                    alert('出庫処理エラー: ' + err.message);
+                });
+            },
+        };
         
-        if (char === '"') {
-          if (inQuotes && nextChar === '"') {
-            cell += '"';
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if (char === ',' && !inQuotes) {
-          result.push(cell);
-          cell = '';
-        } else {
-          cell += char;
-        }
-      }
-      result.push(cell);
-      return result;
-    }
-    
-    function escapeCSV(cell) {
-      let str = String(cell);
-      
-      // 数値のカンマ区切りを除去（例: "1,234.56" → "1234.56"）
-      if (/^[\d,]+\.?\d*$/.test(str)) {
-        str = str.replace(/,/g, '');
-      }
-      
-      if (str.includes(',') || str.includes('\n') || str.includes('"')) {
-        return '"' + str.replace(/"/g, '""') + '"';
-      }
-      return str;
-    }
-    
-    function showError(message) {
-      progressDiv.style.display = 'none';
-      downloadsDiv.innerHTML = `<div class="error">${message}</div>`;
-    }
-  </script>
-</body>
+        document.addEventListener('DOMContentLoaded', () => app.init());
+        </script>
+    </body>
 </html>
