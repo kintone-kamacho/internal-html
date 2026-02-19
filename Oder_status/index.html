@@ -508,17 +508,18 @@
                         '注文書発行日時': getColumnByIndex(purchase, 27), // V列 ← 発注AB列
                         '仮注文書発行日時': getColumnByIndex(purchase, 28), // W列 ← 発注AC列
                         '工場納期': getColumnByIndex(picking, 15), // X列 ← ピッキングP列
-                        '注文納期': getColumnByIndex(purchase, 12), // Y列 ← 発注M列（納期）
-                        '回答納期': getColumnByIndex(purchase, 13), // Z列 ← 発注N列
-                        '納期備考': getColumnByIndex(purchase, 14), // AA列 ← 発注O列
-                        '品目備考': getColumnByIndex(purchase, 25), // AB列 ← 発注Z列
-                        '発注備考': getColumnByIndex(purchase, 26), // AC列 ← 発注AA列
-                        '納期ｱﾗｰﾄ': getColumnByIndex(picking, 17), // AD列 ← ピッキングR列（18列目、空欄の可能性あり）
-                        '単価': getColumnByIndex(picking, 18), // AE列 ← ピッキングS列
-                        '工期': getColumnByIndex(picking, 19), // AF列 ← ピッキングT列
-                        '仮入庫済': tempReceiptStatus, // AG列
-                        '出荷予定日1': getColumnByIndex(workOrder, 29), // AH列 ← 工番AD列
-                        '出荷予定日2': getColumnByIndex(workOrder, 30) // AI列 ← 工番AE列
+                        'P部品納期': getColumnByIndex(purchase, 10), // Y列 ← 発注K列（新規追加）
+                        '注文納期': getColumnByIndex(purchase, 12), // Z列 ← 発注M列（納期）
+                        '回答納期': getColumnByIndex(purchase, 13), // AA列 ← 発注N列
+                        '納期備考': getColumnByIndex(purchase, 14), // AB列 ← 発注O列
+                        '品目備考': getColumnByIndex(purchase, 25), // AC列 ← 発注Z列
+                        '発注備考': getColumnByIndex(purchase, 26), // AD列 ← 発注AA列
+                        '納期ｱﾗｰﾄ': getColumnByIndex(picking, 17), // AE列 ← ピッキングR列（18列目、空欄の可能性あり）
+                        '単価': getColumnByIndex(picking, 18), // AF列 ← ピッキングS列
+                        '工期': getColumnByIndex(picking, 19), // AG列 ← ピッキングT列
+                        '仮入庫済': tempReceiptStatus, // AH列
+                        '出荷予定日1': getColumnByIndex(workOrder, 29), // AI列 ← 工番AD列
+                        '出荷予定日2': getColumnByIndex(workOrder, 30) // AJ列 ← 工番AE列
                     };
                 });
 
