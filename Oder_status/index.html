@@ -307,7 +307,14 @@
         <div id="success-message" class="alert alert-success" style="display: none;">
             <div style="font-weight: 500; margin-bottom: 8px;">✓ 処理完了</div>
             <div id="result-count"></div>
-            <button id="download-button" class="download-button">⬇ Excelをダウンロード</button>
+            <button id="download-button" class="download-button">⬇ Excel（元の順）</button>
+            <button id="download-sorted-button" class="download-button" style="background-color:#047857;">⬇ Excel（警告レベル順）</button>
+            <button id="sort-button" class="download-button" style="background-color:#7c3aed; display:none;">
+                ↕ 警告レベル順に表示
+            </button>
+            <button id="reset-sort-button" class="download-button" style="background-color:#6b7280; display:none;">
+                ↺ 元の順に戻す
+            </button>
         </div>
     </div>
     
@@ -320,6 +327,7 @@
             </div>
         </div>
         <div id="result-container" class="result-container" style="display: none;">
+            <div id="table-top-summary" class="table-footer" style="border-bottom: 1px solid #e5e7eb;"></div>
             <div class="table-wrapper">
                 <table id="result-table"></table>
             </div>
@@ -523,6 +531,88 @@
                     };
                 });
 
+                //「工番がSKで始まる」かつ「品目備考に#Kが含まれる」行を除外
+                mergedData = mergedData.filter(row => {
+                    const isSK = row['工番'].startsWith('SK');
+                    const hasHashK = row['品目備考'].includes('#K');
+                    return !(isSK && hasHashK);
+                });
+
+                //納期などから抽出
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const twoWeeksLater = new Date(today); twoWeeksLater.setDate(today.getDate() + 14);
+                const oneMonthAgo = new Date(today); oneMonthAgo.setMonth(today.getMonth() - 1);
+
+                function parseDate(str) {
+                    if (!str) return null;
+                    const d = new Date(str.replace(/\//g, '-'));
+                    return isNaN(d.getTime()) ? null : d;
+                }
+
+                mergedData = mergedData.filter(row => {
+                    const dateAH = parseDate(row['出荷予定日1']);
+                    const dateY  = parseDate(row['P部品納期']);
+                    const dateX  = parseDate(row['工場納期']);
+                    const dateV  = row['注文書発行日時'];
+                    const dateW  = parseDate(row['仮注文書発行日時']);
+
+                    // AH列：出荷予定日1が今日〜2週間後
+                    const condAH = dateAH && dateAH <= twoWeeksLater;
+                    // Y列：P部品納期が今日〜2週間後
+                    const condY  = dateY  && dateY  <= twoWeeksLater;
+                    // X列：工場納期が今日〜2週間後
+                    const condX  = dateX  && dateX  <= twoWeeksLater;
+                    // V列：注文書発行日時が空欄
+                    const condV  = !dateV || dateV.trim() === '';
+                    // W列：仮注文書発行日時が1か月前以降（最近1か月以内に発行）
+                    const condW  = dateW  && dateW  >= oneMonthAgo;
+
+                    return condAH || condY || condX || condV || condW;
+                });
+
+                //パート1：警告列
+                mergedData = mergedData.map(row => {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const twoWeeksLater = new Date(today); twoWeeksLater.setDate(today.getDate() + 14);
+
+                const dateAH = parseDate(row['出荷予定日1']);
+                const dateY  = parseDate(row['P部品納期']);
+                const dateX  = parseDate(row['工場納期']);
+                const dateAA = parseDate(row['回答納期']);
+
+                const isAHYellow = dateAH && dateAH <= twoWeeksLater;
+                const isYYellow  = dateY  && dateY  <= twoWeeksLater;
+                const isXYellow  = dateX  && dateX  <= twoWeeksLater;
+                const isAGEmpty  = !row['仮入庫済'] || row['仮入庫済'].trim() === '';
+                const isAAEmpty  = !row['回答納期'] || row['回答納期'].trim() === '';
+
+                let warning = '';
+
+                // RED3：回答納期が出荷予定日以降（最優先）
+                if (dateAA && dateAH && dateAA > dateAH) {
+                    warning = 'RED3';
+                }
+                // RED2：回答納期がP部品納期か工場納期以降
+                else if (dateAA && ((dateY && dateAA > dateY) || (dateX && dateAA > dateX))) {
+                    warning = 'RED2';
+                }
+                // RED1：納期が近いのに仮入庫未済
+                else if ((isXYellow || isYYellow || isAHYellow) && isAGEmpty) {
+                    warning = 'RED1';
+                }
+                // Yellow：P部品納期が近いのに回答納期も仮入庫済もない
+                else if (isYYellow && isAAEmpty && isAGEmpty) {
+                    warning = 'Yellow';
+                }
+                // Yellow：出荷予定日が2週間以内
+                else if (isAHYellow) {
+                    warning = 'Yellow';
+                }
+
+                return { '警告': warning, ...row };
+            });
+
                 displayResult();
                 document.getElementById('result-count').textContent = `${mergedData.length}件のデータを統合しました`;
                 document.getElementById('success-message').style.display = 'block';
@@ -535,51 +625,166 @@
             }
         });
 
-        // 結果表示
-        function displayResult() {
+        //結果
+        let isSortedByWarning = false;
+
+        const warningOrder = { 'RED3': 0, 'RED2': 1, 'RED1': 2, 'Yellow': 3, '': 4 };
+        const warningStyle = {
+            'RED3':   'background-color:#ff4444; color:white; font-weight:bold;',
+            'RED2':   'background-color:#ff8800; color:white; font-weight:bold;',
+            'RED1':   'background-color:#ffaaaa;',
+            'Yellow': 'background-color:#fffacd;',
+            '':       ''
+        };
+        const warningLabel = {
+            'RED3':   '🔴🔥 出荷間に合わない',
+            'RED2':   '🔴 納期間に合わない',
+            'RED1':   '🟠 納期近・未入庫',
+            'Yellow': '🟡 要確認',
+            '':       ''
+        };
+
+        function displayResult(sortByWarning = false) {
             if (!mergedData || mergedData.length === 0) return;
 
             document.getElementById('empty-state').style.display = 'none';
             document.getElementById('result-container').style.display = 'block';
+            document.getElementById('sort-button').style.display = 'block';
+            document.getElementById('reset-sort-button').style.display = sortByWarning ? 'block' : 'none';
+
+            let displayData = [...mergedData];
+
+            // ↓この1行を追加（警告なしを除外）
+            displayData = displayData.filter(row => (row['警告'] || '') !== '');
+
+            if (sortByWarning) {
+                displayData.sort((a, b) => {
+                    const oa = warningOrder[a['警告'] || ''] ?? 4;
+                    const ob = warningOrder[b['警告'] || ''] ?? 4;
+                    return oa - ob;
+                });
+            }
 
             const table = document.getElementById('result-table');
-            const headers = Object.keys(mergedData[0]);
-            
+            const headers = Object.keys(mergedData[0]).filter(h => h !== '_columns');
+
             let html = '<thead><tr>';
             headers.forEach(header => {
-                html += `<th>${header}</th>`;
+                const bg = header === '警告' ? 'background-color:#374151; color:white;' : '';
+                html += `<th style="${bg}">${header}</th>`;
             });
             html += '</tr></thead><tbody>';
-            
-            const displayData = mergedData.slice(0, 100);
+
+            // 警告あり件数をカウント
+            const warnCount = {
+                'RED3': 0, 'RED2': 0, 'RED1': 0, 'Yellow': 0
+            };
+
             displayData.forEach(row => {
-                html += '<tr>';
+                const level = row['警告'] || '';
+                if (warnCount[level] !== undefined) warnCount[level]++;
+
+                const rowStyle = warningStyle[level] || '';
+                html += `<tr style="${rowStyle}">`;
                 headers.forEach(header => {
-                    html += `<td>${row[header]}</td>`;
+                    if (header === '警告') {
+                        html += `<td style="white-space:nowrap; font-weight:bold;">${warningLabel[level] || ''}</td>`;
+                    } else if (header === '納期備考' && row[header]) {
+                        html += `<td style="background-color:#e0f2fe; white-space:nowrap;" title="要目視確認">📋 ${row[header]}</td>`;
+                    } else {
+                        html += `<td>${row[header]}</td>`;
+                    }
                 });
                 html += '</tr>';
             });
             html += '</tbody>';
-            
+
             table.innerHTML = html;
 
-            if (mergedData.length > 100) {
-                document.getElementById('table-footer').textContent = `最初の100件を表示しています（全${mergedData.length}件）`;
-                document.getElementById('table-footer').style.display = 'block';
-            }
+            // 上部にサマリー表示
+            const topSummary = document.getElementById('table-top-summary');
+            topSummary.innerHTML = `
+                全${displayData.length}件 ／ 
+                <span style="color:#ff4444; font-weight:bold;">🔴🔥 RED3: ${warnCount['RED3']}件</span> ／ 
+                <span style="color:#ff8800; font-weight:bold;">🔴 RED2: ${warnCount['RED2']}件</span> ／ 
+                <span style="color:#cc4400;">🟠 RED1: ${warnCount['RED1']}件</span> ／ 
+                <span style="color:#997700;">🟡 Yellow: ${warnCount['Yellow']}件</span>
+                ${sortByWarning ? '　<strong>（警告レベル順）</strong>' : ''}
+            `;
+
+            // フッターにサマリー表示
+            const footer = document.getElementById('table-footer');
+            footer.style.display = 'block';
+            footer.innerHTML = `
+                全${displayData.length}件 ／ 
+                <span style="color:#ff4444; font-weight:bold;">🔴🔥 RED3: ${warnCount['RED3']}件</span> ／ 
+                <span style="color:#ff8800; font-weight:bold;">🔴 RED2: ${warnCount['RED2']}件</span> ／ 
+                <span style="color:#cc4400;">🟠 RED1: ${warnCount['RED1']}件</span> ／ 
+                <span style="color:#997700;">🟡 Yellow: ${warnCount['Yellow']}件</span>
+                ${sortByWarning ? '　<strong>（警告レベル順）</strong>' : ''}
+            `;
         }
 
-        // Excelダウンロード
-        document.getElementById('download-button').addEventListener('click', () => {
-            if (!mergedData || mergedData.length === 0) return;
-
-            const ws = XLSX.utils.json_to_sheet(mergedData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'ピッキング統合データ');
-            
-            const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-            XLSX.writeFile(wb, `ピッキング統合データ_${timestamp}.xlsx`);
+        document.getElementById('sort-button').addEventListener('click', () => {
+            isSortedByWarning = true;
+            displayResult(true);
         });
+
+        document.getElementById('reset-sort-button').addEventListener('click', () => {
+            isSortedByWarning = false;
+            displayResult(false);
+        });
+
+        // Excelダウンロード
+function downloadExcel(sortByWarning) {
+    if (!mergedData || mergedData.length === 0) return;
+
+    let data = [...mergedData];
+
+    if (sortByWarning) {
+        const withWarning = data.filter(r => (r['警告'] || '') !== '');
+        const withoutWarning = data.filter(r => (r['警告'] || '') === '');
+        withWarning.sort((a, b) => (warningOrder[a['警告']] ?? 4) - (warningOrder[b['警告']] ?? 4));
+        data = [...withWarning, ...withoutWarning];
+    }
+
+    const excelWarningLabel = {
+        'RED3':   'Lv4:出荷間に合わない',
+        'RED2':   'Lv3:納期間に合わない',
+        'RED1':   'Lv2:納期近・未入庫',
+        'Yellow': 'Lv1:要確認',
+        '':       ''
+    };
+
+    try {
+        const headers = Object.keys(mergedData[0]).filter(h => h !== '_columns');
+        const wb = XLSX.utils.book_new();
+        const wsData = [headers];
+
+        data.forEach(row => {
+            wsData.push(headers.map(h => {
+                if (h === '警告') return excelWarningLabel[row[h] || ''] || '';
+                return row[h] || '';
+            }));
+        });
+
+        const ws = XLSX.utils.json_to_sheet([]);
+        XLSX.utils.sheet_add_aoa(ws, wsData);
+        ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 2, 10) }));
+        XLSX.utils.book_append_sheet(wb, ws, 'ピッキング統合データ');
+
+        const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const suffix = sortByWarning ? '_警告順' : '';
+        XLSX.writeFile(wb, `ピッキング統合データ${suffix}_${timestamp}.xlsx`);
+
+    } catch (e) {
+        alert('Excelの作成に失敗しました: ' + e.message);
+        console.error(e);
+    }
+}
+        document.getElementById('download-button').addEventListener('click', () => downloadExcel(false));
+        document.getElementById('download-sorted-button').addEventListener('click', () => downloadExcel(true));
+
     </script>
 </body>
 </html>
