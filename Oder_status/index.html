@@ -720,9 +720,7 @@
                     return isNaN(d.getTime()) ? null : d;
                 }
 
-                const allData = [...mergedData];
-
-                mergedData = allData.filter(row => {
+                mergedData = mergedData.filter(row => {
                     const dateAH = parseDate(row['出荷予定日1']);
                     const dateY  = parseDate(row['P部品納期']);
                     const dateX  = parseDate(row['工場納期']);
@@ -738,14 +736,11 @@
                     return condAH || condY || condX || condV || condW;
                 });
 
-                const existingRows = new Set(mergedData);
-                allData.forEach(row => {
-                    const alertVal = (row['納期ｱﾗｰﾄ'] || '').trim();
-                    if (['▲', '△'].includes(alertVal) && !existingRows.has(row)) {
-                        mergedData.push(row);
-                    }
-                });
-
+                // さらに▲△のみに絞り込む
+                mergedData = mergedData.filter(row =>
+                    ['▲', '△'].includes((row['納期ｱﾗｰﾄ'] || '').trim())
+                );
+                
                 mergedData = mergedData.map(row => {
                     const today2 = new Date(); today2.setHours(0,0,0,0);
                     const twoWL  = new Date(today2); twoWL.setDate(today2.getDate() + 14);
