@@ -736,10 +736,10 @@
                     return condAH || condY || condX || condV || condW;
                 });
 
-                // // さらに▲△のみに絞り込む
-                // mergedData = mergedData.filter(row =>
-                //     ['▲', '△'].includes((row['納期ｱﾗｰﾄ'] || '').trim())
-                // );
+                // さらに▲△のみに絞り込む
+                 mergedData = mergedData.filter(row =>
+                     ['▲', '△'].includes((row['納期ｱﾗｰﾄ'] || '').trim())
+                 );
 
                 mergedData = mergedData.map(row => {
                     const today2 = new Date(); today2.setHours(0,0,0,0);
