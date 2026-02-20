@@ -324,6 +324,9 @@
             color: #1f2937;
             white-space: nowrap;
             border-top: 1px solid #e5e7eb;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         tbody tr:hover {
@@ -664,9 +667,6 @@
                     const tempReceiptStatus = tempReceipt ? '〇' : '';
 
                     return {
-                        '管理': '',
-                        '指示書': getColumnByIndex(picking, 0),
-                        'レベル': getColumnByIndex(picking, 1),
                         '工番': getColumnByIndex(picking, 2),
                         '製番': getColumnByIndex(workOrder, 10),
                         '契約先': getColumnByIndex(workOrder, 3),
@@ -680,9 +680,7 @@
                         '指示数': getColumnByIndex(picking, 8),
                         '出庫数': getColumnByIndex(picking, 9),
                         'ピ状況': getColumnByIndex(picking, 10),
-                        'ピ引当': getColumnByIndex(picking, 11),
                         '発注伝票№': getColumnByIndex(picking, 12),
-                        '発注担当CD': getColumnByIndex(picking, 13),
                         '発注担当': getColumnByIndex(picking, 14),
                         '発注先': getColumnByIndex(purchase, 16),
                         '注文書発行日時': getColumnByIndex(purchase, 27),
@@ -736,11 +734,13 @@
                     return condAH || condY || condX || condV || condW;
                 });
 
-                // さらに▲△のみに絞り込む
-                 mergedData = mergedData.filter(row =>
-                     ['▲', '△'].includes((row['納期ｱﾗｰﾄ'] || '').trim())
-                 );
-
+                // ×を除外 & 発注伝票№がある行のみ
+                mergedData = mergedData.filter(row => {
+                    const alert = (row['納期ｱﾗｰﾄ'] || '').trim();
+                    const denpyo = (row['発注伝票№'] || '').trim();
+                    return alert !== '×' && denpyo !== '';
+                });
+                
                 mergedData = mergedData.map(row => {
                     const today2 = new Date(); today2.setHours(0,0,0,0);
                     const twoWL  = new Date(today2); twoWL.setDate(today2.getDate() + 14);
@@ -823,7 +823,8 @@
             }
 
             const table = document.getElementById('result-table');
-            const headers = Object.keys(mergedData[0]).filter(h => h !== '_columns');
+            const excludeCols = new Set(['_columns', '管理', '指示書', 'レベル', '発注担当CD', 'ピ引当']);
+            const headers = Object.keys(mergedData[0]).filter(h => !excludeCols.has(h));
 
             let html = '<thead><tr>';
             headers.forEach(header => {
@@ -846,7 +847,7 @@
                     } else if (header === '納期備考' && row[header]) {
                         html += `<td style="background-color:#e0f2fe; white-space:nowrap;" title="要目視確認">📋 ${row[header]}</td>`;
                     } else {
-                        html += `<td>${row[header]}</td>`;
+                        html += `<td title="${row[header]}">${row[header]}</td>`;
                     }
                 });
                 html += '</tr>';
