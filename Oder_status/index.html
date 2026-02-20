@@ -29,7 +29,7 @@
         }
         
         .header {
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
         
         .header h1 {
@@ -43,76 +43,164 @@
             font-size: 14px;
             color: #6b7280;
         }
+
+        /* ===== 一括取込エリア ===== */
+        .bulk-section {
+            margin-bottom: 16px;
+        }
+
+        .bulk-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .bulk-drop-zone {
+            border: 2px dashed #93c5fd;
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: #eff6ff;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bulk-drop-zone:hover,
+        .bulk-drop-zone.drag-over {
+            border-color: #2563eb;
+            background: #dbeafe;
+        }
+
+        .bulk-drop-zone .bulk-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .bulk-drop-zone .bulk-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .bulk-drop-zone .bulk-text .main {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1d4ed8;
+            white-space: nowrap;
+        }
+
+        .bulk-drop-zone .bulk-text .sub {
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 1px;
+        }
+
+        .bulk-result {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #374151;
+            min-height: 16px;
+        }
+
+        .bulk-result .found {
+            color: #059669;
+        }
+
+        .bulk-result .not-found {
+            color: #dc2626;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 12px 0;
+            color: #9ca3af;
+            font-size: 11px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-top: 1px solid #e5e7eb;
+        }
         
+        /* ===== 個別ファイルエリア ===== */
         .file-section {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 8px;
             margin-bottom: 24px;
         }
-        
+
         .file-item {
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            padding: 16px;
-        }
-        
-        .file-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 8px;
-        }
-        
-        .file-input {
-            display: none;
-        }
-        
-        .file-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 8px 16px;
-            background-color: #eff6ff;
-            color: #2563eb;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-        }
-        
-        .file-button:hover {
-            background-color: #dbeafe;
-        }
-        
-        .drop-zone {
             border: 2px dashed #d1d5db;
             border-radius: 8px;
-            padding: 12px;
-            text-align: center;
-            transition: all 0.2s;
+            padding: 10px 12px;
+            background: white;
             cursor: pointer;
-            font-size: 12px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        
-        .drop-zone:hover {
+
+        .file-item:hover,
+        .file-item.drag-over {
             border-color: #2563eb;
             background-color: #eff6ff;
         }
-        
-        .drop-zone.drag-over {
-            border-color: #2563eb;
-            background-color: #dbeafe;
+
+        .file-item.loaded {
+            border-color: #059669;
+            border-style: solid;
+            background-color: #f0fdf4;
         }
-        
-        .file-selected {
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            font-size: 14px;
+
+        .file-item .file-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .file-item .file-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-item .file-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            white-space: nowrap;
+            margin-bottom: 0;
+        }
+
+        .file-item.loaded .file-label {
             color: #059669;
+        }
+
+        .file-item .file-name {
+            font-size: 10px;
+            color: #6b7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: none;
+        }
+
+        .file-item.loaded .file-name {
+            display: block;
+        }
+
+        .file-input {
+            display: none;
         }
         
         .merge-button {
@@ -255,48 +343,61 @@
     <div class="sidebar">
         <div class="header">
             <h1>ピッキング状況データ統合</h1>
-            <p>4つのCSVファイルを読み込んでください</p>
+            <p>CSVファイルを読み込んでください</p>
         </div>
+
+        <!-- ===== 一括取込エリア ===== -->
+        <div class="bulk-section">
+            <span class="bulk-label">一括取込</span>
+            <input type="file" id="bulk-files-input" style="display:none" multiple accept=".csv">
+
+            <div id="bulk-drop-zone" class="bulk-drop-zone">
+                <div class="bulk-icon">📄</div>
+                <div class="bulk-text">
+                    <div class="main">クリック or ドロップ：複数ファイル選択</div>
+                    <div class="sub">ピッキング・工番・発注・仮入庫を自動判別</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider">または個別に選択</div>
         
+        <!-- ===== 個別ファイルエリア ===== -->
         <div class="file-section">
-            <div class="file-item">
-                <label class="file-label">ピッキング状況一覧</label>
-                <input type="file" id="file-picking" class="file-input" accept=".csv">
-                <div id="drop-picking" class="drop-zone">
-                    <div style="font-size: 11px;">📤 ここにファイルをドロップ</div>
-                    <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">またはクリックして選択</div>
+            <input type="file" id="file-picking" class="file-input" accept=".csv">
+            <div id="drop-picking" class="file-item">
+                <div class="file-icon">📋</div>
+                <div class="file-text">
+                    <span class="file-label">ピッキング状況一覧</span>
+                    <span class="file-name" id="selected-picking"></span>
                 </div>
-                <div id="selected-picking" class="file-selected" style="display: none;">✓ <span></span></div>
             </div>
-            
-            <div class="file-item">
-                <label class="file-label">工番一覧</label>
-                <input type="file" id="file-workorder" class="file-input" accept=".csv">
-                <div id="drop-workorder" class="drop-zone">
-                    <div style="font-size: 11px;">📤 ここにファイルをドロップ</div>
-                    <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">またはクリックして選択</div>
+
+            <input type="file" id="file-workorder" class="file-input" accept=".csv">
+            <div id="drop-workorder" class="file-item">
+                <div class="file-icon">🔧</div>
+                <div class="file-text">
+                    <span class="file-label">工番一覧</span>
+                    <span class="file-name" id="selected-workorder"></span>
                 </div>
-                <div id="selected-workorder" class="file-selected" style="display: none;">✓ <span></span></div>
             </div>
-            
-            <div class="file-item">
-                <label class="file-label">発注一覧</label>
-                <input type="file" id="file-purchase" class="file-input" accept=".csv">
-                <div id="drop-purchase" class="drop-zone">
-                    <div style="font-size: 11px;">📤 ここにファイルをドロップ</div>
-                    <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">またはクリックして選択</div>
+
+            <input type="file" id="file-purchase" class="file-input" accept=".csv">
+            <div id="drop-purchase" class="file-item">
+                <div class="file-icon">📦</div>
+                <div class="file-text">
+                    <span class="file-label">発注一覧</span>
+                    <span class="file-name" id="selected-purchase"></span>
                 </div>
-                <div id="selected-purchase" class="file-selected" style="display: none;">✓ <span></span></div>
             </div>
-            
-            <div class="file-item">
-                <label class="file-label">仮入庫一覧</label>
-                <input type="file" id="file-tempreceipt" class="file-input" accept=".csv">
-                <div id="drop-tempreceipt" class="drop-zone">
-                    <div style="font-size: 11px;">📤 ここにファイルをドロップ</div>
-                    <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">またはクリックして選択</div>
+
+            <input type="file" id="file-tempreceipt" class="file-input" accept=".csv">
+            <div id="drop-tempreceipt" class="file-item">
+                <div class="file-icon">📥</div>
+                <div class="file-text">
+                    <span class="file-label">仮入庫一覧</span>
+                    <span class="file-name" id="selected-tempreceipt"></span>
                 </div>
-                <div id="selected-tempreceipt" class="file-selected" style="display: none;">✓ <span></span></div>
             </div>
         </div>
         
@@ -344,13 +445,116 @@
         };
         let mergedData = null;
 
-        // ファイル選択イベント
+        // ===== ファイル名キーワード自動判別 =====
+        const keywordMap = [
+            { key: 'picking',     keywords: ['ピッキング'] },
+            { key: 'workOrder',   keywords: ['工番'] },
+            { key: 'purchase',    keywords: ['発注'] },
+            { key: 'tempReceipt', keywords: ['仮入庫'] },
+        ];
+
+        function detectFileType(filename) {
+            for (const { key, keywords } of keywordMap) {
+                if (keywords.some(kw => filename.includes(kw))) return key;
+            }
+            return null;
+        }
+
+        // UIへ反映（個別エリアの表示も更新）
+        const idMap = {
+            picking:     { drop: 'drop-picking',     selected: 'selected-picking',     input: 'file-picking' },
+            workOrder:   { drop: 'drop-workorder',   selected: 'selected-workorder',   input: 'file-workorder' },
+            purchase:    { drop: 'drop-purchase',     selected: 'selected-purchase',   input: 'file-purchase' },
+            tempReceipt: { drop: 'drop-tempreceipt', selected: 'selected-tempreceipt', input: 'file-tempreceipt' },
+        };
+
+        function applyFile(key, file) {
+            files[key] = file;
+            const ids = idMap[key];
+            const dropEl = document.getElementById(ids.drop);
+            const nameEl = document.getElementById(ids.selected);
+            dropEl.classList.add('loaded');
+            nameEl.textContent = '✓ ' + file.name;
+            checkAllFiles();
+        }
+
+        // ===== 一括ドロップゾーン =====
+        const bulkDropZone = document.getElementById('bulk-drop-zone');
+
+        // クリックで複数ファイル選択
+        bulkDropZone.addEventListener('click', () => {
+            document.getElementById('bulk-files-input').click();
+        });
+
+        document.getElementById('bulk-files-input').addEventListener('change', (e) => {
+            const csvFiles = [...e.target.files].filter(f => f.name.toLowerCase().endsWith('.csv'));
+            processBulkFiles(csvFiles.length > 0 ? csvFiles : [...e.target.files]);
+        });
+
+        bulkDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            bulkDropZone.classList.add('drag-over');
+        });
+
+        bulkDropZone.addEventListener('dragleave', () => {
+            bulkDropZone.classList.remove('drag-over');
+        });
+
+        bulkDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            bulkDropZone.classList.remove('drag-over');
+            const csvFiles = [...e.dataTransfer.files].filter(f => f.name.toLowerCase().endsWith('.csv'));
+            processBulkFiles(csvFiles);
+        });
+
+        function processBulkFiles(fileList) {
+            if (fileList.length === 0) {
+                bulkResult.innerHTML = '<span class="not-found">CSVファイルが見つかりませんでした</span>';
+                return;
+            }
+
+            const found   = {};
+            const unknown = [];
+
+            for (const file of fileList) {
+                const key = detectFileType(file.name);
+                if (key) {
+                    found[key] = file;
+                } else {
+                    unknown.push(file.name);
+                }
+            }
+
+            // 判別できたものを適用
+            for (const [key, file] of Object.entries(found)) {
+                applyFile(key, file);
+            }
+
+            // 結果メッセージ
+            const labelMap = {
+                picking: 'ピッキング', workOrder: '工番',
+                purchase: '発注', tempReceipt: '仮入庫'
+            };
+            const lines = [];
+            for (const [key, label] of Object.entries(labelMap)) {
+                if (found[key]) {
+                    lines.push(`<span class="found">✓ ${label}: ${found[key].name}</span>`);
+                } else {
+                    lines.push(`<span class="not-found">✗ ${label}: 未検出</span>`);
+                }
+            }
+            if (unknown.length > 0) {
+                lines.push(`<span style="color:#9ca3af">⚠ 判別不能: ${unknown.join(', ')}</span>`);
+            }
+            bulkResult.innerHTML = lines.join('<br>');
+        }
+
+        // ===== 個別ファイル選択 =====
         document.getElementById('file-picking').addEventListener('change', (e) => handleFileSelect('picking', e));
         document.getElementById('file-workorder').addEventListener('change', (e) => handleFileSelect('workOrder', e));
         document.getElementById('file-purchase').addEventListener('change', (e) => handleFileSelect('purchase', e));
         document.getElementById('file-tempreceipt').addEventListener('change', (e) => handleFileSelect('tempReceipt', e));
 
-        // ドロップゾーンの設定
         setupDropZone('picking');
         setupDropZone('workorder', 'workOrder');
         setupDropZone('purchase');
@@ -361,39 +565,25 @@
             const dropZone = document.getElementById(`drop-${id}`);
             const fileInput = document.getElementById(`file-${id}`);
 
-            // クリックでファイル選択
-            dropZone.addEventListener('click', () => {
-                fileInput.click();
-            });
+            dropZone.addEventListener('click', () => fileInput.click());
 
-            // ドラッグオーバー
             dropZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 dropZone.classList.add('drag-over');
             });
 
-            // ドラッグ離脱
             dropZone.addEventListener('dragleave', () => {
                 dropZone.classList.remove('drag-over');
             });
 
-            // ドロップ
             dropZone.addEventListener('drop', (e) => {
                 e.preventDefault();
                 dropZone.classList.remove('drag-over');
-                
-                const droppedFiles = e.dataTransfer.files;
-                if (droppedFiles.length > 0) {
-                    const file = droppedFiles[0];
-                    if (file.name.endsWith('.csv')) {
-                        files[key] = file;
-                        const selectedDiv = document.getElementById(`selected-${id}`);
-                        selectedDiv.style.display = 'flex';
-                        selectedDiv.querySelector('span').textContent = file.name;
-                        checkAllFiles();
-                    } else {
-                        alert('CSVファイルを選択してください');
-                    }
+                const file = [...e.dataTransfer.files].find(f => f.name.toLowerCase().endsWith('.csv'));
+                if (file) {
+                    applyFile(key, file);
+                } else {
+                    alert('CSVファイルを選択してください');
                 }
             });
         }
@@ -401,12 +591,7 @@
         function handleFileSelect(type, event) {
             const file = event.target.files[0];
             if (file) {
-                files[type] = file;
-                const id = event.target.id.replace('file-', '');
-                const selectedDiv = document.getElementById(`selected-${id}`);
-                selectedDiv.style.display = 'flex';
-                selectedDiv.querySelector('span').textContent = file.name;
-                checkAllFiles();
+                applyFile(type, file);
             }
         }
 
@@ -415,7 +600,7 @@
             document.getElementById('merge-button').disabled = !allSelected;
         }
 
-        // CSV解析（列番号でアクセスできるように配列も保持）
+        // ===== CSV解析 =====
         function parseCSV(text) {
             const lines = text.split('\n').filter(line => line.trim());
             if (lines.length === 0) return [];
@@ -426,7 +611,7 @@
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',');
                 const row = {
-                    _columns: values.map(v => v ? v.trim() : '') // 列番号でアクセス用
+                    _columns: values.map(v => v ? v.trim() : '')
                 };
                 headers.forEach((header, index) => {
                     row[header] = values[index] ? values[index].trim() : '';
@@ -437,12 +622,10 @@
             return data;
         }
 
-        // 列番号で値を取得（0始まり）
         function getColumnByIndex(row, index) {
             return row._columns && row._columns[index] ? row._columns[index] : '';
         }
 
-        // ファイル読み込み
         function readFileAsText(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -452,17 +635,7 @@
             });
         }
 
-        // 列名を柔軟に取得する関数（半角/全角対応）
-        function getColumnValue(data, ...possibleNames) {
-            for (const name of possibleNames) {
-                if (data[name] !== undefined) {
-                    return data[name];
-                }
-            }
-            return '';
-        }
-
-        // データ統合
+        // ===== データ統合 =====
         document.getElementById('merge-button').addEventListener('click', async () => {
             document.getElementById('error-message').style.display = 'none';
             document.getElementById('success-message').style.display = 'none';
@@ -470,79 +643,76 @@
             document.getElementById('merge-button').disabled = true;
             
             try {
-                const pickingText = await readFileAsText(files.picking);
-                const workOrderText = await readFileAsText(files.workOrder);
-                const purchaseText = await readFileAsText(files.purchase);
+                const pickingText     = await readFileAsText(files.picking);
+                const workOrderText   = await readFileAsText(files.workOrder);
+                const purchaseText    = await readFileAsText(files.purchase);
                 const tempReceiptText = await readFileAsText(files.tempReceipt);
 
-                const pickingData = parseCSV(pickingText);
-                const workOrderData = parseCSV(workOrderText);
-                const purchaseData = parseCSV(purchaseText);
+                const pickingData     = parseCSV(pickingText);
+                const workOrderData   = parseCSV(workOrderText);
+                const purchaseData    = parseCSV(purchaseText);
                 const tempReceiptData = parseCSV(tempReceiptText);
 
                 mergedData = pickingData.map(picking => {
                     const workOrder = workOrderData.find(wo => wo['工番'] === picking['工番']) || {};
-                    const purchase = purchaseData.find(po => po['伝票№'] === picking['発注伝票№']) || {};
+                    const purchase  = purchaseData.find(po => po['伝票№'] === picking['発注伝票№']) || {};
                     
-                    // 仮入庫済チェック：仮入庫一覧の伝票№(B列=index1)が発注伝票№に存在するか
                     const tempReceipt = tempReceiptData.find(tr => {
-                        const tempDenpyoNo = getColumnByIndex(tr, 1); // B列（0始まりで1）
-                        return tempDenpyoNo && tempDenpyoNo === getColumnByIndex(picking, 12); // M列（発注伝票№）
+                        const tempDenpyoNo = getColumnByIndex(tr, 1);
+                        return tempDenpyoNo && tempDenpyoNo === getColumnByIndex(picking, 12);
                     });
                     const tempReceiptStatus = tempReceipt ? '〇' : '';
 
                     return {
-                        '管理': '', // A列
-                        '指示書': getColumnByIndex(picking, 0), // B列 ← ピッキングA列
-                        'レベル': getColumnByIndex(picking, 1), // C列 ← ピッキングB列
-                        '工番': getColumnByIndex(picking, 2), // D列 ← ピッキングC列
-                        '製番': getColumnByIndex(workOrder, 10), // E列 ← 工番K列（品目コード）
-                        '契約先': getColumnByIndex(workOrder, 3), // F列 ← 工番D列（得意先）
-                        '納入先': getColumnByIndex(workOrder, 4), // G列 ← 工番E列
-                        'ピッキングID': getColumnByIndex(picking, 3), // H列 ← ピッキングD列
-                        '品目': getColumnByIndex(picking, 4), // I列 ← ピッキングE列
-                        '品名': getColumnByIndex(picking, 5), // J列 ← ピッキングF列
-                        '仕様': getColumnByIndex(picking, 6), // K列 ← ピッキングG列
-                        'メーカー名': getColumnByIndex(purchase, 20), // L列 ← 発注U列
-                        '単位': getColumnByIndex(picking, 7), // M列 ← ピッキングH列
-                        '指示数': getColumnByIndex(picking, 8), // N列 ← ピッキングI列
-                        '出庫数': getColumnByIndex(picking, 9), // O列 ← ピッキングJ列
-                        'ピ状況': getColumnByIndex(picking, 10), // P列 ← ピッキングK列
-                        'ピ引当': getColumnByIndex(picking, 11), // Q列 ← ピッキングL列
-                        '発注伝票№': getColumnByIndex(picking, 12), // R列 ← ピッキングM列
-                        '発注担当CD': getColumnByIndex(picking, 13), // S列 ← ピッキングN列
-                        '発注担当': getColumnByIndex(picking, 14), // T列 ← ピッキングO列
-                        '発注先': getColumnByIndex(purchase, 16), // U列 ← 発注Q列（発注先名）
-                        '注文書発行日時': getColumnByIndex(purchase, 27), // V列 ← 発注AB列
-                        '仮注文書発行日時': getColumnByIndex(purchase, 28), // W列 ← 発注AC列
-                        '工場納期': getColumnByIndex(picking, 15), // X列 ← ピッキングP列
-                        'P部品納期': getColumnByIndex(purchase, 10), // Y列 ← 発注K列（新規追加）
-                        '注文納期': getColumnByIndex(purchase, 12), // Z列 ← 発注M列（納期）
-                        '回答納期': getColumnByIndex(purchase, 13), // AA列 ← 発注N列
-                        '納期備考': getColumnByIndex(purchase, 14), // AB列 ← 発注O列
-                        '品目備考': getColumnByIndex(purchase, 25), // AC列 ← 発注Z列
-                        '発注備考': getColumnByIndex(purchase, 26), // AD列 ← 発注AA列
-                        '納期ｱﾗｰﾄ': getColumnByIndex(picking, 17), // AE列 ← ピッキングR列（18列目、空欄の可能性あり）
-                        '単価': getColumnByIndex(picking, 18), // AF列 ← ピッキングS列
-                        '工期': getColumnByIndex(picking, 19), // AG列 ← ピッキングT列
-                        '仮入庫済': tempReceiptStatus, // AH列
-                        '出荷予定日1': getColumnByIndex(workOrder, 29), // AI列 ← 工番AD列
-                        '出荷予定日2': getColumnByIndex(workOrder, 30) // AJ列 ← 工番AE列
+                        '管理': '',
+                        '指示書': getColumnByIndex(picking, 0),
+                        'レベル': getColumnByIndex(picking, 1),
+                        '工番': getColumnByIndex(picking, 2),
+                        '製番': getColumnByIndex(workOrder, 10),
+                        '契約先': getColumnByIndex(workOrder, 3),
+                        '納入先': getColumnByIndex(workOrder, 4),
+                        'ピッキングID': getColumnByIndex(picking, 3),
+                        '品目': getColumnByIndex(picking, 4),
+                        '品名': getColumnByIndex(picking, 5),
+                        '仕様': getColumnByIndex(picking, 6),
+                        'メーカー名': getColumnByIndex(purchase, 20),
+                        '単位': getColumnByIndex(picking, 7),
+                        '指示数': getColumnByIndex(picking, 8),
+                        '出庫数': getColumnByIndex(picking, 9),
+                        'ピ状況': getColumnByIndex(picking, 10),
+                        'ピ引当': getColumnByIndex(picking, 11),
+                        '発注伝票№': getColumnByIndex(picking, 12),
+                        '発注担当CD': getColumnByIndex(picking, 13),
+                        '発注担当': getColumnByIndex(picking, 14),
+                        '発注先': getColumnByIndex(purchase, 16),
+                        '注文書発行日時': getColumnByIndex(purchase, 27),
+                        '仮注文書発行日時': getColumnByIndex(purchase, 28),
+                        '工場納期': getColumnByIndex(picking, 15),
+                        'P部品納期': getColumnByIndex(purchase, 10),
+                        '注文納期': getColumnByIndex(purchase, 12),
+                        '回答納期': getColumnByIndex(purchase, 13),
+                        '納期備考': getColumnByIndex(purchase, 14),
+                        '品目備考': getColumnByIndex(purchase, 25),
+                        '発注備考': getColumnByIndex(purchase, 26),
+                        '納期ｱﾗｰﾄ': getColumnByIndex(picking, 17),
+                        '単価': getColumnByIndex(picking, 18),
+                        '工期': getColumnByIndex(picking, 19),
+                        '仮入庫済': tempReceiptStatus,
+                        '出荷予定日1': getColumnByIndex(workOrder, 29),
+                        '出荷予定日2': getColumnByIndex(workOrder, 30)
                     };
                 });
 
-                //「工番がSKで始まる」かつ「品目備考に#Kが含まれる」行を除外
                 mergedData = mergedData.filter(row => {
-                    const isSK = row['工番'].startsWith('SK');
+                    const isSK    = row['工番'].startsWith('SK');
                     const hasHashK = row['品目備考'].includes('#K');
                     return !(isSK && hasHashK);
                 });
 
-                //納期などから抽出
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const twoWeeksLater = new Date(today); twoWeeksLater.setDate(today.getDate() + 14);
-                const oneMonthAgo = new Date(today); oneMonthAgo.setMonth(today.getMonth() - 1);
+                const oneMonthAgo   = new Date(today); oneMonthAgo.setMonth(today.getMonth() - 1);
 
                 function parseDate(str) {
                     if (!str) return null;
@@ -550,68 +720,63 @@
                     return isNaN(d.getTime()) ? null : d;
                 }
 
-                mergedData = mergedData.filter(row => {
+                const allData = [...mergedData];
+
+                mergedData = allData.filter(row => {
                     const dateAH = parseDate(row['出荷予定日1']);
                     const dateY  = parseDate(row['P部品納期']);
                     const dateX  = parseDate(row['工場納期']);
                     const dateV  = row['注文書発行日時'];
                     const dateW  = parseDate(row['仮注文書発行日時']);
 
-                    // AH列：出荷予定日1が今日〜2週間後
                     const condAH = dateAH && dateAH <= twoWeeksLater;
-                    // Y列：P部品納期が今日〜2週間後
                     const condY  = dateY  && dateY  <= twoWeeksLater;
-                    // X列：工場納期が今日〜2週間後
                     const condX  = dateX  && dateX  <= twoWeeksLater;
-                    // V列：注文書発行日時が空欄
                     const condV  = !dateV || dateV.trim() === '';
-                    // W列：仮注文書発行日時が1か月前以降（最近1か月以内に発行）
                     const condW  = dateW  && dateW  >= oneMonthAgo;
 
                     return condAH || condY || condX || condV || condW;
                 });
 
-                //パート1：警告列
+                const existingRows = new Set(mergedData);
+                allData.forEach(row => {
+                    const alertVal = (row['納期ｱﾗｰﾄ'] || '').trim();
+                    if (['▲', '△'].includes(alertVal) && !existingRows.has(row)) {
+                        mergedData.push(row);
+                    }
+                });
+
                 mergedData = mergedData.map(row => {
-                const today = new Date(); today.setHours(0,0,0,0);
-                const twoWeeksLater = new Date(today); twoWeeksLater.setDate(today.getDate() + 14);
+                    const today2 = new Date(); today2.setHours(0,0,0,0);
+                    const twoWL  = new Date(today2); twoWL.setDate(today2.getDate() + 14);
 
-                const dateAH = parseDate(row['出荷予定日1']);
-                const dateY  = parseDate(row['P部品納期']);
-                const dateX  = parseDate(row['工場納期']);
-                const dateAA = parseDate(row['回答納期']);
+                    const dateAH = parseDate(row['出荷予定日1']);
+                    const dateY  = parseDate(row['P部品納期']);
+                    const dateX  = parseDate(row['工場納期']);
+                    const dateAA = parseDate(row['回答納期']);
 
-                const isAHYellow = dateAH && dateAH <= twoWeeksLater;
-                const isYYellow  = dateY  && dateY  <= twoWeeksLater;
-                const isXYellow  = dateX  && dateX  <= twoWeeksLater;
-                const isAGEmpty  = !row['仮入庫済'] || row['仮入庫済'].trim() === '';
-                const isAAEmpty  = !row['回答納期'] || row['回答納期'].trim() === '';
+                    const isAHYellow = dateAH && dateAH <= twoWL;
+                    const isYYellow  = dateY  && dateY  <= twoWL;
+                    const isXYellow  = dateX  && dateX  <= twoWL;
+                    const isAGEmpty  = !row['仮入庫済'] || row['仮入庫済'].trim() === '';
+                    const isAAEmpty  = !row['回答納期'] || row['回答納期'].trim() === '';
 
-                let warning = '';
+                    let warning = '';
 
-                // RED3：回答納期が出荷予定日以降（最優先）
-                if (dateAA && dateAH && dateAA > dateAH) {
-                    warning = 'RED3';
-                }
-                // RED2：回答納期がP部品納期か工場納期以降
-                else if (dateAA && ((dateY && dateAA > dateY) || (dateX && dateAA > dateX))) {
-                    warning = 'RED2';
-                }
-                // RED1：納期が近いのに仮入庫未済
-                else if ((isXYellow || isYYellow || isAHYellow) && isAGEmpty) {
-                    warning = 'RED1';
-                }
-                // Yellow：P部品納期が近いのに回答納期も仮入庫済もない
-                else if (isYYellow && isAAEmpty && isAGEmpty) {
-                    warning = 'Yellow';
-                }
-                // Yellow：出荷予定日が2週間以内
-                else if (isAHYellow) {
-                    warning = 'Yellow';
-                }
+                    if (dateAA && dateAH && dateAA > dateAH) {
+                        warning = 'RED3';
+                    } else if (dateAA && ((dateY && dateAA > dateY) || (dateX && dateAA > dateX))) {
+                        warning = 'RED2';
+                    } else if ((isXYellow || isYYellow || isAHYellow) && isAGEmpty) {
+                        warning = 'RED1';
+                    } else if (isYYellow && isAAEmpty && isAGEmpty) {
+                        warning = 'Yellow';
+                    } else if (isAHYellow) {
+                        warning = 'Yellow';
+                    }
 
-                return { '警告': warning, ...row };
-            });
+                    return { '警告': warning, ...row };
+                });
 
                 displayResult();
                 document.getElementById('result-count').textContent = `${mergedData.length}件のデータを統合しました`;
@@ -625,7 +790,7 @@
             }
         });
 
-        //結果
+        // ===== 表示 =====
         let isSortedByWarning = false;
 
         const warningOrder = { 'RED3': 0, 'RED2': 1, 'RED1': 2, 'Yellow': 3, '': 4 };
@@ -652,10 +817,7 @@
             document.getElementById('sort-button').style.display = 'block';
             document.getElementById('reset-sort-button').style.display = sortByWarning ? 'block' : 'none';
 
-            let displayData = [...mergedData];
-
-            // ↓この1行を追加（警告なしを除外）
-            displayData = displayData.filter(row => (row['警告'] || '') !== '');
+            let displayData = [...mergedData].filter(row => (row['警告'] || '') !== '');
 
             if (sortByWarning) {
                 displayData.sort((a, b) => {
@@ -675,10 +837,7 @@
             });
             html += '</tr></thead><tbody>';
 
-            // 警告あり件数をカウント
-            const warnCount = {
-                'RED3': 0, 'RED2': 0, 'RED1': 0, 'Yellow': 0
-            };
+            const warnCount = { 'RED3': 0, 'RED2': 0, 'RED1': 0, 'Yellow': 0 };
 
             displayData.forEach(row => {
                 const level = row['警告'] || '';
@@ -701,28 +860,19 @@
 
             table.innerHTML = html;
 
-            // 上部にサマリー表示
-            const topSummary = document.getElementById('table-top-summary');
-            topSummary.innerHTML = `
+            const summaryHTML = `
                 全${displayData.length}件 ／ 
-                <span style="color:#ff4444; font-weight:bold;">🔴🔥 RED3: ${warnCount['RED3']}件</span> ／ 
-                <span style="color:#ff8800; font-weight:bold;">🔴 RED2: ${warnCount['RED2']}件</span> ／ 
-                <span style="color:#cc4400;">🟠 RED1: ${warnCount['RED1']}件</span> ／ 
-                <span style="color:#997700;">🟡 Yellow: ${warnCount['Yellow']}件</span>
+                <span style="color:#ff4444; font-weight:bold;">🔴🔥 Lv4: ${warnCount['RED3']}件</span> ／ 
+                <span style="color:#ff8800; font-weight:bold;">🔴 Lv3: ${warnCount['RED2']}件</span> ／ 
+                <span style="color:#cc4400;">🟠 Lv2: ${warnCount['RED1']}件</span> ／ 
+                <span style="color:#997700;">🟡 Lv1: ${warnCount['Yellow']}件</span>
                 ${sortByWarning ? '　<strong>（警告レベル順）</strong>' : ''}
             `;
+            document.getElementById('table-top-summary').innerHTML = summaryHTML;
 
-            // フッターにサマリー表示
             const footer = document.getElementById('table-footer');
             footer.style.display = 'block';
-            footer.innerHTML = `
-                全${displayData.length}件 ／ 
-                <span style="color:#ff4444; font-weight:bold;">🔴🔥 RED3: ${warnCount['RED3']}件</span> ／ 
-                <span style="color:#ff8800; font-weight:bold;">🔴 RED2: ${warnCount['RED2']}件</span> ／ 
-                <span style="color:#cc4400;">🟠 RED1: ${warnCount['RED1']}件</span> ／ 
-                <span style="color:#997700;">🟡 Yellow: ${warnCount['Yellow']}件</span>
-                ${sortByWarning ? '　<strong>（警告レベル順）</strong>' : ''}
-            `;
+            footer.innerHTML = summaryHTML;
         }
 
         document.getElementById('sort-button').addEventListener('click', () => {
@@ -735,56 +885,56 @@
             displayResult(false);
         });
 
-        // Excelダウンロード
-function downloadExcel(sortByWarning) {
-    if (!mergedData || mergedData.length === 0) return;
+        // ===== Excelダウンロード =====
+        function downloadExcel(sortByWarning) {
+            if (!mergedData || mergedData.length === 0) return;
 
-    let data = [...mergedData];
+            let data = [...mergedData];
 
-    if (sortByWarning) {
-        const withWarning = data.filter(r => (r['警告'] || '') !== '');
-        const withoutWarning = data.filter(r => (r['警告'] || '') === '');
-        withWarning.sort((a, b) => (warningOrder[a['警告']] ?? 4) - (warningOrder[b['警告']] ?? 4));
-        data = [...withWarning, ...withoutWarning];
-    }
+            if (sortByWarning) {
+                const withWarning    = data.filter(r => (r['警告'] || '') !== '');
+                const withoutWarning = data.filter(r => (r['警告'] || '') === '');
+                withWarning.sort((a, b) => (warningOrder[a['警告']] ?? 4) - (warningOrder[b['警告']] ?? 4));
+                data = [...withWarning, ...withoutWarning];
+            }
 
-    const excelWarningLabel = {
-        'RED3':   'Lv4:出荷間に合わない',
-        'RED2':   'Lv3:納期間に合わない',
-        'RED1':   'Lv2:納期近・未入庫',
-        'Yellow': 'Lv1:要確認',
-        '':       ''
-    };
+            const excelWarningLabel = {
+                'RED3':   'Lv4:出荷間に合わない',
+                'RED2':   'Lv3:納期間に合わない',
+                'RED1':   'Lv2:納期近・未入庫',
+                'Yellow': 'Lv1:要確認',
+                '':       ''
+            };
 
-    try {
-        const headers = Object.keys(mergedData[0]).filter(h => h !== '_columns');
-        const wb = XLSX.utils.book_new();
-        const wsData = [headers];
+            try {
+                const headers = Object.keys(mergedData[0]).filter(h => h !== '_columns');
+                const wb = XLSX.utils.book_new();
+                const wsData = [headers];
 
-        data.forEach(row => {
-            wsData.push(headers.map(h => {
-                if (h === '警告') return excelWarningLabel[row[h] || ''] || '';
-                return row[h] || '';
-            }));
-        });
+                data.forEach(row => {
+                    wsData.push(headers.map(h => {
+                        if (h === '警告') return excelWarningLabel[row[h] || ''] || '';
+                        return row[h] || '';
+                    }));
+                });
 
-        const ws = XLSX.utils.json_to_sheet([]);
-        XLSX.utils.sheet_add_aoa(ws, wsData);
-        ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 2, 10) }));
-        XLSX.utils.book_append_sheet(wb, ws, 'ピッキング統合データ');
+                const ws = XLSX.utils.json_to_sheet([]);
+                XLSX.utils.sheet_add_aoa(ws, wsData);
+                ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 2, 10) }));
+                XLSX.utils.book_append_sheet(wb, ws, 'ピッキング統合データ');
 
-        const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const suffix = sortByWarning ? '_警告順' : '';
-        XLSX.writeFile(wb, `ピッキング統合データ${suffix}_${timestamp}.xlsx`);
+                const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                const suffix = sortByWarning ? '_警告順' : '';
+                XLSX.writeFile(wb, `ピッキング統合データ${suffix}_${timestamp}.xlsx`);
 
-    } catch (e) {
-        alert('Excelの作成に失敗しました: ' + e.message);
-        console.error(e);
-    }
-}
+            } catch (e) {
+                alert('Excelの作成に失敗しました: ' + e.message);
+                console.error(e);
+            }
+        }
+
         document.getElementById('download-button').addEventListener('click', () => downloadExcel(false));
         document.getElementById('download-sorted-button').addEventListener('click', () => downloadExcel(true));
-
     </script>
 </body>
 </html>
