@@ -324,9 +324,6 @@
             color: #1f2937;
             white-space: nowrap;
             border-top: 1px solid #e5e7eb;
-            max-width: 160px;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
         
         tbody tr:hover {
@@ -667,6 +664,9 @@
                     const tempReceiptStatus = tempReceipt ? '〇' : '';
 
                     return {
+                        '管理': '',
+                        '指示書': getColumnByIndex(picking, 0),
+                        'レベル': getColumnByIndex(picking, 1),
                         '工番': getColumnByIndex(picking, 2),
                         '製番': getColumnByIndex(workOrder, 10),
                         '契約先': getColumnByIndex(workOrder, 3),
@@ -680,7 +680,9 @@
                         '指示数': getColumnByIndex(picking, 8),
                         '出庫数': getColumnByIndex(picking, 9),
                         'ピ状況': getColumnByIndex(picking, 10),
+                        'ピ引当': getColumnByIndex(picking, 11),
                         '発注伝票№': getColumnByIndex(picking, 12),
+                        '発注担当CD': getColumnByIndex(picking, 13),
                         '発注担当': getColumnByIndex(picking, 14),
                         '発注先': getColumnByIndex(purchase, 16),
                         '注文書発行日時': getColumnByIndex(purchase, 27),
@@ -734,12 +736,10 @@
                     return condAH || condY || condX || condV || condW;
                 });
 
-                // ×を除外 & 発注伝票№がある行のみ
-                mergedData = mergedData.filter(row => {
-                    const alert = (row['納期ｱﾗｰﾄ'] || '').trim();
-                    const denpyo = (row['発注伝票№'] || '').trim();
-                    return alert !== '×' && denpyo !== '';
-                });
+                // さらに▲△のみに絞り込む
+                mergedData = mergedData.filter(row =>
+                    ['▲', '△'].includes((row['納期ｱﾗｰﾄ'] || '').trim())
+                );
                 
                 mergedData = mergedData.map(row => {
                     const today2 = new Date(); today2.setHours(0,0,0,0);
@@ -759,8 +759,13 @@
                     let warning = '';
 
                     if (dateAA && dateAH && dateAA > dateAH) {
-                        warning = 'RED3';
-                    } else if (dateAA && ((dateY && dateAA > dateY) || (dateX && dateAA > dateX))) {
+                        // ← 元のRED3条件に該当
+                        if (dateX && dateAH >= dateX) {
+                            warning = 'RED3';      // 日付が正常 → 本当に間に合わない
+                        } else {
+                            warning = 'Yellow2'; // 出荷予定日1が工場納期より古い → 未更新疑い
+                        }
+                    }  else if (dateAA && ((dateY && dateAA > dateY) || (dateX && dateAA > dateX))) {
                         warning = 'RED2';
                     } else if ((isXYellow || isYYellow || isAHYellow) && isAGEmpty) {
                         warning = 'RED1';
@@ -769,6 +774,8 @@
                     } else if (isAHYellow) {
                         warning = 'Yellow';
                     }
+
+
 
                     return { '警告': warning, ...row };
                 });
@@ -788,12 +795,13 @@
         // ===== 表示 =====
         let isSortedByWarning = false;
 
-        const warningOrder = { 'RED3': 0, 'RED2': 1, 'RED1': 2, 'Yellow': 3, '': 4 };
+        const warningOrder = { 'RED3': 0, 'RED2': 1, 'RED1': 2, 'Yellow': 3, 'Yellow2':4, '': 5 };
         const warningStyle = {
             'RED3':   'background-color:#ff4444; color:white; font-weight:bold;',
             'RED2':   'background-color:#ff8800; color:white; font-weight:bold;',
             'RED1':   'background-color:#ffaaaa;',
             'Yellow': 'background-color:#fffacd;',
+            'Yellow2': 'background-color:#fffacd;',
             '':       ''
         };
         const warningLabel = {
@@ -801,6 +809,7 @@
             'RED2':   '🔴 納期間に合わない',
             'RED1':   '🟠 納期近・未入庫',
             'Yellow': '🟡 要確認',
+            'Yellow2': '🟡⚠ 出荷日未更新・要確認',
             '':       ''
         };
 
@@ -823,8 +832,7 @@
             }
 
             const table = document.getElementById('result-table');
-            const excludeCols = new Set(['_columns', '管理', '指示書', 'レベル', '発注担当CD', 'ピ引当']);
-            const headers = Object.keys(mergedData[0]).filter(h => !excludeCols.has(h));
+            const headers = Object.keys(mergedData[0]).filter(h => h !== '_columns');
 
             let html = '<thead><tr>';
             headers.forEach(header => {
@@ -833,7 +841,7 @@
             });
             html += '</tr></thead><tbody>';
 
-            const warnCount = { 'RED3': 0, 'RED2': 0, 'RED1': 0, 'Yellow': 0 };
+            const warnCount = { 'RED3': 0, 'RED2': 0, 'RED1': 0, 'Yellow': 0, 'Yellow2': 0 };
 
             displayData.forEach(row => {
                 const level = row['警告'] || '';
@@ -847,7 +855,7 @@
                     } else if (header === '納期備考' && row[header]) {
                         html += `<td style="background-color:#e0f2fe; white-space:nowrap;" title="要目視確認">📋 ${row[header]}</td>`;
                     } else {
-                        html += `<td title="${row[header]}">${row[header]}</td>`;
+                        html += `<td>${row[header]}</td>`;
                     }
                 });
                 html += '</tr>';
@@ -861,7 +869,8 @@
                 <span style="color:#ff4444; font-weight:bold;">🔴🔥 Lv4: ${warnCount['RED3']}件</span> ／ 
                 <span style="color:#ff8800; font-weight:bold;">🔴 Lv3: ${warnCount['RED2']}件</span> ／ 
                 <span style="color:#cc4400;">🟠 Lv2: ${warnCount['RED1']}件</span> ／ 
-                <span style="color:#997700;">🟡 Lv1: ${warnCount['Yellow']}件</span>
+                <span style="color:#997700;">🟡 Lv1: ${warnCount['Yellow']}件</span> ／
+                <span style="color:#997700;">🟡⚠ 未更新疑: ${warnCount['Yellow2']}件</span>
                 ${sortByWarning ? '　<strong>（警告レベル順）</strong>' : ''}
             `;
             document.getElementById('table-top-summary').innerHTML = summaryHTML;
@@ -899,6 +908,7 @@
                 'RED2':   'Lv3:納期間に合わない',
                 'RED1':   'Lv2:納期近・未入庫',
                 'Yellow': 'Lv1:要確認',
+                'Yellow2': 'Lv1:出荷日未更新・要確認',
                 '':       ''
             };
 
