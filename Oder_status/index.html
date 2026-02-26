@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ピッキング状況データ統合ツール</title>
     <link rel="icon" href="../assets/icons/sarubobo.png" type="image/png">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <style>
         * {
             margin: 0;
@@ -631,7 +631,7 @@
                 const reader = new FileReader();
                 reader.onload = (e) => resolve(e.target.result);
                 reader.onerror = reject;
-                reader.readAsText(file, 'UTF-8');
+                reader.readAsText(file, 'Shift_JIS');
             });
         }
 
@@ -924,9 +924,37 @@
                     }));
                 });
 
-                const ws = XLSX.utils.json_to_sheet([]);
-                XLSX.utils.sheet_add_aoa(ws, wsData);
+                // 1. 空シート作成
+                const ws = XLSX.utils.aoa_to_sheet(wsData);  // json_to_sheet ではなく aoa_to_sheet に変更
+
+                // 2. 警告列に色付け
+                const warningColIndex = headers.indexOf('警告');
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                // 行全体に色をつける場合（警告列だけでなく全セルに）
+                for (let R = 1; R <= range.e.r; ++R) {
+                    const warning = data[R - 1]['警告'] || '';
+                    let bgColor = '';
+                    if (warning === 'RED3') bgColor = 'FF4444';
+                    else if (warning === 'RED2') bgColor = 'FF8800';
+                    else if (warning === 'RED1') bgColor = 'FFAAAA';
+                    else if (['Yellow','Yellow2'].includes(warning)) bgColor = 'FFFACD';
+
+                    if (!bgColor) continue;
+
+                    for (let C = 0; C <= range.e.c; ++C) {
+                        const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+                        if (!ws[cellAddr]) ws[cellAddr] = { t: 's', v: '' };
+                        ws[cellAddr].s = {
+                            fill: { patternType: "solid", fgColor: { rgb: bgColor } },
+                            font: { bold: ['RED3','RED2'].includes(warning) }
+                        };
+                    }
+                }
+
+                // 3. 列幅設定
                 ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 2, 10) }));
+
+                // 4. ブックに追加
                 XLSX.utils.book_append_sheet(wb, ws, 'ピッキング統合データ');
 
                 const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
