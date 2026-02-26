@@ -142,7 +142,9 @@
 
             try {
                 const file = fileInput.files[0];
-                const text = await file.text();
+                const arrayBuffer = await file.arrayBuffer();
+                const decoder = new TextDecoder('shift-jis');
+                const text = decoder.decode(arrayBuffer);
                 const lines = text.split('\n');
 
                 // 区切り文字を自動判定
