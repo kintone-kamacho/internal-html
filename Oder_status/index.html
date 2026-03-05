@@ -891,6 +891,19 @@
         });
 
         // ===== Excelダウンロード =====
+        // ---- 罫線スタイル定義 ----
+        const BORDER_THIN = {
+            top:    { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } },
+            left:   { style: 'thin', color: { rgb: '000000' } },
+            right:  { style: 'thin', color: { rgb: '000000' } }
+        };
+        const BORDER_HEADER = {
+            top:    { style: 'medium', color: { rgb: '000000' } },
+            bottom: { style: 'medium', color: { rgb: '000000' } },
+            left:   { style: 'thin',   color: { rgb: '000000' } },
+            right:  { style: 'thin',   color: { rgb: '000000' } }
+        };
         function downloadExcel(sortByWarning) {
             if (!mergedData || mergedData.length === 0) return;
 
@@ -927,32 +940,47 @@
                 // 1. 空シート作成
                 const ws = XLSX.utils.aoa_to_sheet(wsData);  // json_to_sheet ではなく aoa_to_sheet に変更
 
-                // 2. 警告列に色付け
-                const warningColIndex = headers.indexOf('警告');
+                // 2. 全セルに罫線＋背景色を適用
                 const range = XLSX.utils.decode_range(ws['!ref']);
-                // 行全体に色をつける場合（警告列だけでなく全セルに）
-                for (let R = 1; R <= range.e.r; ++R) {
-                    const warning = data[R - 1]['警告'] || '';
-                    let bgColor = '';
-                    if (warning === 'RED3') bgColor = 'FF4444';
-                    else if (warning === 'RED2') bgColor = 'FF8800';
-                    else if (warning === 'RED1') bgColor = 'FFAAAA';
-                    else if (['Yellow','Yellow2'].includes(warning)) bgColor = 'FFFACD';
-
-                    if (!bgColor) continue;
-
-                    for (let C = 0; C <= range.e.c; ++C) {
+                for (let R = 0; R <= range.e.r; R++) {
+                    for (let C = 0; C <= range.e.c; C++) {
                         const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
                         if (!ws[cellAddr]) ws[cellAddr] = { t: 's', v: '' };
-                        ws[cellAddr].s = {
-                            fill: { patternType: "solid", fgColor: { rgb: bgColor } },
-                            font: { bold: ['RED3','RED2'].includes(warning) }
-                        };
+
+                        if (R === 0) {
+                            // ヘッダー行
+                            ws[cellAddr].s = {
+                                font:   { bold: true, color: { rgb: 'FFFFFF' } },
+                                fill:   { patternType: 'solid', fgColor: { rgb: '374151' } },
+                                border: BORDER_HEADER,
+                                alignment: { horizontal: 'center', vertical: 'center' }
+                            };
+                        } else {
+                            // データ行
+                            const warning = data[R - 1]['警告'] || '';
+                            let bgColor = '';
+                            if (warning === 'RED3')                          { bgColor = 'FF4444'; }
+                            else if (warning === 'RED2')                     { bgColor = 'FF8800'; }
+                            else if (warning === 'RED1')                     { bgColor = 'FFAAAA'; }
+                            else if (['Yellow','Yellow2'].includes(warning)) { bgColor = 'FFFACD'; }
+
+                            const bold = ['RED3','RED2'].includes(warning);
+                            const fontColor = ['RED3','RED2'].includes(warning) ? 'FFFFFF' : '000000';
+
+                            ws[cellAddr].s = {
+                                border: BORDER_THIN,
+                                ...(bgColor ? { fill: { patternType: 'solid', fgColor: { rgb: bgColor } } } : {}),
+                                font: { bold, color: { rgb: fontColor } }
+                            };
+                        }
                     }
                 }
 
                 // 3. 列幅設定
-                ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 2, 10) }));
+                ws['!cols'] = headers.map((h, i) => {
+                    const hidden = ['管理', '指示書'].includes(h);
+                    return { wch: Math.max(h.length * 2, 10), hidden };
+                });
 
                 // 4. ブックに追加
                 XLSX.utils.book_append_sheet(wb, ws, 'ピッキング統合データ');
