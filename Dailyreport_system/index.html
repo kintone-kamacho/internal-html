@@ -395,7 +395,11 @@ body {
 <!-- APP -->
 <div id="appScreen" style="display:none">
   <header class="app-header">
-    <div class="app-logo"><span class="logo-leaf">🌿</span> 日報システム</div>
+    <nav class="desktop-tabs" id="desktopTabs">
+      <div class="dtab active" data-tab="report">📝 日報入力</div>
+      <div class="dtab" data-tab="manager" id="desktopMgrTab" style="display:none">👥 部署管理</div>
+      <div class="dtab" data-tab="settings">⚙ 設定</div>
+    </nav>
     <div style="display:flex;align-items:center;gap:10px">
       <div class="user-chip">
         <span id="hdrName">—</span>
@@ -404,13 +408,8 @@ body {
       </div>
       <button class="btn btn-ghost btn-sm" id="logoutBtnDesktop" onclick="doLogout()" style="display:none">ログアウト</button>
     </div>
-  </header>
 
-  <nav class="desktop-tabs" id="desktopTabs">
-    <div class="dtab active" data-tab="report">📝 日報入力</div>
-    <div class="dtab" data-tab="manager" id="desktopMgrTab" style="display:none">👥 部署管理</div>
-    <div class="dtab" data-tab="settings">⚙ 設定</div>
-  </nav>
+  </header>
 
   <!-- REPORT TAB -->
   <div class="tab-content active" id="tab-report">
