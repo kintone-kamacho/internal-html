@@ -1622,7 +1622,7 @@ async function downloadAllCSV() {
       .map(([key, hours]) => {
         const [wcode, pn] = key.split('\t');
         const h = hours%1===0 ? hours : hours.toFixed(1);
-        return `${wcode}\t${pn}\t${h}`;
+        return `${wcode},${pn},${h}`;
       });
 
     // 5. BOM付きタブ区切りCSVダウンロード
