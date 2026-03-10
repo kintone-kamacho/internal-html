@@ -758,14 +758,16 @@
 
                     let warning = '';
 
-                    if (dateAA && dateAH && dateAA > dateAH) {
+                    if (dateX && dateX <= today2) {
+                        warning = 'RED3';      // 工場納期が今日以前 → 単独でRED3
+                    } else if (dateAA && dateAH && dateAA > dateAH) {
                         // ← 元のRED3条件に該当
                         if (dateX && dateAH >= dateX) {
                             warning = 'RED3';      // 日付が正常 → 本当に間に合わない
                         } else {
                             warning = 'Yellow2'; // 出荷予定日1が工場納期より古い → 未更新疑い
                         }
-                    }  else if (dateAA && ((dateY && dateAA > dateY) || (dateX && dateAA > dateX))) {
+                    } else if (dateAA && ((dateY && dateAA > dateY) || (dateX && dateAA > dateX))) {
                         warning = 'RED2';
                     } else if ((isXYellow || isYYellow || isAHYellow) && isAGEmpty) {
                         warning = 'RED1';
@@ -950,7 +952,7 @@
                         if (R === 0) {
                             // ヘッダー行
                             ws[cellAddr].s = {
-                                font:   { bold: true, color: { rgb: 'FFFFFF' } },
+                                font:   { bold: true, color: { rgb: '000000' } },
                                 fill:   { patternType: 'solid', fgColor: { rgb: '374151' } },
                                 border: BORDER_HEADER,
                                 alignment: { horizontal: 'center', vertical: 'center' }
