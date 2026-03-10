@@ -966,8 +966,8 @@
                             else if (warning === 'RED1')                     { bgColor = 'FFAAAA'; }
                             else if (['Yellow','Yellow2'].includes(warning)) { bgColor = 'FFFACD'; }
 
-                            const bold = ['RED3','RED2'].includes(warning);
-                            const fontColor = ['RED3','RED2'].includes(warning) ? 'FFFFFF' : '000000';
+                            const bold = false;
+                            const fontColor = '000000';
 
                             ws[cellAddr].s = {
                                 border: BORDER_THIN,
