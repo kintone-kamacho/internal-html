@@ -190,7 +190,7 @@
             font-size: 10px;
             color: #6b7280;
             white-space: nowrap;
-            overflow: hidden;
+            overflow: visible;
             text-overflow: ellipsis;
             display: none;
         }
@@ -287,16 +287,20 @@
             margin-top: 16px;
             margin-bottom: 8px;
         }
-        
+
+        /* ① overflow: hidden → visible に変更 */
         .result-container {
             background: white;
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            overflow: visible;
         }
         
+        /* ② table-wrapperに縦スクロールと高さを追加 */
         .table-wrapper {
             overflow-x: auto;
+            overflow-y: auto;        /* ← 追加 */
+            max-height: calc(100vh - 160px);  /* ← 追加 */
         }
         
         table {
@@ -316,6 +320,10 @@
             color: #6b7280;
             text-transform: uppercase;
             white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background-color: #f9fafb;
         }
         
         td {
@@ -664,27 +672,15 @@
                     const tempReceiptStatus = tempReceipt ? '〇' : '';
 
                     return {
-                        '管理': '',
-                        '指示書': getColumnByIndex(picking, 0),
-                        'レベル': getColumnByIndex(picking, 1),
+                        '発注担当': getColumnByIndex(picking, 14),
+                        '発注伝票№': getColumnByIndex(picking, 12),
+                        '発注先': getColumnByIndex(purchase, 16),
                         '工番': getColumnByIndex(picking, 2),
-                        '製番': getColumnByIndex(workOrder, 10),
-                        '契約先': getColumnByIndex(workOrder, 3),
-                        '納入先': getColumnByIndex(workOrder, 4),
-                        'ピッキングID': getColumnByIndex(picking, 3),
                         '品目': getColumnByIndex(picking, 4),
                         '品名': getColumnByIndex(picking, 5),
                         '仕様': getColumnByIndex(picking, 6),
                         'メーカー名': getColumnByIndex(purchase, 20),
                         '単位': getColumnByIndex(picking, 7),
-                        '指示数': getColumnByIndex(picking, 8),
-                        '出庫数': getColumnByIndex(picking, 9),
-                        'ピ状況': getColumnByIndex(picking, 10),
-                        'ピ引当': getColumnByIndex(picking, 11),
-                        '発注伝票№': getColumnByIndex(picking, 12),
-                        '発注担当CD': getColumnByIndex(picking, 13),
-                        '発注担当': getColumnByIndex(picking, 14),
-                        '発注先': getColumnByIndex(purchase, 16),
                         '注文書発行日時': getColumnByIndex(purchase, 27),
                         '仮注文書発行日時': getColumnByIndex(purchase, 28),
                         '工場納期': getColumnByIndex(picking, 15),
@@ -699,7 +695,10 @@
                         '工期': getColumnByIndex(picking, 19),
                         '仮入庫済': tempReceiptStatus,
                         '出荷予定日1': getColumnByIndex(workOrder, 29),
-                        '出荷予定日2': getColumnByIndex(workOrder, 30)
+                        '出荷予定日2': getColumnByIndex(workOrder, 30),
+                        '製番': getColumnByIndex(workOrder, 10),
+                        '契約先': getColumnByIndex(workOrder, 3),
+                        '納入先': getColumnByIndex(workOrder, 4)
                     };
                 });
 
@@ -761,7 +760,6 @@
                     if (dateX && dateX <= today2) {
                         warning = 'RED3';      // 工場納期が今日以前 → 単独でRED3
                     } else if (dateAA && dateAH && dateAA > dateAH) {
-                        // ← 元のRED3条件に該当
                         if (dateX && dateAH >= dateX) {
                             warning = 'RED3';      // 日付が正常 → 本当に間に合わない
                         } else {
@@ -776,8 +774,6 @@
                     } else if (isAHYellow) {
                         warning = 'Yellow';
                     }
-
-
 
                     return { '警告': warning, ...row };
                 });
@@ -939,8 +935,8 @@
                     }));
                 });
 
-                // 1. 空シート作成
-                const ws = XLSX.utils.aoa_to_sheet(wsData);  // json_to_sheet ではなく aoa_to_sheet に変更
+                // 1. シート作成
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
 
                 // 2. 全セルに罫線＋背景色を適用
                 const range = XLSX.utils.decode_range(ws['!ref']);
@@ -952,8 +948,8 @@
                         if (R === 0) {
                             // ヘッダー行
                             ws[cellAddr].s = {
-                                font:   { bold: true, color: { rgb: '000000' } },
-                                fill:   { patternType: 'solid', fgColor: { rgb: '374151' } },
+                                font:   { bold: true, color: { rgb: '1f2937' } },
+                                fill:   { patternType: 'solid', fgColor: { rgb: 'E5E7EB' } },
                                 border: BORDER_HEADER,
                                 alignment: { horizontal: 'center', vertical: 'center' }
                             };
@@ -966,23 +962,18 @@
                             else if (warning === 'RED1')                     { bgColor = 'FFAAAA'; }
                             else if (['Yellow','Yellow2'].includes(warning)) { bgColor = 'FFFACD'; }
 
-                            const bold = false;
-                            const fontColor = '000000';
-
                             ws[cellAddr].s = {
                                 border: BORDER_THIN,
                                 ...(bgColor ? { fill: { patternType: 'solid', fgColor: { rgb: bgColor } } } : {}),
-                                font: { bold, color: { rgb: fontColor } }
+                                font: { bold: false, color: { rgb: '000000' } }
                             };
                         }
                     }
                 }
 
-                // 3. 列幅設定
-                ws['!cols'] = headers.map((h, i) => {
-                    const hidden = ['管理', '指示書'].includes(h);
-                    return { wch: Math.max(h.length * 2, 10), hidden };
-                });
+                // 3. 列幅設定（非表示列なし）1行目を固定
+                ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 2, 10) }));
+                ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
 
                 // 4. ブックに追加
                 XLSX.utils.book_append_sheet(wb, ws, 'ピッキング統合データ');

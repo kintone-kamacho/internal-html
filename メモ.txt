@@ -1,0 +1,10 @@
+assets 　　　　		アイコン
+csv_processor　		品目マスター抽出(3等分)＋品目別保管場所
+Dailyreport　　		日報データ抽出ツール
+Dailyreport_system
+Duplicate_checker	品番重複チェックツール
+folder-tool
+Oder_CSV_Filter		正式注文書発行チェック
+Oder_status		ピッキング状況データ統合ツール
+qr-generator		QRコード作成ツール
+Temporary_CSV_Filter
