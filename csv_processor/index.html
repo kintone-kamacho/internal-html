@@ -871,7 +871,7 @@
             const matchesPrefix = prefixList.some(prefix => firstCell.startsWith(prefix));
             
             if (matchesPrefix) {
-              const row = columnIndexes.map(idx => cells[idx] || '');
+              const row = columnIndexes.map(idx => (cells[idx] || '').replace(/\x00/g, ''));
               filteredData.push(row);
             }
           }
