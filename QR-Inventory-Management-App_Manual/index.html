@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR在庫管理アプリ 取扱説明書</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+
+  :root {
+    --blue: #2563eb;
+    --blue-dark: #1e40af;
+    --blue-light: #eff6ff;
+    --blue-border: #bfdbfe;
+    --green: #059669;
+    --green-light: #f0fdf4;
+    --red: #dc2626;
+    --yellow: #f59e0b;
+    --yellow-light: #fef3c7;
+    --purple: #7c3aed;
+    --purple-light: #f5f3ff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-400: #9ca3af;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --sidebar-width: 260px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-700);
+    line-height: 1.7;
+    font-size: 14px;
+  }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: white;
+    border-right: 1px solid var(--gray-200);
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--blue-dark);
+    color: white;
+  }
+
+  .sidebar-header h1 {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  .sidebar-header .version {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+
+  .sidebar nav { padding: 12px 0; }
+
+  .nav-section {
+    padding: 8px 16px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray-400);
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    font-size: 13px;
+    color: var(--gray-600);
+    text-decoration: none;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+
+  .nav-link:hover {
+    background: var(--gray-50);
+    color: var(--blue);
+    border-left-color: var(--blue-border);
+  }
+
+  .nav-link.active {
+    background: var(--blue-light);
+    color: var(--blue);
+    border-left-color: var(--blue);
+    font-weight: 500;
+  }
+
+  .nav-link .icon { font-size: 14px; flex-shrink: 0; }
+
+  /* ===== MAIN ===== */
+  .main {
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+  }
+
+  .top-bar {
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
+    padding: 12px 40px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--gray-400);
+  }
+
+  .top-bar strong { color: var(--gray-700); }
+
+  .content {
+    max-width: 860px;
+    padding: 40px 40px 80px;
+  }
+
+  /* ===== SECTIONS ===== */
+  .section {
+    margin-bottom: 60px;
+    scroll-margin-top: 60px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--blue);
+  }
+
+  .section-icon {
+    width: 40px; height: 40px;
+    background: var(--blue);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+
+  .section-num {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--blue);
+    background: var(--blue-light);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 28px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  h3::before {
+    content: '';
+    display: block;
+    width: 4px; height: 16px;
+    background: var(--blue);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gray-700);
+    margin: 20px 0 8px;
+  }
+
+  p { margin-bottom: 10px; }
+
+  /* ===== HERO ===== */
+  .hero {
+    background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue) 100%);
+    color: white;
+    padding: 48px 40px;
+    margin-bottom: 40px;
+  }
+
+  .hero h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .hero p { opacity: 0.85; font-size: 14px; margin: 0; }
+
+  .hero-meta {
+    display: flex;
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .hero-badge {
+    background: rgba(255,255,255,0.15);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* ===== COMPONENTS ===== */
+  .card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    padding: 12px 16px;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--gray-700);
+  }
+
+  .card-body { padding: 16px; }
+
+  /* Step list */
+  .steps {
+    counter-reset: step;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 12px 0;
+  }
+
+  .steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+  }
+
+  .steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px; height: 22px;
+    background: var(--blue);
+    color: white;
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Bullets */
+  .bullets {
+    list-style: none;
+    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .bullets li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding-left: 4px;
+    font-size: 14px;
+  }
+
+  .bullets li::before {
+    content: '・';
+    color: var(--blue);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Callouts */
+  .callout {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin: 12px 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .callout-icon { flex-shrink: 0; font-size: 15px; }
+
+  .callout.warning {
+    background: var(--yellow-light);
+    border: 1px solid #fcd34d;
+    color: #92400e;
+  }
+
+  .callout.tip {
+    background: var(--green-light);
+    border: 1px solid #86efac;
+    color: #166534;
+  }
+
+  .callout.info {
+    background: var(--blue-light);
+    border: 1px solid var(--blue-border);
+    color: var(--blue-dark);
+  }
+
+  .callout.purple {
+    background: var(--purple-light);
+    border: 1px solid #c4b5fd;
+    color: #5b21b6;
+  }
+
+  /* Permission table */
+  .perm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .perm-table th {
+    background: var(--blue-dark);
+    color: white;
+    padding: 10px 14px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .perm-table th:first-child { text-align: left; }
+
+  .perm-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--gray-100);
+    text-align: center;
+  }
+
+  .perm-table td:first-child { text-align: left; font-weight: 500; }
+
+  .perm-table tr:last-child td { border-bottom: none; }
+  .perm-table tr:nth-child(even) td { background: var(--gray-50); }
+
+  .ok { color: var(--green); font-size: 16px; }
+  .ng { color: var(--gray-400); font-size: 16px; }
+
+  /* Info table */
+  .info-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .info-table tr { border-bottom: 1px solid var(--gray-100); }
+  .info-table tr:last-child { border-bottom: none; }
+
+  .info-table td {
+    padding: 9px 12px;
+    vertical-align: top;
+  }
+
+  .info-table td:first-child {
+    font-weight: 600;
+    color: var(--blue-dark);
+    background: var(--blue-light);
+    width: 35%;
+    white-space: nowrap;
+  }
+
+  /* Badge */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    vertical-align: middle;
+  }
+
+  .badge-purple { background: var(--purple); color: white; }
+  .badge-blue { background: var(--blue); color: white; }
+  .badge-green { background: var(--green); color: white; }
+
+  /* Code */
+  code {
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #be185d;
+  }
+
+  /* FAQ */
+  .faq-item {
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    background: white;
+  }
+
+  .faq-q {
+    padding: 14px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--gray-900);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .faq-q::before {
+    content: 'Q';
+    background: var(--blue);
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .faq-a {
+    padding: 0 16px 14px 46px;
+    font-size: 13px;
+    color: var(--gray-600);
+    line-height: 1.7;
+  }
+
+  /* URL box */
+  .url-box {
+    background: var(--gray-900);
+    color: #86efac;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 14px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Scroll to top */
+  .back-top {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--blue);
+    color: white;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+    text-decoration: none;
+  }
+
+  /* New badge */
+  .new-badge {
+    display: inline-block;
+    background: var(--red);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  @media print {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .top-bar { display: none; }
+    .back-top { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>📱 QR在庫管理アプリ<br>取扱説明書</h1>
+    <div class="version">v2.5.0</div>
+  </div>
+  <nav>
+    <div class="nav-section">はじめに</div>
+    <a href="#intro" class="nav-link"><span class="icon">🚀</span>アクセス・初回登録</a>
+    <a href="#permissions" class="nav-link"><span class="icon">🔑</span>権限一覧</a>
+
+    <div class="nav-section">使い方</div>
+    <a href="#general" class="nav-link"><span class="icon">👤</span>一般ユーザー</a>
+    <a href="#serial" class="nav-link"><span class="icon">🏷️</span>シリアルNo.管理</a>
+    <a href="#warehouse" class="nav-link"><span class="icon">🏭</span>管理部倉庫G</a>
+    <a href="#admin" class="nav-link"><span class="icon">⚙️</span>管理者</a>
+
+    <div class="nav-section">サポート</div>
+    <a href="#faq" class="nav-link"><span class="icon">❓</span>FAQ</a>
+    <a href="#version" class="nav-link"><span class="icon">📋</span>バージョン情報</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="top-bar">
+    <span>📱 QR在庫管理アプリ</span>
+    <span>›</span>
+    <strong>取扱説明書</strong>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>📱 QRコード在庫管理アプリ 取扱説明書</h1>
+    <p>QRコードで入出庫管理。スマホとPC両方から操作可能。wifiかモバイル通信必須</p>
+    <div class="hero-meta">
+      <span class="hero-badge">v2.5.0</span>
+      <span class="hero-badge">Firebase連携</span>
+      <span class="hero-badge">PWA対応</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ===== 1. はじめに ===== -->
+    <div class="section" id="intro">
+      <div class="section-header">
+        <div class="section-icon">🚀</div>
+        <div>
+          <div class="section-num">Section 1</div>
+          <div class="section-title">アクセス方法と初回登録</div>
+        </div>
+      </div>
+
+      <h3>アクセス方法</h3>
+      <p>ブラウザから以下のURLにアクセスしてください。</p>
+      <div class="url-box">🌐 &nbsp;https://kanri.web.app</div>
+      <table class="info-table" style="background:white;border:1px solid var(--gray-200);border-radius:10px;overflow:hidden;margin-top:12px;">
+        <tr><td>動作環境</td><td>Android（Chrome）/ PC（Chrome・Edge）</td></tr>
+        <tr><td>インターネット</td><td>必須（オフライン不可）</td></tr>
+      </table>
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <span>カメラ機能を使用するには <code>https://</code> でのアクセスが必須です。ファイルを直接開いても動作しません。</span>
+      </div>
+
+      <h3>初回ユーザー登録</h3>
+      <p>初めてアクセスすると登録画面が表示されます。以下の項目を入力してください。</p>
+      <ol class="steps">
+        <li>名前を入力（姓と名の間を空けずフルネームで。例：山田太郎）</li>
+        <li>メールアドレスを入力（@kamacho.co.jp のアドレス）</li>
+        <li>部署を選択（所属する部署を選んでください）</li>
+        <li>「登録」ボタンをタップして完了</li>
+      </ol>
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <span>「管理者」部署は管理用です。一般ユーザーは登録しないでください。</span>
+      </div>
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <span>登録情報は端末に保存されます。機種変更時は再登録が必要ですが、Firebaseのデータ（在庫・履歴）は引き継がれます。</span>
+      </div>
+    </div>
+
+    <!-- ===== 2. 権限 ===== -->
+    <div class="section" id="permissions">
+      <div class="section-header">
+        <div class="section-icon">🔑</div>
+        <div>
+          <div class="section-num">Section 2</div>
+          <div class="section-title">権限と使用できる機能</div>
+        </div>
+      </div>
+
+      <p>部署によって使用できる機能が異なります。</p>
+      <table class="perm-table">
+        <thead>
+          <tr>
+            <th>機能</th>
+            <th>一般<br><span style="font-size:11px;opacity:0.8;">製造部・装備G</span></th>
+            <th>管理部倉庫G</th>
+            <th>管理者</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>出庫処理・出庫取消</td><td><span class="ok">✅</span></td><td><span class="ok">✅</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>在庫検索・閲覧</td><td><span class="ok">✅</span></td><td><span class="ok">✅</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>履歴閲覧</td><td><span class="ok">✅</span></td><td><span class="ok">✅</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>シリアルNo.入力（出庫時）</td><td><span class="ok">✅</span></td><td><span class="ng">—</span></td><td><span class="ng">—</span></td></tr>
+          <tr><td>工番固定出庫モード</td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>入庫処理・入庫取消</td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>PAS出庫チェック編集</td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>品番CSVアップロード</td><td><span class="ng">—</span></td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>バックアップ・復元</td><td><span class="ng">—</span></td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>棚卸チェックポイント</td><td><span class="ng">—</span></td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>シリアルNo.修正</td><td><span class="ng">—</span></td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>テストデータ削除</td><td><span class="ng">—</span></td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>更新履歴編集</td><td><span class="ng">—</span></td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout purple" style="margin-top:16px;">
+        <span class="callout-icon">🏷️</span>
+        <span>管理部倉庫G・管理者は、シリアルNo.必要品番であっても<strong>通常の出庫処理（個数入力のみ）</strong>で処理します。シリアルNo.入力欄は表示されません。</span>
+      </div>
+    </div>
+
+    <!-- ===== 3. 一般 ===== -->
+    <div class="section" id="general">
+      <div class="section-header">
+        <div class="section-icon">👤</div>
+        <div>
+          <div class="section-num">Section 3</div>
+          <div class="section-title">一般ユーザーの使い方</div>
+        </div>
+      </div>
+      <p>製造部1G・製造部2G・装備Gのユーザーが主に使用する機能です。</p>
+
+      <h3>出庫処理（通常モード）</h3>
+      <p>部品を倉庫から取り出す際に使用します。</p>
+      <ol class="steps">
+        <li>「📱 スキャン」タブを開く</li>
+        <li>「📷 カメラ起動（入出庫登録）」をタップ</li>
+        <li>部品のQRコードにカメラを向けて読み取る</li>
+        <li>読み取った商品情報を確認し「出庫」を選択（デフォルト）</li>
+        <li>出庫日・工番・個数を入力</li>
+        <li>「✅ 出庫処理」をタップして完了</li>
+      </ol>
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <span>工番は英数字とハイフンのみ入力可能です。自動で大文字に変換されます。工番が未入力のまま処理しようとすると「工番が入力されていません」と表示されます。</span>
+      </div>
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <span>複数の工番に同じ部品を出庫する場合は「+」ボタンで工番行を追加できます（最大10件）。</span>
+      </div>
+
+      <h3>在庫検索</h3>
+      <p>現在の在庫数や履歴を確認する際に使用します。</p>
+      <ul class="bullets">
+        <li>「📦 在庫」タブ または「📱 スキャン」→「在庫検索」を使用</li>
+        <li>カメラでQRを読み取る、または「✍️ 手入力」で品番を入力</li>
+        <li>品番をタップすると詳細（現在庫・履歴）が表示される</li>
+        <li><span class="badge badge-purple">S/N 🔍</span> バッジがある品番はタップするとシリアルNo.一覧も確認できる</li>
+      </ul>
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <span>手入力では部分一致検索が可能です。例えば「PDA61」と入力すると該当する全品番が表示されます。</span>
+      </div>
+
+      <h3>履歴確認</h3>
+      <ul class="bullets">
+        <li>「📋 履歴」タブを開く</li>
+        <li>フィルターで担当者・カテゴリー・保管場所を絞り込める</li>
+        <li>「自分が担当者の製造出庫品」にチェックを入れると自分関連の出庫のみ表示</li>
+      </ul>
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <span>画面に表示される履歴は直近200件です。</span>
+      </div>
+    </div>
+
+    <!-- ===== 4. シリアル ===== -->
+    <div class="section" id="serial">
+      <div class="section-header">
+        <div class="section-icon">🏷️</div>
+        <div>
+          <div class="section-num">Section 4</div>
+          <div class="section-title">シリアルNo.管理機能</div>
+        </div>
+      </div>
+      <p>一部の品番（CSVで「シリアルNo.必要」が設定された品番）は、<strong>一般ユーザー（製造部・装備G）</strong>が出庫する際にシリアルNo.の入力が必要です。</p>
+      <div class="callout purple">
+        <span class="callout-icon">🏷️</span>
+        <span>管理部倉庫G・管理者はシリアルNo.必要品番でも通常処理（個数入力のみ）で出庫します。シリアルNo.入力欄は表示されません。</span>
+      </div>
+
+      <h3>シリアルNo.が必要な品番の出庫（一般ユーザー）</h3>
+      <ol class="steps">
+        <li>QRスキャン後、品番に <span class="badge badge-purple">シリアルNo.必要</span> の紫バッジが表示される</li>
+        <li>出庫フォームの工番欄が紫色になり、シリアルNo.入力欄が表示される</li>
+        <li>工番を入力し、シリアルNo.を1行ずつ手入力（個数は自動カウント）</li>
+        <li>「＋ 手動追加」ボタンで行を追加して複数個出庫</li>
+        <li>出庫ボタン押下で確認ダイアログを確認して完了</li>
+      </ol>
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <span>1行 = 1個出庫です。シリアルNo.の行数が自動的に個数になります。</span>
+      </div>
+
+      <h3>連続入力機能（連番シリアルNo.）</h3>
+      <p>シリアルNo.が連番の場合、開始番号と個数を指定して自動生成できます。</p>
+      <ol class="steps">
+        <li>工番行の「🏷️ 連続入力」ボタンをタップ</li>
+        <li>「開始シリアルNo.」に最初の番号を入力（例：12345）</li>
+        <li>「個数」に出庫する数を入力（例：3）</li>
+        <li>「✅ 生成」ボタンをタップ → 12345・12346・12347 が自動入力される</li>
+        <li>そのまま出庫処理へ進む</li>
+      </ol>
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <span>末尾が数字のシリアルNo.（例：ABC-12345）であれば連続生成できます。桁数は維持されます（例：00098 → 00099 → 00100）。</span>
+      </div>
+
+      <h3>シリアルNo.の確認</h3>
+      <ul class="bullets">
+        <li>「📦 在庫」タブ → 品番の <span class="badge badge-purple">S/N 🔍</span> バッジをタップ</li>
+        <li>品目詳細画面の「🏷️ シリアルNo.一覧」を展開（履歴の上に表示）</li>
+        <li>工番ごとに出庫済みシリアルNo.が一覧表示される</li>
+        <li>連番の場合は「12345～12347」の範囲形式で表示される</li>
+        <li>範囲表示をタップすると個別のシリアルNo.（12345 12346 12347）が展開表示される</li>
+        <li>取消済みのシリアルNo.は取り消し線で表示</li>
+        <li>検索欄でシリアルNo.や工番を絞り込める</li>
+      </ul>
+
+      <h3>シリアルNo.の修正</h3>
+      <p>品目詳細のシリアルNo.一覧から修正できます。</p>
+
+      <h4>個別修正</h4>
+      <ul class="bullets">
+        <li>個別表示のシリアルNo.右の「✏️」をタップ</li>
+        <li>新しいシリアルNo.を入力して確定</li>
+      </ul>
+
+      <h4>連番範囲の一括修正</h4>
+      <ul class="bullets">
+        <li>範囲表示（例：12345～12347）の右の「✏️」をタップ</li>
+        <li>新しい開始シリアルNo.を入力（例：12368）</li>
+        <li>同工番の全件が自動更新される（12368・12369・12370）</li>
+      </ul>
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <span>修正は台帳（serialLedger）のみ反映されます。履歴レコードは変更されません。</span>
+      </div>
+    </div>
+
+    <!-- ===== 5. 倉庫G ===== -->
+    <div class="section" id="warehouse">
+      <div class="section-header">
+        <div class="section-icon">🏭</div>
+        <div>
+          <div class="section-num">Section 5</div>
+          <div class="section-title">管理部倉庫Gの使い方</div>
+        </div>
+      </div>
+      <p>管理部倉庫Gは一般ユーザーの機能に加え、入庫・取消・PASチェック・工番固定出庫が使用できます。</p>
+
+      <h3>出庫処理（工番固定モード）<span class="new-badge">倉庫G・管理者のみ</span></h3>
+      <p>同じ工番で複数の部品を続けて出庫する場合に便利なモードです。</p>
+      <ol class="steps">
+        <li>「🔧 工番固定出庫」タブをタップ（倉庫G・管理者のみ選択可。他部署は薄表示で選択不可）</li>
+        <li>工番を入力して「✅ 工番を設定してスキャン開始」をタップ</li>
+        <li>カメラが起動するので部品QRを次々と読み取る</li>
+        <li>各部品の個数をその都度入力して出庫</li>
+        <li>出庫完了後カメラが自動再起動するので続けて次の部品をスキャン</li>
+        <li>工番を変える場合は「工番変更」ボタンをタップ</li>
+      </ol>
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <span>同じ現場で複数種類の部品を一気に出庫する場合に効率的です。</span>
+      </div>
+
+      <h3>入庫処理</h3>
+      <p>新しい部品が納品されたときに使用します。</p>
+      <ol class="steps">
+        <li>QRコードをスキャンして商品情報を読み取る</li>
+        <li>「入庫」ボタンを選択</li>
+        <li>入庫日・個数を入力</li>
+        <li>「✅ 入庫処理」をタップ</li>
+      </ol>
+
+      <h3>取消処理</h3>
+      <p>誤って入出庫した場合の訂正に使用します。</p>
+      <table class="info-table" style="background:white;border:1px solid var(--gray-200);border-radius:10px;overflow:hidden;">
+        <tr><td>出庫取消</td><td>誤って出庫した場合。工番と個数を入力して取消。在庫が戻ります。</td></tr>
+        <tr><td>入庫取消</td><td>誤って入庫した場合。個数を入力して取消。在庫が減ります。</td></tr>
+      </table>
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <span>取消処理は履歴に「X 出庫取消」「X 入庫取消」として記録されます。履歴自体は削除されません。</span>
+      </div>
+
+      <h3>PAS出庫チェック</h3>
+      <p>製造部・装備Gからの出庫に対してPAS出荷済みであることを確認・記録する機能です。</p>
+      <ul class="bullets">
+        <li>「📋 履歴」タブを開く</li>
+        <li>製造部・装備Gによる出庫レコードに「PAS出庫」チェックボックスが表示される</li>
+        <li>PAS出荷を確認したらチェックを入れる</li>
+        <li>チェックの編集は倉庫G・管理者のみ可能</li>
+      </ul>
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <span>「自分が担当者の製造出庫品」フィルターを使うと、担当品番の出庫のみ表示されて確認しやすくなります。</span>
+      </div>
+    </div>
+
+    <!-- ===== 6. 管理者 ===== -->
+    <div class="section" id="admin">
+      <div class="section-header">
+        <div class="section-icon">⚙️</div>
+        <div>
+          <div class="section-num">Section 6</div>
+          <div class="section-title">管理者の使い方</div>
+        </div>
+      </div>
+      <p>管理者は全機能を使用できます。通常業務以外の管理作業について説明します。</p>
+
+      <h3>品番CSVアップロード</h3>
+      <p>「⚙️ 設定」タブ → 「CSV登録」カードからアップロードします。</p>
+      <table class="info-table" style="background:white;border:1px solid var(--gray-200);border-radius:10px;overflow:hidden;">
+        <tr><td>フォーマット</td><td><code>品番,品名,仕様,担当者名,カテゴリー,アラート値,シリアルNo.必要</code></td></tr>
+        <tr><td>通常品番例</td><td><code>PDA61-01-40,ロードセル 10t,(上下金具無),上村,ロードセル,5,</code></td></tr>
+        <tr><td>S/N必要品番例</td><td><code>PDA61-02-01,センサーA,型式ABC,山田,センサー,3,1</code></td></tr>
+        <tr><td>シリアルNo.必要列</td><td>1=必要　空白=不要</td></tr>
+        <tr><td>文字コード</td><td>UTF-8（コンマ区切り）</td></tr>
+      </table>
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <span>CSVアップロードで既存データが全件上書きされます。必ず全品番を含めてください。</span>
+      </div>
+
+      <h3>バックアップ管理</h3>
+      <div class="card">
+        <div class="card-title">🔄 自動バックアップ</div>
+        <div class="card-body">アプリが開いている間、1時間ごとに自動でFirebaseにバックアップされます。24時間分（0〜23時台）が保存されます。</div>
+      </div>
+      <div class="card">
+        <div class="card-title">💾 手動バックアップ（Firebase）</div>
+        <div class="card-body">
+          <ul class="bullets">
+            <li>「今すぐバックアップ」ボタンで任意のタイミングでバックアップ</li>
+            <li>最新20件まで保存。特定の時点から復元可能</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📥 CSVバックアップ</div>
+        <div class="card-body">
+          <ul class="bullets">
+            <li>「📥 CSVでバックアップ」でローカルにCSVファイルをダウンロード</li>
+            <li>在庫データ・履歴・PASチェック・CSVマスターが含まれる</li>
+            <li>「📤 CSVから復元」でCSVからデータを復元可能</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <span>CSVから復元すると現在のすべてのデータが上書きされます。必ず事前にバックアップを取ってください。</span>
+      </div>
+
+      <h3>棚卸チェックポイント</h3>
+      <p>年1回の棚卸時に使用します。在庫数の長期的な正確性を保つための仕組みです。</p>
+
+      <h4>チェックポイント保存（棚卸時）</h4>
+      <ol class="steps">
+        <li>棚卸で実物と在庫数を確認・修正済みの状態にする</li>
+        <li>「📸 棚卸チェックポイントを保存」をタップ</li>
+        <li>メモを入力（例：2026年3月棚卸）して保存</li>
+        <li>その時点の在庫数・シリアルNo.台帳が確定値として保存される</li>
+      </ol>
+
+      <h4>チェックポイントから再計算</h4>
+      <ol class="steps">
+        <li>在庫数がずれていると思われる場合に使用</li>
+        <li>「🔄 チェックポイントから再計算」をタップ</li>
+        <li>変更内容を確認してOKをタップ</li>
+        <li>保存日時以降の履歴のみを集計して在庫数を再計算・修正</li>
+      </ol>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <span>チェックポイントは1つのみ保存され毎回上書きされます。保存日時・メモ・品番数・保存者が表示されます。</span>
+      </div>
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <span>履歴は5年で自動削除されます。年1回の棚卸時にチェックポイントを保存しておくことで、5年以上経過後も正確な再計算が可能です。</span>
+      </div>
+
+      <h3>テストデータ削除</h3>
+      <ul class="bullets">
+        <li>CSVでカテゴリーを「ﾃｽﾄ」にした品番のみ対象</li>
+        <li>「🗑️ テストカテゴリーのデータを削除」をタップ</li>
+        <li>該当品番の在庫・履歴・シリアルNo.台帳がすべて削除される</li>
+      </ul>
+
+      <h3>更新履歴の管理</h3>
+      <ul class="bullets">
+        <li>「📋 更新履歴」カード → 「✏️ 編集」ボタン</li>
+        <li>テキストエリアに更新内容を入力して「💾 保存」</li>
+        <li><code>##</code> でバージョン見出し、<code>###</code> でセクション、<code>-</code> で箇条書きになる</li>
+        <li>保存内容はFirebaseに保存され全端末で同期される</li>
+      </ul>
+    </div>
+
+    <!-- ===== 7. FAQ ===== -->
+    <div class="section" id="faq">
+      <div class="section-header">
+        <div class="section-icon">❓</div>
+        <div>
+          <div class="section-num">Section 7</div>
+          <div class="section-title">FAQ</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">カメラが起動しない</div>
+        <div class="faq-a">
+          以下を確認してください。<br>
+          ・<code>https://</code> でアクセスしているか（<code>file://</code>では動作しません）<br>
+          ・ブラウザのカメラ権限が「許可」になっているか<br>
+          ・iPhone：設定 → Safari → カメラ → 「確認」または「許可」<br>
+          ・Android：アドレスバー横の🔒 → カメラ → 許可
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">入庫処理・工番固定出庫モードが使えない</div>
+        <div class="faq-a">入庫処理・工番固定出庫モードは「管理部倉庫G」と「管理者」のみ使用できます。設定タブ → ユーザー情報で自分の部署設定を確認してください。一般ユーザーには工番固定出庫ボタンが薄く表示され、タップできない状態になっています。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">在庫数がおかしい</div>
+        <div class="faq-a">
+          管理者に連絡して「チェックポイントから再計算」を実施してもらってください。チェックポイントが保存されていない場合は、実物確認で在庫数を修正してからチェックポイントを保存します。
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">シリアルNo.一覧と実際の履歴が一致しない</div>
+        <div class="faq-a">
+          シリアルNo.台帳（serialLedger）は履歴とは独立して保存されています。管理者が「チェックポイントから再計算」を実行することで台帳を最新化できます。テストデータの場合は「テストデータ削除」で台帳も含めて削除されます。
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">連続入力で生成した番号が想定と違う</div>
+        <div class="faq-a">連続入力は末尾の数字部分をインクリメントします。「ABC-099」の次は「ABC-100」になります（桁数は維持されません）。「ABC-0099」のように末尾の桁数を合わせてから入力してください。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">過去の履歴が見つからない</div>
+        <div class="faq-a">履歴タブは直近200件のみ表示されます。なお履歴は5年で自動削除されます。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">2つのタブで同時に開いて処理した場合</div>
+        <div class="faq-a">同じブラウザで複数タブを開くとFirebaseの初期化が競合してフリーズする場合があります。1つのタブのみで使用してください。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">スマホを機種変更した</div>
+        <div class="faq-a">アプリを開くと初回登録画面が表示されます。同じ名前・メール・部署で再登録してください。Firebaseのデータ（在庫・履歴）は端末に依存しないため引き継がれます。</div>
+      </div>
+    </div>
+
+    <!-- ===== 8. バージョン ===== -->
+    <div class="section" id="version">
+      <div class="section-header">
+        <div class="section-icon">📋</div>
+        <div>
+          <div class="section-num">Section 8</div>
+          <div class="section-title">バージョン情報</div>
+        </div>
+      </div>
+
+      <table class="info-table" style="background:white;border:1px solid var(--gray-200);border-radius:10px;overflow:hidden;">
+        <tr><td>バージョン</td><td>v2.5.0</td></tr>
+        <tr><td>最終更新</td><td>2026年3月23日</td></tr>
+        <tr><td>開発・管理</td><td>鹿嶋</td></tr>
+        <tr><td>Firebase</td><td>qr-inventory-4cb2b</td></tr>
+        <tr><td>URL</td><td>https://kanri.web.app</td></tr>
+      </table>
+
+      <h3>更新履歴</h3>
+
+      <div class="card" style="margin-top:8px;">
+        <div class="card-title">v2.5.0（2026-03-23）</div>
+        <ul class="bullets">
+        <h4>🐛 バグ修正</h4>
+            <li>在庫詳細の履歴からシリアルNo.を編集しても即時反映されない問題を修正</li>
+            <li>台帳と履歴のシリアルNo.がズレていた場合でも正しく更新されるよう修正（replaceAll方式に変更）</li>
+          </ul>
+          <h4>🔄 変更</h4>
+          <ul class="bullets">
+            <li>シリアルNo.の表示・編集UIを刷新</li>
+            <li>連番の場合「12345～12349」形式で表示し、タップで個別番号を展開</li>
+            <li>展開後は各番号に個別の✏️編集ボタンを表示</li>
+            <li>非連番で3件超の場合は「他N件」で省略表示し、タップで全件展開</li>
+            <li>在庫詳細のシリアルNo.一覧をアコーディオン（折りたたみ）表示に変更</li>
+            <li>常に展開していた検索ボックスを折りたたみ内に移動してすっきり表示</li>
+          </ul>
+        </div>
+        <div class="card-title">v2.4.0（2026-03-17）</div>
+        <div class="card-body">
+          <h4>✨ 追加</h4>
+          <ul class="bullets">
+            <li>シリアルNo.連続入力機能（「🏷️ 連続入力」ボタンで開始番号と個数を指定して自動生成）</li>
+            <li>シリアルNo.が連番の場合「12345～12347」形式で範囲表示（クリックで個別展開）</li>
+            <li>連番範囲の開始番号を修正すると全件が自動更新される機能</li>
+          </ul>
+          <h4>🔄 変更</h4>
+          <ul class="bullets">
+            <li>工番固定出庫モードを管理部倉庫G・管理者のみ選択可に変更（他部署は薄表示・選択不可）</li>
+            <li>管理部倉庫G・管理者はシリアルNo.必要品番でも通常処理のみに変更</li>
+            <li>シリアルNo.入力欄のカメラスキャンボタンを削除</li>
+          </ul>
+          <h4>🐛 バグ修正</h4>
+          <ul class="bullets">
+            <li>テストデータ削除時にserialLedgerも同時削除されない問題を修正</li>
+            <li>工番が未入力のまま処理しようとした際に「工番が入力されていません」と個別表示するよう改善</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">v2.3.0（2026-03-16）</div>
+        <div class="card-body">
+          <h4>✨ 追加</h4>
+          <ul class="bullets">
+            <li>シリアルNo.の修正機能</li>
+            <li>シリアルNo.の検索機能</li>
+          </ul>
+          <h4>🔄 変更</h4>
+          <ul class="bullets">
+            <li>シリアルNo.一覧が履歴の上にまとめて表示されるよう変更</li>
+          </ul>
+          <h4>🐛 バグ修正</h4>
+          <ul class="bullets">
+            <li>工番固定出庫モードで「工番変更」後にカメラが再起動できない問題を修正</li>
+            <li>シリアルNo.必要品番スキャン後に工番変更するとフリーズする問題を修正</li>
+          </ul>
+          <h4>🚀 改善</h4>
+          <ul class="bullets">
+            <li>工番固定出庫モードで出庫完了後にカメラを自動再起動するよう変更</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">v2.2.2（2026-03-13）</div>
+        <div class="card-body">
+          <h4>🔄 変更</h4>
+          <ul class="bullets">
+            <li>更新履歴全体をクリックで展開する形に変更</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">v2.2.1（2026-03-13）</div>
+        <div class="card-body">
+          <h4>✨ 追加</h4>
+          <ul class="bullets">
+            <li>棚卸チェックポイント機能（管理者設定）</li>
+            <li>棚卸時に在庫数・シリアルNo.台帳を確定値として保存</li>
+            <li>チェックポイント以降の履歴のみで在庫を再計算できる</li>
+            <li>更新履歴機能（管理者設定）- Firebaseに保存・全端末で同期</li>
+          </ul>
+          <h4>🐛 バグ修正</h4>
+          <ul class="bullets">
+            <li>在庫検索→品目詳細で過去の履歴が表示されない問題を修正</li>
+          </ul>
+          <h4>🔄 変更</h4>
+          <ul class="bullets">
+            <li>旧「履歴から在庫を再計算」ボタンを棚卸チェックポイントに置き換え</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">v2.2.0（2026-03-13）</div>
+        <div class="card-body">
+          <h4>🐛 バグ修正</h4>
+          <ul class="bullets">
+            <li>入庫・入庫取消・出庫取消で在庫数が更新されない問題を修正</li>
+            <li>index.htmlとindex_test.htmlを同時に開くとFirebaseが二重初期化される問題を修正</li>
+          </ul>
+          <h4>✨ 追加</h4>
+          <ul class="bullets">
+            <li>品目詳細画面にシリアルNo.一覧セクションを追加（工番ごとに整理表示）</li>
+            <li>シリアルNo.台帳（serialLedger）をFirebaseに別途管理</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">v2.1.0（2026-03-12）</div>
+        <div class="card-body">
+          <h4>✨ 追加</h4>
+          <ul class="bullets">
+            <li>シリアルNo.管理機能（CSVに「シリアルNo.必要」列を追加）</li>
+            <li>出庫フォームでシリアルNo.を1行ずつ入力（個数は自動カウント）</li>
+            <li>複数工番ごとに独立したシリアルNo.入力欄</li>
+            <li>出庫確認ダイアログにシリアルNo.一覧を表示</li>
+            <li>履歴に🏷️タグでシリアルNo.を表示</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">v2.0.0（初期リリース）</div>
+        <div class="card-body">
+          <h4>🚀 主な機能</h4>
+          <ul class="bullets">
+            <li>Firebase Realtime Database連携</li>
+            <li>QRコードスキャンによる入出庫登録・在庫検索</li>
+            <li>工番固定出庫モード</li>
+            <li>入庫権限制限（管理部倉庫G・管理者のみ）</li>
+            <li>PAS出庫チェック機能</li>
+            <li>在庫一覧・履歴フィルター（担当者・カテゴリー・保管場所）</li>
+            <li>保管場所CSV登録</li>
+            <li>自動バックアップ・手動バックアップ（Firebase・CSV）</li>
+            <li>テストデータ削除機能</li>
+            <li>品番コピー（クリップボード）</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:40px;color:var(--gray-400);font-size:13px;">
+        変更があったら随時更新します。
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main><!-- /main -->
+
+<a href="#" class="back-top">↑</a>
+
+<script>
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('.nav-link');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 80) current = s.id;
+    });
+    navLinks.forEach(l => {
+      l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+    });
+  });
+</script>
+</body>
+</html>
