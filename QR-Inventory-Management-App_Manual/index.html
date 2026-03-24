@@ -1198,6 +1198,34 @@
       l.classList.toggle('active', l.getAttribute('href') === '#' + current);
     });
   });
+
+  // card-titleの先頭にある最新バージョンを自動検出して各所に反映
+  (function syncVersion() {
+    const pattern = /^(v[\d.]+)（(\d{4})-(\d{2})-(\d{2})）/;
+
+    for (const el of document.querySelectorAll('.card-title')) {
+      const m = el.textContent.trim().match(pattern);
+      if (!m) continue;
+
+      const ver  = m[1];                                          // "v2.5.1"
+      const date = `${m[2]}年${+m[3]}月${+m[4]}日`;             // "2026年3月24日"
+
+      // サイドバー
+      document.querySelector('.sidebar-header .version').textContent = ver;
+
+      // ヒーローバッジ（最初のバッジ）
+      document.querySelector('.hero-badge').textContent = ver;
+
+      // バージョン情報テーブル（th/tdペアを走査）
+      const cells = [...document.querySelectorAll('.info-table td')];
+      cells.forEach((td, i) => {
+        if (td.textContent === 'バージョン') cells[i + 1].textContent = ver;
+        if (td.textContent === '最終更新')   cells[i + 1].textContent = date;
+      });
+
+      break; // 最初に見つかったもの（＝一番上に書いたもの）が最新
+    }
+  })();
 </script>
 </body>
 </html>
