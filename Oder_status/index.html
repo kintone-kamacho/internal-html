@@ -703,9 +703,9 @@
                 });
 
                 mergedData = mergedData.filter(row => {
-                    const isSK    = row['工番'].startsWith('SK');
-                    const hasHashK = row['品目備考'].includes('#K');
-                    return !(isSK && hasHashK);
+                    const isSKorMK = row['工番'].startsWith('SK') || row['工番'].startsWith('MK');
+                    const hasHashK  = row['品目備考'].includes('#K');
+                    return !(isSKorMK && hasHashK);
                 });
 
                 const today = new Date();
