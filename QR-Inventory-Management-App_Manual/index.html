@@ -925,6 +925,19 @@
         <span>履歴は5年で自動削除されます。年1回の棚卸時にチェックポイントを保存しておくことで、5年以上経過後も正確な再計算が可能です。</span>
       </div>
 
+      <h3>PCモード設定 <span class="new-badge">隠し設定</span></h3>
+      <p>PCからカメラの代わりに画像ファイルでQRコードを読み取る機能です。</p>
+      <ul class="bullets">
+        <li>設定画面のバージョン番号を<strong>5回タップ</strong>で表示・非表示が切り替わる</li>
+        <li>ONにするとスキャン画面に画像ドロップゾーンが表示される</li>
+        <li>PNG・JPG・GIF形式の画像に対応</li>
+        <li>スマホでは通常OFFのまま使用する</li>
+      </ul>
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <span>画像読み取りは3段階でリトライするため、小さいQRコードや低解像度の画像でも読み取りやすくなっています。</span>
+      </div>
+
       <h3>テストデータ削除</h3>
       <ul class="bullets">
         <li>CSVでカテゴリーを「ﾃｽﾄ」にした品番のみ対象</li>
@@ -1021,11 +1034,29 @@
       </table>
 
       <h3>更新履歴</h3>
-
+      
       <div class="card" style="margin-top:8px;">
-      <div class="card-title">v2.5.2（2026-03-25）</div>
-      <ul class="bullets">
-      <h4>🚀 改善</h4>
+        <div class="card-title">v2.5.3（2026-03-26）</div>
+        <div class="card-body">
+          <h4>🚀 改善</h4>
+          <ul class="bullets">
+            <li>PCモードの画像スキャン精度を改善</li>
+            <li>QRコード読み取りライブラリをjsQRに切り替え</li>
+            <li>読み取り失敗時に3段階でリトライするよう変更（①そのまま → ②2倍拡大 → ③コントラスト強調）</li>
+            <li>スマホのカメラスキャンには影響なし</li>
+          </ul>
+          <h4>🔄 変更</h4>
+          <ul class="bullets">
+            <li>PCモード設定を隠し設定に変更</li>
+            <li>設定画面のバージョン番号を5回タップで表示・非表示切り替え</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">v2.5.2（2026-03-25）</div>
+        <div class="card-body">
+          <h4>🚀 改善</h4>
           <ul class="bullets">
             <li>品目詳細を開くたびにFirebaseからその品番の履歴を直接取得するよう変更</li>
             <li>従来はアプリ起動時の最新200件（全品番合計）から絞り込んでいたため、他品番の出入庫が多いと古い履歴が表示されない問題があった</li>
@@ -1034,27 +1065,32 @@
             <li>「✕ 全件」ボタンで通常表示（最新200件）に戻せる</li>
             <li>FirebaseにitemCodeインデックスを追加し、品番での検索通信量を削減</li>
           </ul>
-      <h4>🔄 変更</h4>
-          <li>シリアルNoの変更時に✓マークがつくように変更</li>
-          <li>シリアルNo連続登録の場合、最初のシリアルNoを変更したら全体修正、中身を修正したら1つだけ修正に変更</li>
-          <li>シリアルNo非連続の場合、最初のシリアルNoを表示、残りは〇件として非表示にした状態で中身を隠すように変更</li>
-        </ul>
+          <h4>🔄 変更</h4>
+          <ul class="bullets">
+            <li>シリアルNoの変更時に✓マークがつくように変更</li>
+            <li>シリアルNo連続登録の場合、最初のシリアルNoを変更したら全体修正、中身を修正したら1つだけ修正に変更</li>
+            <li>シリアルNo非連続の場合、最初のシリアルNoを表示、残りは〇件として非表示にした状態で中身を隠すように変更</li>
+          </ul>
+        </div>
       </div>
 
-        <div class = "card">
+      <div class="card">
         <div class="card-title">v2.5.1（2026-03-24）</div>
-        <ul class="bullets">
-        <h4>🐛 バグ修正</h4>
+        <div class="card-body">
+          <h4>🐛 バグ修正</h4>
+          <ul class="bullets">
             <li>工番入力時にカーソルが先頭側に戻る問題を修正（常に末尾へ移動するよう変更）</li>
-            <li>入出庫登録画面を開くたびに日付が今日の日付にリセットされるよう修正</li>   
-            <li>日付の設定がUTC(協定世界時)になっていたのでJST(日本時間)に修正</li>    
-        </ul>
+            <li>入出庫登録画面を開くたびに日付が今日の日付にリセットされるよう修正</li>
+            <li>日付の設定がUTC（協定世界時）になっていたのでJST（日本時間）に修正</li>
+          </ul>
         </div>
+      </div>
 
-        <div class="card">
+      <div class="card">
         <div class="card-title">v2.5.0（2026-03-23）</div>
-        <ul class="bullets">
-        <h4>🐛 バグ修正</h4>
+        <div class="card-body">
+          <h4>🐛 バグ修正</h4>
+          <ul class="bullets">
             <li>在庫詳細の履歴からシリアルNo.を編集しても即時反映されない問題を修正</li>
             <li>台帳と履歴のシリアルNo.がズレていた場合でも正しく更新されるよう修正（replaceAll方式に変更）</li>
           </ul>
@@ -1068,29 +1104,30 @@
             <li>常に展開していた検索ボックスを折りたたみ内に移動してすっきり表示</li>
           </ul>
         </div>
-        
-        <div class="card">
-          <div class="card-title">v2.4.0（2026-03-17）</div>
-          <div class="card-body">
-            <h4>✨ 追加</h4>
-            <ul class="bullets">
-              <li>シリアルNo.連続入力機能（「🏷️ 連続入力」ボタンで開始番号と個数を指定して自動生成）</li>
-              <li>シリアルNo.が連番の場合「12345～12347」形式で範囲表示（クリックで個別展開）</li>
-              <li>連番範囲の開始番号を修正すると全件が自動更新される機能</li>
-            </ul>
-            <h4>🔄 変更</h4>
-            <ul class="bullets">
-              <li>工番固定出庫モードを管理部倉庫G・管理者のみ選択可に変更（他部署は薄表示・選択不可）</li>
-              <li>管理部倉庫G・管理者はシリアルNo.必要品番でも通常処理のみに変更</li>
-              <li>シリアルNo.入力欄のカメラスキャンボタンを削除</li>
-            </ul>
-            <h4>🐛 バグ修正</h4>
-            <ul class="bullets">
-              <li>テストデータ削除時にserialLedgerも同時削除されない問題を修正</li>
-              <li>工番が未入力のまま処理しようとした際に「工番が入力されていません」と個別表示するよう改善</li>
-            </ul>
-          </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">v2.4.0（2026-03-17）</div>
+        <div class="card-body">
+          <h4>✨ 追加</h4>
+          <ul class="bullets">
+            <li>シリアルNo.連続入力機能（「🏷️ 連続入力」ボタンで開始番号と個数を指定して自動生成）</li>
+            <li>シリアルNo.が連番の場合「12345～12347」形式で範囲表示（クリックで個別展開）</li>
+            <li>連番範囲の開始番号を修正すると全件が自動更新される機能</li>
+          </ul>
+          <h4>🔄 変更</h4>
+          <ul class="bullets">
+            <li>工番固定出庫モードを管理部倉庫G・管理者のみ選択可に変更（他部署は薄表示・選択不可）</li>
+            <li>管理部倉庫G・管理者はシリアルNo.必要品番でも通常処理のみに変更</li>
+            <li>シリアルNo.入力欄のカメラスキャンボタンを削除</li>
+          </ul>
+          <h4>🐛 バグ修正</h4>
+          <ul class="bullets">
+            <li>テストデータ削除時にserialLedgerも同時削除されない問題を修正</li>
+            <li>工番が未入力のまま処理しようとした際に「工番が入力されていません」と個別表示するよう改善</li>
+          </ul>
         </div>
+      </div>
 
       <div class="card">
         <div class="card-title">v2.3.0（2026-03-16）</div>
@@ -1197,7 +1234,7 @@
       </div>
 
       <div style="text-align:center;margin-top:40px;color:var(--gray-400);font-size:13px;">
-        変更があったら随時更新します。
+        変更があったら随時更新します。QRコード在庫管理→設定→更新履歴と同様の内容です。(管理者のみ閲覧編集可能)
       </div>
     </div>
 
