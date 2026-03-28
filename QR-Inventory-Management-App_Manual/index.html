@@ -646,6 +646,7 @@
           <tr><td>シリアルNo.修正</td><td><span class="ng">—</span></td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td></tr>
           <tr><td>テストデータ削除</td><td><span class="ng">—</span></td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td></tr>
           <tr><td>更新履歴編集</td><td><span class="ng">—</span></td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td></tr>
+          <tr><td>管理者メール管理</td><td><span class="ng">—</span></td><td><span class="ng">—</span></td><td><span class="ok">✅</span></td></tr>
           
         </tbody>
       </table>
@@ -970,6 +971,38 @@
       </ul>
     </div>
 
+    <h3>管理者メールアドレス管理 <span class="new-badge">NEW</span></h3>
+    <p>「管理者」部署で登録できるメールアドレスをFirebaseで管理する機能です。登録済みのメールアドレスのみ管理者として登録できます。</p>
+
+    <h4>初回設定（Firebaseコンソールから）</h4>
+    <ol class="steps">
+      <li>Firebaseコンソール → Realtime Database を開く</li>
+      <li>URLの末尾に <code>/adminEmails</code> を追加してアクセス</li>
+      <li>「＋」ボタンをクリックし、キー名（例：<code>yamada_kamacho_co_jp</code>）と値（例：<code>yamada@kamacho.co.jp</code>）を入力して追加</li>
+      <li>以降はアプリの設定画面から管理可能</li>
+    </ol>
+    <div class="callout info">
+      <span class="callout-icon">ℹ️</span>
+      <span>キー名は <code>@</code> と <code>.</code> をすべて <code>_</code>（アンダースコア）に変換したものを使用します。例：<code>yamada@kamacho.co.jp</code> → <code>yamada_kamacho_co_jp</code></span>
+    </div>
+
+    <h4>アプリからの追加・削除</h4>
+    <ul class="bullets">
+      <li>「⚙️ 設定」→「🔐 管理者メールアドレス管理」カードを開く</li>
+      <li>メールアドレスを入力して「追加」ボタンをタップ</li>
+      <li>登録済みアドレスの「削除」ボタンで削除可能</li>
+      <li>管理者が1人の場合は自分自身を削除できない（管理者ゼロ防止）</li>
+    </ul>
+
+    <div class="callout warning">
+      <span class="callout-icon">⚠️</span>
+      <span>自分のアドレスを変更したい場合は、先に新しいアドレスを追加してから古いアドレスを削除してください。管理者が1人の場合は先に別の管理者を追加する必要があります。</span>
+    </div>
+    <div class="callout tip">
+      <span class="callout-icon">💡</span>
+      <span>初回設定のみFirebaseコンソールでの操作が必要です。以降はアプリ内で完結します。</span>
+    </div>
+
     <!-- ===== 7. FAQ ===== -->
     <div class="section" id="faq">
       <div class="section-header">
@@ -1050,6 +1083,20 @@
       </table>
 
       <h3>更新履歴</h3>
+
+      <div class="card" style=""margin-top:8px;">
+        <div class="card-title">v2.5.5（2026-03-27）</div>
+        <div class="card-body">
+          <h4>✨ 追加</h4>
+          <ul class="bullets">
+            <li>管理者メールアドレス管理機能を追加</li>
+            <li>「管理者」部署での登録時にFirebaseに登録済みのメールアドレスかを照合</li>
+            <li>未登録メールでは管理者登録不可（部署選択がリセットされる）</li>
+            <li>管理者設定画面から管理者メールの追加・削除が可能</li>
+            <li>管理者が1人の場合は自分自身の削除を禁止（管理者ゼロ防止）</li>
+          </ul>
+        </div>
+      </div>
       
       <div class="card" style="margin-top:8px;">
         <div class="card-title">v2.5.4（2026-03-27）</div>
