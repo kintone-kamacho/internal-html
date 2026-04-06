@@ -8,19 +8,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
             font-family: 'Segoe UI', Miraigo Sans, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -29,35 +25,26 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
         }
-        
+
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 30px;
             text-align: center;
         }
-        
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-        
-        .content {
-            padding: 40px;
-        }
-        
+
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .header p { opacity: 0.9; font-size: 14px; }
+
+        .content { padding: 40px; }
+
         .file-upload-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 30px;
             margin-bottom: 30px;
         }
-        
+
         .upload-box {
             border: 3px dashed #667eea;
             border-radius: 15px;
@@ -72,29 +59,12 @@
             justify-content: center;
             align-items: center;
         }
-        
-        .upload-box:hover {
-            border-color: #764ba2;
-            background: #f0f2ff;
-            transform: translateY(-2px);
-        }
-        
-        .upload-box.drag-over {
-            border-color: #10b981;
-            background: #f0fdf4;
-            transform: scale(1.02);
-        }
-        
-        .upload-box h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-        
-        .upload-box input[type="file"] {
-            display: none;
-        }
-        
+
+        .upload-box:hover { border-color: #764ba2; background: #f0f2ff; transform: translateY(-2px); }
+        .upload-box.drag-over { border-color: #10b981; background: #f0fdf4; transform: scale(1.02); }
+        .upload-box h3 { color: #667eea; margin-bottom: 15px; font-size: 18px; }
+        .upload-box input[type="file"] { display: none; }
+
         .upload-label {
             display: inline-block;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -105,24 +75,12 @@
             font-weight: 600;
             transition: all 0.3s;
         }
-        
-        .upload-label:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .file-name {
-            margin-top: 15px;
-            color: #666;
-            font-size: 14px;
-            min-height: 20px;
-        }
-        
-        .file-name.loaded {
-            color: #10b981;
-            font-weight: 600;
-        }
-        
+
+        .upload-label:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
+
+        .file-name { margin-top: 15px; color: #666; font-size: 14px; min-height: 20px; }
+        .file-name.loaded { color: #10b981; font-weight: 600; }
+
         .check-button {
             width: 100%;
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -136,112 +94,86 @@
             transition: all 0.3s;
             margin-bottom: 30px;
         }
-        
-        .check-button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
-        }
-        
-        .check-button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        
-        .results {
-            display: none;
-        }
-        
-        .results.show {
-            display: block;
-        }
-        
+
+        .check-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.4); }
+        .check-button:disabled { background: #ccc; cursor: not-allowed; }
+
+        .results { display: none; }
+        .results.show { display: block; }
+
         .summary {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 15px;
             margin-bottom: 30px;
         }
-        
+
         .summary-card {
             background: linear-gradient(135deg, #f8f9ff 0%, #e8ebff 100%);
-            padding: 20px;
+            padding: 18px 15px;
             border-radius: 10px;
             text-align: center;
             border-left: 4px solid #667eea;
         }
-        
-        .summary-card.duplicate {
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            border-left-color: #ef4444;
-        }
-        
-        .summary-card.new {
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border-left-color: #10b981;
-        }
-        
-        .summary-card h3 {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-        }
-        
-        .summary-card .number {
-            font-size: 32px;
-            font-weight: 700;
-            color: #333;
-        }
-        
+
+        .summary-card.duplicate { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-left-color: #ef4444; }
+        .summary-card.new      { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left-color: #10b981; }
+        .summary-card.warn     { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left-color: #f59e0b; }
+
+        .summary-card h3 { font-size: 13px; color: #666; margin-bottom: 8px; }
+        .summary-card .number { font-size: 30px; font-weight: 700; color: #333; }
+
         .table-container {
             overflow-x: auto;
             margin-top: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-height: 400px;
+            overflow-y: auto;
         }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
-        
+
+        table { width: 100%; border-collapse: collapse; background: white; }
+
         th {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 15px;
+            padding: 12px 15px;
             text-align: left;
             font-weight: 600;
             position: sticky;
             top: 0;
+            z-index: 1;
+            font-size: 13px;
         }
-        
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #e5e7eb;
+
+        td { padding: 10px 15px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+        tr:hover { background: #f8f9ff; }
+
+        .section-title {
+            font-size: 20px;
+            color: #333;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
         }
-        
-        tr:hover {
-            background: #f8f9ff;
-        }
-        
-        .status-badge {
+
+        .section-title.warn-title { border-bottom-color: #f59e0b; }
+        .section-title.ok-title   { border-bottom-color: #10b981; }
+
+        .badge {
             display: inline-block;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 6px;
+            vertical-align: middle;
         }
-        
-        .status-duplicate {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-        
-        .status-new {
-            background: #dcfce7;
-            color: #059669;
-        }
-        
+
+        .badge-red    { background: #fee2e2; color: #dc2626; }
+        .badge-yellow { background: #fef3c7; color: #b45309; }
+        .badge-green  { background: #dcfce7; color: #059669; }
+
         .download-button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -253,360 +185,323 @@
             margin-top: 20px;
             transition: all 0.3s;
         }
-        
-        .download-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .section-title {
-            font-size: 20px;
-            color: #333;
-            margin: 30px 0 15px 0;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
+
+        .download-button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
+
+        .no-data {
+            color: #10b981;
+            font-size: 15px;
+            padding: 15px;
+            background: #f0fdf4;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📋 品番重複チェックツール</h1>
-            <p>CSV・XLSX両対応 | 元データと新データを読み込んで品番の重複をチェック</p>
-        </div>
-        
-        <div class="content">
-            <div class="file-upload-section">
-                <div class="upload-box" id="oldDropZone">
-                    <h3>📁 元データ（CSV/XLSX）</h3>
-                    <p style="color: #999; margin-bottom: 15px; font-size: 13px;">ファイルをドラッグ&ドロップ または クリックして選択</p>
-                    <label for="oldFile" class="upload-label">ファイルを選択</label>
-                    <input type="file" id="oldFile" accept=".csv,.xlsx,.xls">
-                    <div class="file-name" id="oldFileName">ファイル未選択</div>
-                </div>
-                
-                <div class="upload-box" id="newDropZone">
-                    <h3>📄 新データ（CSV/XLSX）</h3>
-                    <p style="color: #999; margin-bottom: 15px; font-size: 13px;">ファイルをドラッグ&ドロップ または クリックして選択</p>
-                    <label for="newFile" class="upload-label">ファイルを選択</label>
-                    <input type="file" id="newFile" accept=".csv,.xlsx,.xls">
-                    <div class="file-name" id="newFileName">ファイル未選択</div>
-                </div>
-            </div>
-            
-            <button class="check-button" id="checkButton" disabled>重複チェック実行</button>
-            
-            <div class="results" id="results">
-                <div class="summary" id="summary"></div>
-                
-                <div id="duplicateSection" style="display:none;">
-                    <h2 class="section-title">⚠️ 重複データ</h2>
-                    <div class="table-container">
-                        <table id="duplicateTable">
-                            <thead>
-                                <tr>
-                                    <th>品番</th>
-                                    <th>品名</th>
-                                    <th>仕様</th>
-                                    <th>担当者</th>
-                                    <th>カテゴリー</th>
-                                    <th>アラート値</th>
-                                </tr>
-                            </thead>
-                            <tbody id="duplicateBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <div id="newSection" style="display:none;">
-                    <h2 class="section-title">✅ 新規データ</h2>
-                    <div class="table-container">
-                        <table id="newTable">
-                            <thead>
-                                <tr>
-                                    <th>品番</th>
-                                    <th>品名</th>
-                                    <th>仕様</th>
-                                    <th>担当者</th>
-                                    <th>カテゴリー</th>
-                                    <th>アラート値</th>
-                                </tr>
-                            </thead>
-                            <tbody id="newBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <button class="download-button" id="downloadButton">結果をExcelでダウンロード</button>
-            </div>
-        </div>
+<div class="container">
+    <div class="header">
+        <h1>📋 品番重複チェックツール</h1>
+        <p>CSV・XLSX両対応 ｜ ファイル内重複 ＋ ファイル間重複を同時チェック</p>
     </div>
 
-    <script>
-        let oldData = [];
-        let newData = [];
-        let checkResults = null;
+    <div class="content">
+        <div class="file-upload-section">
+            <div class="upload-box" id="oldDropZone">
+                <h3>📁 元データ（CSV/XLSX）</h3>
+                <p style="color:#999;margin-bottom:15px;font-size:13px;">ファイルをドラッグ&ドロップ または クリックして選択</p>
+                <label for="oldFile" class="upload-label">ファイルを選択</label>
+                <input type="file" id="oldFile" accept=".csv,.xlsx,.xls">
+                <div class="file-name" id="oldFileName">ファイル未選択</div>
+            </div>
 
-        // ドラッグ&ドロップ設定
-        setupDropZone('oldDropZone', 'oldFile', 'old');
-        setupDropZone('newDropZone', 'newFile', 'new');
+            <div class="upload-box" id="newDropZone">
+                <h3>📄 新データ（CSV/XLSX）</h3>
+                <p style="color:#999;margin-bottom:15px;font-size:13px;">ファイルをドラッグ&ドロップ または クリックして選択</p>
+                <label for="newFile" class="upload-label">ファイルを選択</label>
+                <input type="file" id="newFile" accept=".csv,.xlsx,.xls">
+                <div class="file-name" id="newFileName">ファイル未選択</div>
+            </div>
+        </div>
 
-        function setupDropZone(dropZoneId, fileInputId, type) {
-            const dropZone = document.getElementById(dropZoneId);
-            const fileInput = document.getElementById(fileInputId);
+        <button class="check-button" id="checkButton" disabled>重複チェック実行</button>
 
-            // ドラッグオーバー時
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                dropZone.classList.add('drag-over');
-            });
+        <div class="results" id="results">
+            <div class="summary" id="summary"></div>
 
-            // ドラッグが離れた時
-            dropZone.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                dropZone.classList.remove('drag-over');
-            });
+            <!-- 元データ内重複 -->
+            <div id="oldIntraSection" style="display:none;">
+                <h2 class="section-title warn-title">⚠️ 元データ内の重複 <span class="badge badge-yellow" id="oldIntraBadge"></span></h2>
+                <div class="table-container"><table id="oldIntraTable"><thead></thead><tbody></tbody></table></div>
+            </div>
+            <div id="oldIntraOk" class="no-data" style="display:none;">✅ 元データ内に重複はありません</div>
 
-            // ドロップ時
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                dropZone.classList.remove('drag-over');
+            <!-- 新データ内重複 -->
+            <div id="newIntraSection" style="display:none;">
+                <h2 class="section-title warn-title">⚠️ 新データ内の重複 <span class="badge badge-yellow" id="newIntraBadge"></span></h2>
+                <div class="table-container"><table id="newIntraTable"><thead></thead><tbody></tbody></table></div>
+            </div>
+            <div id="newIntraOk" class="no-data" style="display:none;">✅ 新データ内に重複はありません</div>
 
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    const file = files[0];
-                    const extension = file.name.split('.').pop().toLowerCase();
-                    if (['csv', 'xlsx', 'xls'].includes(extension)) {
-                        // FileListを作成してinput要素に設定
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(file);
-                        fileInput.files = dataTransfer.files;
-                        readFile(file, type);
-                    } else {
-                        alert('CSV または XLSX/XLS ファイルをドロップしてください');
-                    }
-                }
-            });
+            <!-- ファイル間重複 -->
+            <div id="crossSection" style="display:none;">
+                <h2 class="section-title">⚠️ ファイル間重複（元データと一致） <span class="badge badge-red" id="crossBadge"></span></h2>
+                <div class="table-container"><table id="crossTable"><thead></thead><tbody></tbody></table></div>
+            </div>
+            <div id="crossOk" class="no-data" style="display:none;">✅ ファイル間に重複はありません</div>
 
-            // クリックでもファイル選択できるように
-            dropZone.addEventListener('click', (e) => {
-                if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
-                    fileInput.click();
-                }
-            });
-        }
+            <!-- 新規データ -->
+            <div id="newSection" style="display:none;">
+                <h2 class="section-title ok-title">✅ 新規データ（重複なし） <span class="badge badge-green" id="newBadge"></span></h2>
+                <div class="table-container"><table id="newTable"><thead></thead><tbody></tbody></table></div>
+            </div>
 
-        // ファイル読み込み処理
-        document.getElementById('oldFile').addEventListener('change', function(e) {
-            readFile(e.target.files[0], 'old');
-        });
+            <button class="download-button" id="downloadButton">結果をExcelでダウンロード</button>
+        </div>
+    </div>
+</div>
 
-        document.getElementById('newFile').addEventListener('change', function(e) {
-            readFile(e.target.files[0], 'new');
-        });
+<script>
+    let oldData = [], newData = [], checkResults = null;
 
-        function readFile(file, type) {
-            if (!file) return;
-            
-            const fileName = type === 'old' ? 'oldFileName' : 'newFileName';
-            document.getElementById(fileName).textContent = `読込中... ${file.name}`;
-            
-            const extension = file.name.split('.').pop().toLowerCase();
-            
-            if (extension === 'csv') {
-                readCSV(file, type);
-            } else if (extension === 'xlsx' || extension === 'xls') {
-                readExcel(file, type);
+    setupDropZone('oldDropZone', 'oldFile', 'old');
+    setupDropZone('newDropZone', 'newFile', 'new');
+
+    function setupDropZone(dropZoneId, fileInputId, type) {
+        const dropZone = document.getElementById(dropZoneId);
+        const fileInput = document.getElementById(fileInputId);
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag-over'); });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (['csv','xlsx','xls'].includes(ext)) {
+                    const dt = new DataTransfer(); dt.items.add(file); fileInput.files = dt.files;
+                    readFile(file, type);
+                } else { alert('CSV または XLSX/XLS ファイルをドロップしてください'); }
             }
-        }
+        });
+        dropZone.addEventListener('click', e => { if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') fileInput.click(); });
+    }
 
-        function readCSV(file, type) {
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    if (type === 'old') {
-                        oldData = results.data;
-                        document.getElementById('oldFileName').textContent = `✓ ${file.name}`;
-                        document.getElementById('oldFileName').classList.add('loaded');
-                    } else {
-                        newData = results.data;
-                        document.getElementById('newFileName').textContent = `✓ ${file.name}`;
-                        document.getElementById('newFileName').classList.add('loaded');
-                    }
-                    checkButtonState();
-                },
-                error: function(error) {
-                    alert('CSVファイルの読み込みに失敗しました: ' + error.message);
-                }
-            });
-        }
+    document.getElementById('oldFile').addEventListener('change', e => readFile(e.target.files[0], 'old'));
+    document.getElementById('newFile').addEventListener('change', e => readFile(e.target.files[0], 'new'));
 
-        function readExcel(file, type) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                    
-                    if (type === 'old') {
-                        oldData = jsonData;
-                        document.getElementById('oldFileName').textContent = `✓ ${file.name}`;
-                        document.getElementById('oldFileName').classList.add('loaded');
-                    } else {
-                        newData = jsonData;
-                        document.getElementById('newFileName').textContent = `✓ ${file.name}`;
-                        document.getElementById('newFileName').classList.add('loaded');
-                    }
-                    checkButtonState();
-                } catch (error) {
-                    alert('Excelファイルの読み込みに失敗しました: ' + error.message);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
+    function readFile(file, type) {
+        if (!file) return;
+        const nameId = type === 'old' ? 'oldFileName' : 'newFileName';
+        document.getElementById(nameId).textContent = `読込中... ${file.name}`;
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'csv') readCSV(file, type);
+        else readExcel(file, type);
+    }
 
-        function checkButtonState() {
-            const button = document.getElementById('checkButton');
-            if (oldData.length > 0 && newData.length > 0) {
-                button.disabled = false;
+    function readCSV(file, type) {
+        Papa.parse(file, {
+            header: true, skipEmptyLines: true,
+            complete(results) { setData(type, results.data, file.name); },
+            error(err) { alert('CSVファイルの読み込みに失敗しました: ' + err.message); }
+        });
+    }
+
+    function readExcel(file, type) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+                setData(type, data, file.name);
+            } catch(err) { alert('Excelファイルの読み込みに失敗しました: ' + err.message); }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function setData(type, data, name) {
+        if (type === 'old') {
+            oldData = data;
+            const el = document.getElementById('oldFileName');
+            el.textContent = `✓ ${name}`; el.classList.add('loaded');
+        } else {
+            newData = data;
+            const el = document.getElementById('newFileName');
+            el.textContent = `✓ ${name}`; el.classList.add('loaded');
+        }
+        checkButtonState();
+    }
+
+    function checkButtonState() {
+        document.getElementById('checkButton').disabled = !(oldData.length > 0 && newData.length > 0);
+    }
+
+    document.getElementById('checkButton').addEventListener('click', performCheck);
+
+    /* ── 同ファイル内重複を検出 ── */
+    function findIntraDuplicates(data) {
+        if (!data.length) return { duplicateRows: [], hinbanKey: null };
+        const keys = Object.keys(data[0]);
+        const hinbanKey = keys.find(k => k.includes('品番')) || keys[0];
+        const seen = new Map();   // hinban → first index
+        const dupIndices = new Set();
+
+        data.forEach((row, i) => {
+            const h = String(row[hinbanKey] || '').trim();
+            if (!h) return;
+            if (seen.has(h)) {
+                dupIndices.add(seen.get(h));  // mark original too
+                dupIndices.add(i);
             } else {
-                button.disabled = true;
+                seen.set(h, i);
             }
-        }
-
-        // 重複チェック実行
-        document.getElementById('checkButton').addEventListener('click', function() {
-            performCheck();
         });
 
-        function performCheck() {
-            // 品番のキーを特定（半角スペースやタブを含む可能性があるため）
-            const oldKeys = Object.keys(oldData[0]);
-            const newKeys = Object.keys(newData[0]);
-            
-            const hinbanKey = oldKeys.find(key => key.includes('品番')) || oldKeys[0];
-            const newHinbanKey = newKeys.find(key => key.includes('品番')) || newKeys[0];
-            
-            // 元データの品番セットを作成（トリム処理）
-            const oldHinbanSet = new Set(
-                oldData.map(row => String(row[hinbanKey] || '').trim())
-            );
-            
-            // 新データを重複・新規に分類
-            const duplicates = [];
-            const newItems = [];
-            
-            newData.forEach(row => {
-                const hinban = String(row[newHinbanKey] || '').trim();
-                if (oldHinbanSet.has(hinban)) {
-                    duplicates.push(row);
-                } else {
-                    newItems.push(row);
-                }
-            });
-            
-            checkResults = {
-                duplicates: duplicates,
-                newItems: newItems,
-                total: newData.length
-            };
-            
-            displayResults();
-        }
+        return { duplicateRows: [...dupIndices].sort((a,b)=>a-b).map(i => data[i]), hinbanKey };
+    }
 
-        function displayResults() {
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.classList.add('show');
-            
-            // サマリー表示
-            const summaryHTML = `
-                <div class="summary-card">
-                    <h3>チェック総数</h3>
-                    <div class="number">${checkResults.total}</div>
-                </div>
-                <div class="summary-card duplicate">
-                    <h3>重複データ</h3>
-                    <div class="number">${checkResults.duplicates.length}</div>
-                </div>
-                <div class="summary-card new">
-                    <h3>新規データ</h3>
-                    <div class="number">${checkResults.newItems.length}</div>
-                </div>
-            `;
-            document.getElementById('summary').innerHTML = summaryHTML;
-            
-            // 重複テーブル表示
-            if (checkResults.duplicates.length > 0) {
-                document.getElementById('duplicateSection').style.display = 'block';
-                displayTable(checkResults.duplicates, 'duplicateBody');
-            } else {
-                document.getElementById('duplicateSection').style.display = 'none';
-            }
-            
-            // 新規テーブル表示
-            if (checkResults.newItems.length > 0) {
-                document.getElementById('newSection').style.display = 'block';
-                displayTable(checkResults.newItems, 'newBody');
-            } else {
-                document.getElementById('newSection').style.display = 'none';
-            }
-        }
+    function performCheck() {
+        // ─── 品番キー特定 ───
+        const oldKeys = Object.keys(oldData[0]);
+        const newKeys = Object.keys(newData[0]);
+        const oldHinbanKey = oldKeys.find(k => k.includes('品番')) || oldKeys[0];
+        const newHinbanKey = newKeys.find(k => k.includes('品番')) || newKeys[0];
 
-        function displayTable(data, tbodyId) {
-            const tbody = document.getElementById(tbodyId);
-            tbody.innerHTML = '';
-            
-            const keys = Object.keys(data[0]);
-            
-            data.forEach(row => {
-                const tr = document.createElement('tr');
-                keys.forEach(key => {
-                    const td = document.createElement('td');
-                    td.textContent = row[key] || '';
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-        }
+        // ─── 元データ内重複 ───
+        const { duplicateRows: oldIntra } = findIntraDuplicates(oldData);
 
-        // Excel出力
-        document.getElementById('downloadButton').addEventListener('click', function() {
-            const wb = XLSX.utils.book_new();
-            
-            // サマリーシート
-            const summaryData = [
-                ['チェック結果サマリー'],
-                [''],
-                ['項目', '件数'],
-                ['チェック総数', checkResults.total],
-                ['重複データ', checkResults.duplicates.length],
-                ['新規データ', checkResults.newItems.length]
-            ];
-            const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-            XLSX.utils.book_append_sheet(wb, summarySheet, 'サマリー');
-            
-            // 重複データシート
-            if (checkResults.duplicates.length > 0) {
-                const duplicateSheet = XLSX.utils.json_to_sheet(checkResults.duplicates);
-                XLSX.utils.book_append_sheet(wb, duplicateSheet, '重複データ');
-            }
-            
-            // 新規データシート
-            if (checkResults.newItems.length > 0) {
-                const newSheet = XLSX.utils.json_to_sheet(checkResults.newItems);
-                XLSX.utils.book_append_sheet(wb, newSheet, '新規データ');
-            }
-            
-            // ファイル出力
-            const timestamp = new Date().toISOString().slice(0,19).replace(/:/g,'-');
-            XLSX.writeFile(wb, `重複チェック結果_${timestamp}.xlsx`);
+        // ─── 新データ内重複 ───
+        const { duplicateRows: newIntra } = findIntraDuplicates(newData);
+
+        // ─── ファイル間重複（元データセット vs 新データ各行） ───
+        const oldSet = new Set(oldData.map(r => String(r[oldHinbanKey] || '').trim()));
+        const crossDups = [], newItems = [];
+
+        newData.forEach(row => {
+            const h = String(row[newHinbanKey] || '').trim();
+            if (oldSet.has(h)) crossDups.push(row);
+            else newItems.push(row);
         });
-    </script>
+
+        checkResults = { oldIntra, newIntra, crossDups, newItems, newTotal: newData.length };
+        displayResults();
+    }
+
+    function displayResults() {
+        const r = checkResults;
+        document.getElementById('results').classList.add('show');
+
+        // ─── サマリー ───
+        document.getElementById('summary').innerHTML = `
+            <div class="summary-card">
+                <h3>新データ チェック総数</h3>
+                <div class="number">${r.newTotal}</div>
+            </div>
+            <div class="summary-card warn">
+                <h3>元データ内 重複</h3>
+                <div class="number">${r.oldIntra.length}</div>
+            </div>
+            <div class="summary-card warn">
+                <h3>新データ内 重複</h3>
+                <div class="number">${r.newIntra.length}</div>
+            </div>
+            <div class="summary-card duplicate">
+                <h3>ファイル間 重複</h3>
+                <div class="number">${r.crossDups.length}</div>
+            </div>
+            <div class="summary-card new">
+                <h3>完全新規データ</h3>
+                <div class="number">${r.newItems.length}</div>
+            </div>`;
+
+        // ─── 元データ内重複 ───
+        if (r.oldIntra.length > 0) {
+            document.getElementById('oldIntraSection').style.display = 'block';
+            document.getElementById('oldIntraOk').style.display = 'none';
+            document.getElementById('oldIntraBadge').textContent = r.oldIntra.length + '件';
+            buildTable('oldIntraTable', r.oldIntra);
+        } else {
+            document.getElementById('oldIntraSection').style.display = 'none';
+            document.getElementById('oldIntraOk').style.display = 'block';
+        }
+
+        // ─── 新データ内重複 ───
+        if (r.newIntra.length > 0) {
+            document.getElementById('newIntraSection').style.display = 'block';
+            document.getElementById('newIntraOk').style.display = 'none';
+            document.getElementById('newIntraBadge').textContent = r.newIntra.length + '件';
+            buildTable('newIntraTable', r.newIntra);
+        } else {
+            document.getElementById('newIntraSection').style.display = 'none';
+            document.getElementById('newIntraOk').style.display = 'block';
+        }
+
+        // ─── ファイル間重複 ───
+        if (r.crossDups.length > 0) {
+            document.getElementById('crossSection').style.display = 'block';
+            document.getElementById('crossOk').style.display = 'none';
+            document.getElementById('crossBadge').textContent = r.crossDups.length + '件';
+            buildTable('crossTable', r.crossDups);
+        } else {
+            document.getElementById('crossSection').style.display = 'none';
+            document.getElementById('crossOk').style.display = 'block';
+        }
+
+        // ─── 新規データ ───
+        if (r.newItems.length > 0) {
+            document.getElementById('newSection').style.display = 'block';
+            document.getElementById('newBadge').textContent = r.newItems.length + '件';
+            buildTable('newTable', r.newItems);
+        } else {
+            document.getElementById('newSection').style.display = 'none';
+        }
+    }
+
+    function buildTable(tableId, data) {
+        const table = document.getElementById(tableId);
+        const keys = Object.keys(data[0]);
+
+        // thead
+        table.tHead.innerHTML = '';
+        const tr = document.createElement('tr');
+        keys.forEach(k => { const th = document.createElement('th'); th.textContent = k; tr.appendChild(th); });
+        table.tHead.appendChild(tr);
+
+        // tbody
+        table.tBodies[0].innerHTML = '';
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            keys.forEach(k => { const td = document.createElement('td'); td.textContent = row[k] ?? ''; tr.appendChild(td); });
+            table.tBodies[0].appendChild(tr);
+        });
+    }
+
+    // ─── Excel出力 ───
+    document.getElementById('downloadButton').addEventListener('click', () => {
+        const r = checkResults;
+        const wb = XLSX.utils.book_new();
+
+        // サマリー
+        const summaryData = [
+            ['チェック結果サマリー'], [''],
+            ['項目', '件数'],
+            ['新データ チェック総数', r.newTotal],
+            ['元データ内 重複', r.oldIntra.length],
+            ['新データ内 重複', r.newIntra.length],
+            ['ファイル間 重複', r.crossDups.length],
+            ['完全新規データ', r.newItems.length]
+        ];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), 'サマリー');
+
+        if (r.oldIntra.length)  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(r.oldIntra),  '元データ内重複');
+        if (r.newIntra.length)  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(r.newIntra),  '新データ内重複');
+        if (r.crossDups.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(r.crossDups), 'ファイル間重複');
+        if (r.newItems.length)  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(r.newItems),  '新規データ');
+
+        const ts = new Date().toISOString().slice(0,19).replace(/:/g,'-');
+        XLSX.writeFile(wb, `重複チェック結果_${ts}.xlsx`);
+    });
+</script>
 </body>
 </html>
