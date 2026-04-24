@@ -1,0 +1,122 @@
+■ 全体像（まずこれだけ理解）
+
+やることはシンプルにこの4つだけです：
+
+最新を取る
+ブランチ作る
+修正してコミット
+Pushしてマージ（Pull Request）
+■ 初回だけやる準備
+① リポジトリをクローン
+
+GitHub Desktopで：
+
+「File」→「Clone repository」
+対象リポジトリを選択
+保存先：今使ってる
+C:\Users\...\internal-html
+
+👉 すでにあるならOK（スキップ）
+
+■ 毎回の作業手順（これが本番）
+① 最新を取得（絶対やる）
+
+GitHub Desktop上で：
+
+「Fetch origin」
+「Pull origin」
+
+👉 他の人の変更を取り込む
+
+② ブランチを作る
+上の「Current Branch」クリック
+「New Branch」
+
+例：
+
+feature/header-fix
+fix/button-bug
+
+👉 名前は「何をしたか」が分かればOK
+
+③ HTMLを修正
+
+いつも通り：
+
+VSCodeなどで編集
+保存
+
+👉 ここは今まで通りでOK
+
+④ コミット
+
+GitHub Desktopに戻ると変更が出るので：
+
+Summary（必須）
+例：ヘッダーのレイアウト修正
+「Commit to ○○（ブランチ名）」
+⑤ Push（超重要）
+「Publish branch」 or 「Push origin」
+
+👉 これでGitHubにアップされる
+
+⑥ Pull Request作成（これがチーム作業）
+右上「Create Pull Request」クリック
+ブラウザ開く
+
+GitHub上で：
+
+内容を書く（簡単でOK）
+何を修正したか
+「Create Pull Request」
+⑦ マージ（取り込み）
+問題なければ「Merge」
+「Delete branch」（削除してOK）
+⑧ mainを最新に戻す
+
+GitHub Desktopで：
+
+main に切り替え
+「Pull origin」
+
+👉 次の作業の準備完了
+
+■ 重要ルール（これだけ守る）
+✔ mainには直接コミットしない
+
+👉 これが一番大事
+
+✔ 作業前にPull
+
+👉 古い状態で作業しない
+
+✔ 作業ごとにブランチ
+
+👉 混ざらないようにする
+
+■ よくあるミス（先に回避）
+❌ Push忘れ
+
+👉 他の人に見えない
+
+❌ mainで作業
+
+👉 事故の元
+
+❌ Pullせず開始
+
+👉 コンフリクト原因
+
+■ 超シンプルに言うと
+
+今まで：
+
+修正 → commit → 終わり
+
+これから：
+
+Pull → ブランチ → 修正 → commit → Push → マージ
+■ 最後に
+
+このやり方は最小構成なので、
+2〜5人くらいのチームならこれで十分回ります。
