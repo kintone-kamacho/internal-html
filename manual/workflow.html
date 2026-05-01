@@ -111,6 +111,8 @@
     <div class="section-label">PAGES</div>
     <a href="git-basic.html">📖 Git入門・初回セットアップ</a>
     <a href="workflow.html" class="active">🔄 日常の作業手順・運用ルール</a>
+    <div class="section-label">応用</div>
+    <a href="#branch">🌿 ブランチ運用</a>
   </aside>
 
   <main>
@@ -324,6 +326,107 @@
       </div>
 
     </div>
+
+    <!-- ─── ブランチ運用 ─── -->
+    <div class="section" id="branch">
+      <div class="section-title">🌿 ブランチ運用</div>
+
+      <div class="box box-info">
+        💡 <strong>ブランチとは？</strong><br>
+        mainブランチを「本番」として、作業用に別のブランチを作って編集する方法です。<br>
+        完成したらmainに取り込む（マージする）ことで、作業中の不完全な内容が本番に影響しません。
+      </div>
+
+      <div class="box box-warn">
+        ⚠️ <strong>注意：ブランチを切り替え忘れると今日のような混乱が起きます。</strong><br>
+        作業前に必ず現在のブランチを確認してください。
+      </div>
+
+      <!-- フロー図 -->
+      <div class="flow" style="margin: 20px 0;">
+        <div class="flow-item"><div class="fi-icon">🌿</div><div class="fi-label">①ブランチ作成</div><div class="fi-cmd">New branch</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item"><div class="fi-icon">✏️</div><div class="fi-label">②編集・確認</div><div class="fi-cmd">commit / push</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item"><div class="fi-icon">🔀</div><div class="fi-label">③mainへ取込</div><div class="fi-cmd">merge</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item"><div class="fi-icon">🗑️</div><div class="fi-label">④ブランチ削除</div><div class="fi-cmd">delete branch</div></div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="step-card">
+        <div class="step-header"><div class="step-num">1</div><h3>作業用ブランチを作成する</h3></div>
+        <p>mainブランチにいる状態で新しいブランチを作ります。ブランチ名は作業内容がわかる名前にしてください。</p>
+        <div class="gd-block">
+          <div class="gd-title">🖥️ GitHub Desktop の操作</div>
+          <ol>
+            <li>上部中央のブランチ名が <strong>「main」</strong> になっていることを確認</li>
+            <li><strong>「Branch」</strong> メニュー → <strong>「New branch」</strong> をクリック</li>
+            <li>ブランチ名を入力（例：<code>fix/qr-tool</code> / <code>add/new-tool</code>）</li>
+            <li><span class="btn-img blue">Create branch</span> をクリック</li>
+            <li>上部のブランチ名が新しいブランチ名に変わったことを確認</li>
+          </ol>
+        </div>
+        <div class="box box-info">
+          📝 <strong>ブランチ名の例：</strong><br>
+          <code>fix/order-csv</code>（修正系）　<code>add/daily-report</code>（追加系）　<code>update/manual</code>（更新系）
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="step-card">
+        <div class="step-header"><div class="step-num">2</div><h3>編集・コミット・Pushする</h3></div>
+        <p>通常の作業手順と同じです。ブランチ上で編集・コミット・Pushを行います。</p>
+        <div class="box box-warn">
+          ⚠️ <strong>作業前に必ず上部のブランチ名を確認してください。</strong><br>
+          「main」のままになっていたら作業用ブランチに切り替えてから編集します。
+        </div>
+        <div class="gd-block">
+          <div class="gd-title">🖥️ GitHub Desktop の操作</div>
+          <ol>
+            <li>上部のブランチ名が作業用ブランチになっていることを確認</li>
+            <li>ファイルを編集・保存する</li>
+            <li>コミットメッセージを入力して <span class="btn-img">Commit to [ブランチ名]</span> をクリック</li>
+            <li><span class="btn-img dark">Push origin</span> をクリック</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="step-card">
+        <div class="step-header"><div class="step-num">3</div><h3>mainにマージする（取り込む）</h3></div>
+        <p>ブラウザで動作確認が取れたら、mainブランチに取り込みます。</p>
+        <div class="gd-block">
+          <div class="gd-title">🖥️ GitHub Desktop の操作</div>
+          <ol>
+            <li>上部のブランチを <strong>「main」</strong> に切り替える</li>
+            <li><strong>「Branch」</strong> メニュー → <strong>「Merge into current branch」</strong> をクリック</li>
+            <li>作業用ブランチを選択する</li>
+            <li><span class="btn-img blue">Create a merge commit</span> をクリック</li>
+            <li><span class="btn-img dark">Push origin</span> をクリック</li>
+          </ol>
+        </div>
+        <div class="box box-success">
+          ✅ Push が完了したら GitHub Pages に反映されます（数分かかる場合があります）。
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="step-card">
+        <div class="step-header"><div class="step-num">4</div><h3>作業用ブランチを削除する</h3></div>
+        <p>マージ完了後、作業用ブランチは不要になるので削除してすっきりさせましょう。</p>
+        <div class="gd-block">
+          <div class="gd-title">🖥️ GitHub Desktop の操作</div>
+          <ol>
+            <li>作業用ブランチに切り替える</li>
+            <li><strong>「Branch」</strong> メニュー → <strong>「Delete」</strong> をクリック</li>
+            <li>「Delete branch on remote」にチェックを入れて削除</li>
+          </ol>
+        </div>
+      </div>
+
+    </div>
+
   </main>
 </div>
 <footer>社内HTMLツール マニュアル　|　更新日: 2026-05-01</footer>
