@@ -9,20 +9,33 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
-            background-color: #f9fafb; height: 100vh; display: flex;
+            background-color: #f9fafb;
+            height: 100vh;
+            display: flex;
         }
         .sidebar {
-            width: 320px; background: white; border-right: 1px solid #e5e7eb;
-            padding: 24px; overflow-y: auto; flex-shrink: 0;
+            width: 320px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            padding: 24px;
+            overflow-y: auto;
         }
         .header { margin-bottom: 16px; }
         .header h1 { font-size: 20px; font-weight: bold; color: #1f2937; margin-bottom: 8px; }
         .header p { font-size: 14px; color: #6b7280; }
 
-        /* 一括取込 */
+        /* ===== 一括取込 ===== */
         .bulk-section { margin-bottom: 16px; }
-        .bulk-label { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; display: block; }
-        .bulk-drop-zone { border: 2px dashed #93c5fd; border-radius: 8px; padding: 10px 12px; background: #eff6ff; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 8px; }
+        .bulk-label {
+            font-size: 12px; font-weight: 600; color: #6b7280;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            margin-bottom: 6px; display: block;
+        }
+        .bulk-drop-zone {
+            border: 2px dashed #93c5fd; border-radius: 8px; padding: 10px 12px;
+            background: #eff6ff; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 8px;
+        }
         .bulk-drop-zone:hover, .bulk-drop-zone.drag-over { border-color: #2563eb; background: #dbeafe; }
         .bulk-drop-zone .bulk-icon { font-size: 20px; flex-shrink: 0; }
         .bulk-drop-zone .bulk-text { flex: 1; min-width: 0; }
@@ -32,1102 +45,940 @@
         .bulk-result .found { color: #059669; }
         .bulk-result .not-found { color: #dc2626; }
 
-        .divider { display: flex; align-items: center; gap: 8px; margin: 12px 0; color: #9ca3af; font-size: 11px; }
+        .divider {
+            display: flex; align-items: center; gap: 8px;
+            margin: 12px 0; color: #9ca3af; font-size: 11px;
+        }
         .divider::before, .divider::after { content: ''; flex: 1; border-top: 1px solid #e5e7eb; }
 
-        /* 個別ファイル */
+        /* ===== 個別ファイル ===== */
         .file-section { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-        .file-item { border: 2px dashed #d1d5db; border-radius: 8px; padding: 10px 12px; background: white; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 8px; }
+        .file-item {
+            border: 2px dashed #d1d5db; border-radius: 8px; padding: 10px 12px;
+            background: white; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 8px;
+        }
         .file-item:hover, .file-item.drag-over { border-color: #2563eb; background-color: #eff6ff; }
         .file-item.loaded { border-color: #059669; border-style: solid; background-color: #f0fdf4; }
         .file-item .file-icon { font-size: 16px; flex-shrink: 0; }
         .file-item .file-text { flex: 1; min-width: 0; }
         .file-item .file-label { display: block; font-size: 12px; font-weight: 600; color: #374151; white-space: nowrap; }
         .file-item.loaded .file-label { color: #059669; }
-        .file-item .file-name { font-size: 10px; color: #6b7280; display: none; }
+        .file-item .file-name { font-size: 10px; color: #6b7280; white-space: nowrap; overflow: visible; display: none; }
         .file-item.loaded .file-name { display: block; }
         .file-input { display: none; }
 
-        /* ===== フォルダ設定エリア（アコーディオン） ===== */
-        .folder-section {
-            border: 1.5px solid #ddd6fe; border-radius: 8px;
-            margin-bottom: 16px; background: #faf5ff; overflow: hidden;
-        }
-        .folder-section-title {
-            font-size: 12px; font-weight: 700; color: #5b21b6;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 9px 12px; cursor: pointer; user-select: none;
-            transition: background .15s; gap: 4px; margin-bottom: 0;
-        }
-        .folder-section-title:hover { background: #ede9fe; }
-        .folder-title-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
-        .folder-badge {
-            font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 10px;
-            white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1;
-        }
-        .folder-badge.ok     { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
-        .folder-badge.warn   { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-        .folder-badge.reauth { background: #fff7ed; color: #7c2d12; border: 1px solid #fed7aa; }
-        .folder-chevron { font-size: 10px; color: #7c3aed; transition: transform .2s; flex-shrink: 0; }
-        .folder-chevron.open { transform: rotate(90deg); }
-        .folder-body { display: none; padding: 0 12px 12px; }
-        .folder-body.open { display: block; }
-        .folder-status-box {
-            font-size: 11px; padding: 7px 9px; border-radius: 6px;
-            margin-bottom: 8px; line-height: 1.5; word-break: break-all;
-        }
-        .folder-status-box.no-folder  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-        .folder-status-box.has-folder { background: #ede9fe; color: #4c1d95; border: 1px solid #c4b5fd; }
-        .folder-status-box.need-reauth { background: #fff7ed; color: #7c2d12; border: 1px solid #fed7aa; }
-        .folder-btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
-        .folder-btn {
-            padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
-            cursor: pointer; transition: all .15s; border: 1.5px solid #7c3aed;
-            background: white; color: #7c3aed; white-space: nowrap;
-        }
-        .folder-btn:hover:not(:disabled) { background: #f5f3ff; }
-        .folder-btn.primary { background: #7c3aed; color: white; }
-        .folder-btn.primary:hover:not(:disabled) { background: #6d28d9; }
-        .folder-btn:disabled { border-color: #e5e7eb; color: #d1d5db; cursor: not-allowed; }
-        .folder-btn.danger { border-color: #dc2626; color: #dc2626; }
-        .folder-btn.danger:hover:not(:disabled) { background: #fef2f2; }
-        .folder-save-log {
-            font-size: 10px; margin-top: 6px; padding: 4px 8px;
-            border-radius: 4px; background: #d1fae5; color: #065f46;
-            display: none;
-        }
-        .folder-save-log.error { background: #fee2e2; color: #991b1b; }
-
-        /* スナップショット */
+        /* ===== スナップショットエリア ===== */
         .snapshot-section {
             border: 1px solid #e5e7eb; border-radius: 8px;
             padding: 12px; margin-bottom: 16px; background: #fafafa;
         }
-        .snapshot-section-title { font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-        .snapshot-source-toggle { display: flex; gap: 6px; margin-bottom: 6px; }
-        .snapshot-btn { flex: 1; padding: 6px 8px; border-radius: 6px; border: 1.5px solid #d1d5db; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .15s; background: white; color: #6b7280; }
-        .snapshot-btn.active { border-color: #7c3aed; background: #f5f3ff; color: #7c3aed; }
+        .snapshot-section-title {
+            font-size: 12px; font-weight: 700; color: #374151;
+            margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+        }
+        .snapshot-source-toggle {
+            display: flex; gap: 6px; margin-bottom: 10px;
+        }
+        .snapshot-btn {
+            flex: 1; padding: 6px 8px; border-radius: 6px; border: 1.5px solid #d1d5db;
+            font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+            background: white; color: #6b7280;
+        }
+        .snapshot-btn.active {
+            border-color: #7c3aed; background: #f5f3ff; color: #7c3aed;
+        }
         .snapshot-btn:hover:not(.active) { border-color: #9ca3af; background: #f3f4f6; }
-        .snapshot-status { font-size: 11px; padding: 6px 8px; border-radius: 6px; background: #f3f4f6; color: #6b7280; min-height: 28px; display: flex; align-items: center; gap: 4px; }
-        .snapshot-status.has-data { background: #f5f3ff; color: #6d28d9; }
-        .snapshot-status.no-data   { background: #fef3c7; color: #92400e; }
 
-        .snapshot-json-drop { border: 2px dashed #c4b5fd; border-radius: 6px; padding: 8px 10px; background: #f5f3ff; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 6px; margin-top: 8px; }
-        .snapshot-json-drop:hover, .snapshot-json-drop.drag-over { border-color: #7c3aed; background: #ede9fe; }
+        .snapshot-status {
+            font-size: 11px; padding: 6px 8px; border-radius: 6px;
+            background: #f3f4f6; color: #6b7280; min-height: 28px;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .snapshot-status.has-data { background: #f5f3ff; color: #6d28d9; }
+        .snapshot-status.no-data { background: #fef3c7; color: #92400e; }
+
+        .snapshot-json-drop {
+            border: 2px dashed #c4b5fd; border-radius: 6px; padding: 8px 10px;
+            background: #f5f3ff; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 6px; margin-top: 8px;
+        }
+        .snapshot-json-drop:hover, .snapshot-json-drop.drag-over {
+            border-color: #7c3aed; background: #ede9fe;
+        }
         .snapshot-json-drop .sj-icon { font-size: 16px; flex-shrink: 0; }
         .snapshot-json-drop .sj-text { font-size: 11px; font-weight: 600; color: #6d28d9; }
-        .snapshot-json-drop .sj-sub  { font-size: 10px; color: #9ca3af; }
+        .snapshot-json-drop .sj-sub { font-size: 10px; color: #9ca3af; }
 
-        .snapshot-excel-drop { border: 2px dashed #6ee7b7; border-radius: 6px; padding: 8px 10px; background: #ecfdf5; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 6px; margin-top: 8px; }
-        .snapshot-excel-drop:hover, .snapshot-excel-drop.drag-over { border-color: #059669; background: #d1fae5; }
+        .snapshot-excel-drop {
+            border: 2px dashed #6ee7b7; border-radius: 6px; padding: 8px 10px;
+            background: #ecfdf5; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 6px; margin-top: 8px;
+        }
+        .snapshot-excel-drop:hover, .snapshot-excel-drop.drag-over {
+            border-color: #059669; background: #d1fae5;
+        }
         .snapshot-excel-drop .se-icon { font-size: 16px; flex-shrink: 0; }
         .snapshot-excel-drop .se-text { font-size: 11px; font-weight: 600; color: #065f46; }
         .snapshot-excel-drop .se-sub  { font-size: 10px; color: #9ca3af; }
 
-        /* ボタン類 */
-        .merge-button { width: 100%; padding: 12px 16px; border: none; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: background-color .2s; margin-bottom: 16px; }
+        /* ===== ボタン ===== */
+        .merge-button {
+            width: 100%; padding: 12px 16px; border: none; border-radius: 8px;
+            font-weight: 500; font-size: 14px; cursor: pointer;
+            transition: background-color 0.2s; margin-bottom: 16px;
+        }
         .merge-button:enabled { background-color: #2563eb; color: white; }
         .merge-button:enabled:hover { background-color: #1d4ed8; }
         .merge-button:disabled { background-color: #d1d5db; color: #9ca3af; cursor: not-allowed; }
+
         .alert { padding: 12px; border-radius: 8px; font-size: 14px; margin-top: 16px; }
-        .alert-error   { background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        .alert-error { background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
         .alert-success { background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
-        .download-button { width: 100%; padding: 8px 16px; background-color: #059669; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; margin-top: 8px; transition: background-color .2s; }
+
+        .download-button {
+            width: 100%; padding: 8px 16px; background-color: #059669;
+            color: white; border: none; border-radius: 8px; cursor: pointer;
+            font-size: 14px; margin-top: 8px; transition: background-color 0.2s;
+        }
         .download-button:hover { background-color: #047857; }
 
-        /* メイン */
+        /* ===== メインエリア ===== */
         .main-area { flex: 1; padding: 24px; overflow: auto; }
-        .empty-state { display: flex; align-items: center; justify-content: center; height: 100%; text-align: center; color: #6b7280; }
+        .empty-state {
+            display: flex; align-items: center; justify-content: center;
+            height: 100%; text-align: center; color: #6b7280;
+        }
         .empty-state h2 { font-size: 20px; font-weight: 500; margin-top: 16px; margin-bottom: 8px; }
-        .result-container { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.1); overflow: visible; }
+        .result-container { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: visible; }
         .table-wrapper { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 160px); }
         table { width: 100%; border-collapse: collapse; }
         thead { background-color: #f9fafb; }
-        th { padding: 12px; text-align: left; font-size: 12px; font-weight: 500; color: #6b7280; text-transform: uppercase; white-space: nowrap; position: sticky; top: 0; z-index: 1; background-color: #f9fafb; }
+        th {
+            padding: 12px; text-align: left; font-size: 12px; font-weight: 500;
+            color: #6b7280; text-transform: uppercase; white-space: nowrap;
+            position: sticky; top: 0; z-index: 1; background-color: #f9fafb;
+        }
         td { padding: 8px 12px; font-size: 14px; color: #1f2937; white-space: nowrap; border-top: 1px solid #e5e7eb; }
         tbody tr:hover { background-color: #f9fafb; }
         .table-footer { padding: 12px 24px; background-color: #f9fafb; text-align: center; font-size: 14px; color: #6b7280; }
     </style>
 </head>
 <body>
-<div class="sidebar">
-    <div class="header">
-        <h1>ピッキング状況データ統合</h1>
-        <p>CSVファイルを読み込んでください</p>
-    </div>
+    <div class="sidebar">
+        <div class="header">
+            <h1>ピッキング状況データ統合</h1>
+            <p>CSVファイルを読み込んでください</p>
+        </div>
 
-    <!-- ===== 保存先フォルダ設定（アコーディオン） ===== -->
-    <div class="folder-section">
-        <div class="folder-section-title" id="folder-accordion-title" onclick="toggleFolderAccordion()">
-            <div class="folder-title-left">
-                <span>📁 保存先フォルダ設定</span>
-                <span id="folder-badge" class="folder-badge warn">未設定</span>
+        <!-- 一括取込 -->
+        <div class="bulk-section">
+            <span class="bulk-label">一括取込</span>
+            <input type="file" id="bulk-files-input" style="display:none" multiple accept=".csv">
+            <div id="bulk-drop-zone" class="bulk-drop-zone">
+                <div class="bulk-icon">📄</div>
+                <div class="bulk-text">
+                    <div class="main">ドロップ：複数ファイル選択</div>
+                    <div class="sub">ピッキング・工番・発注・仮入庫を自動判別</div>
+                </div>
             </div>
-            <span class="folder-chevron" id="folder-chevron">▶</span>
+            <div id="bulk-result" class="bulk-result"></div>
         </div>
-        <div class="folder-body" id="folder-body">
-            <div id="folder-status-box" class="folder-status-box no-folder" style="margin-top:8px;">
-                未設定 — フォルダを選択してください
-            </div>
-            <div class="folder-btn-row">
-                <button class="folder-btn primary" id="btn-set-folder">📁 フォルダを設定</button>
-                <button class="folder-btn" id="btn-reauth-folder" style="display:none">🔓 再許可</button>
-                <button class="folder-btn danger" id="btn-clear-folder" style="display:none">✕</button>
-            </div>
-            <div id="folder-save-log" class="folder-save-log"></div>
-            <div id="api-unsupported" style="font-size:10px;color:#9ca3af;margin-top:6px;display:none;">
-                ⚠ このブラウザはFile System Access APIに非対応です。<br>ダウンロードフォルダへの保存になります。
-            </div>
-        </div>
-    </div>
 
-    <!-- 一括取込 -->
-    <div class="bulk-section">
-        <span class="bulk-label">一括取込</span>
-        <input type="file" id="bulk-files-input" style="display:none" multiple accept=".csv">
-        <div id="bulk-drop-zone" class="bulk-drop-zone">
-            <div class="bulk-icon">📄</div>
-            <div class="bulk-text">
-                <div class="main">ドロップ：複数ファイル選択</div>
-                <div class="sub">ピッキング・工番・発注・仮入庫を自動判別</div>
-            </div>
-        </div>
-        <div id="bulk-result" class="bulk-result"></div>
-    </div>
+        <div class="divider">または個別に選択</div>
 
-    <div class="divider">または個別に選択</div>
+        <!-- 個別ファイル -->
+        <div class="file-section">
+            <input type="file" id="file-picking" class="file-input" accept=".csv">
+            <div id="drop-picking" class="file-item">
+                <div class="file-icon">📋</div>
+                <div class="file-text">
+                    <span class="file-label">ドロップ：ピッキング状況一覧</span>
+                    <span class="file-name" id="selected-picking"></span>
+                </div>
+            </div>
 
-    <!-- 個別ファイル -->
-    <div class="file-section">
-        <input type="file" id="file-picking"     class="file-input" accept=".csv">
-        <div id="drop-picking" class="file-item">
-            <div class="file-icon">📋</div>
-            <div class="file-text">
-                <span class="file-label">ドロップ：ピッキング状況一覧</span>
-                <span class="file-name" id="selected-picking"></span>
+            <input type="file" id="file-workorder" class="file-input" accept=".csv">
+            <div id="drop-workorder" class="file-item">
+                <div class="file-icon">🔧</div>
+                <div class="file-text">
+                    <span class="file-label">ドロップ：工番一覧</span>
+                    <span class="file-name" id="selected-workorder"></span>
+                </div>
             </div>
-        </div>
-        <input type="file" id="file-workorder"   class="file-input" accept=".csv">
-        <div id="drop-workorder" class="file-item">
-            <div class="file-icon">🔧</div>
-            <div class="file-text">
-                <span class="file-label">ドロップ：工番一覧</span>
-                <span class="file-name" id="selected-workorder"></span>
-            </div>
-        </div>
-        <input type="file" id="file-purchase"    class="file-input" accept=".csv">
-        <div id="drop-purchase" class="file-item">
-            <div class="file-icon">📦</div>
-            <div class="file-text">
-                <span class="file-label">ドロップ：発注一覧</span>
-                <span class="file-name" id="selected-purchase"></span>
-            </div>
-        </div>
-        <input type="file" id="file-tempreceipt" class="file-input" accept=".csv">
-        <div id="drop-tempreceipt" class="file-item">
-            <div class="file-icon">📥</div>
-            <div class="file-text">
-                <span class="file-label">ドロップ：仮入庫一覧</span>
-                <span class="file-name" id="selected-tempreceipt"></span>
-            </div>
-        </div>
-    </div>
 
-    <!-- スナップショット比較エリア -->
-    <div class="snapshot-section">
-        <div class="snapshot-section-title">🕓 前回データとの比較</div>
-        <div class="snapshot-source-toggle">
-            <button class="snapshot-btn active" id="btn-use-localstorage" onclick="setSnapshotSource('localStorage')">🖥 ブラウザ記憶</button>
-            <button class="snapshot-btn" id="btn-use-json"  onclick="setSnapshotSource('json')">📂 JSON</button>
-        </div>
-        <div style="margin-top:4px;">
-            <button class="snapshot-btn" id="btn-use-excel" onclick="setSnapshotSource('excel')"
-                style="width:100%; text-align:left; padding:6px 10px;">
-                📊 前回出力Excelから生成（実験用）
-            </button>
-        </div>
-        <div id="snapshot-status" class="snapshot-status no-data" style="margin-top:8px;">
-            ⚠ 前回データなし（初回実行）
-        </div>
-        <!-- JSONドロップ -->
-        <div id="snapshot-json-area" style="display:none;">
-            <input type="file" id="file-snapshot-json" style="display:none" accept=".json">
-            <div id="drop-snapshot-json" class="snapshot-json-drop">
-                <div class="sj-icon">🗂</div>
-                <div>
-                    <div class="sj-text">JSONスナップショットを読み込む</div>
-                    <div class="sj-sub">前回保存した picking_snapshot_*.json</div>
+            <input type="file" id="file-purchase" class="file-input" accept=".csv">
+            <div id="drop-purchase" class="file-item">
+                <div class="file-icon">📦</div>
+                <div class="file-text">
+                    <span class="file-label">ドロップ：発注一覧</span>
+                    <span class="file-name" id="selected-purchase"></span>
+                </div>
+            </div>
+
+            <input type="file" id="file-tempreceipt" class="file-input" accept=".csv">
+            <div id="drop-tempreceipt" class="file-item">
+                <div class="file-icon">📥</div>
+                <div class="file-text">
+                    <span class="file-label">ドロップ：仮入庫一覧</span>
+                    <span class="file-name" id="selected-tempreceipt"></span>
                 </div>
             </div>
         </div>
-        <!-- Excelドロップ -->
-        <div id="snapshot-excel-area" style="display:none;">
-            <input type="file" id="file-snapshot-excel" style="display:none" accept=".xlsx">
-            <div id="drop-snapshot-excel" class="snapshot-excel-drop">
-                <div class="se-icon">📊</div>
-                <div>
-                    <div class="se-text">前回出力のExcelを読み込む</div>
-                    <div class="se-sub">ピッキング統合データ_*.xlsx</div>
+
+        <!-- ===== スナップショット比較エリア ===== -->
+        <div class="snapshot-section">
+            <div class="snapshot-section-title">
+                🕓 前回データとの比較
+            </div>
+
+            <!-- 1段目：ブラウザ記憶 / JSON -->
+            <div class="snapshot-source-toggle">
+                <button class="snapshot-btn active" id="btn-use-localstorage" onclick="setSnapshotSource('localStorage')">
+                    🖥 ブラウザ記憶
+                </button>
+                <button class="snapshot-btn" id="btn-use-json" onclick="setSnapshotSource('json')">
+                    📂 JSON
+                </button>
+            </div>
+            <!-- 2段目：Excel（全幅） -->
+            <div style="margin-top:6px;">
+                <button class="snapshot-btn" id="btn-use-excel" onclick="setSnapshotSource('excel')"
+                    style="width:100%; text-align:left; padding:6px 10px;">
+                    📊 前回出力Excelから生成（実験用）
+                </button>
+            </div>
+
+            <!-- ステータス表示 -->
+            <div id="snapshot-status" class="snapshot-status no-data" style="margin-top:8px;">
+                ⚠ 前回データなし（初回実行）
+            </div>
+
+            <!-- JSONファイル読み込みゾーン -->
+            <div id="snapshot-json-area" style="display:none;">
+                <input type="file" id="file-snapshot-json" style="display:none" accept=".json">
+                <div id="drop-snapshot-json" class="snapshot-json-drop">
+                    <div class="sj-icon">🗂</div>
+                    <div>
+                        <div class="sj-text">JSONスナップショットを読み込む</div>
+                        <div class="sj-sub">前回保存した picking_snapshot_*.json</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Excelファイル読み込みゾーン -->
+            <div id="snapshot-excel-area" style="display:none;">
+                <input type="file" id="file-snapshot-excel" style="display:none" accept=".xlsx">
+                <div id="drop-snapshot-excel" class="snapshot-excel-drop">
+                    <div class="se-icon">📊</div>
+                    <div>
+                        <div class="se-text">前回出力のExcelを読み込む</div>
+                        <div class="se-sub">ピッキング統合データ_*.xlsx</div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <button id="merge-button" class="merge-button" disabled>データを統合</button>
+        <button id="merge-button" class="merge-button" disabled>データを統合</button>
 
-    <div id="error-message"   class="alert alert-error"   style="display:none;"></div>
-    <div id="success-message" class="alert alert-success" style="display:none;">
-        <div style="font-weight:500; margin-bottom:8px;">✓ 処理完了</div>
-        <div id="result-count"></div>
-        <button id="download-button"          class="download-button">⬇ Excel（元の順）</button>
-        <button id="download-sorted-button"   class="download-button" style="background-color:#047857;">⬇ Excel（警告レベル順）</button>
-        <button id="download-snapshot-button" class="download-button" style="background-color:#7c3aed;">📥 スナップショットをJSONで保存</button>
-        <button id="sort-button"       class="download-button" style="background-color:#7c3aed;display:none;">↕ 警告レベル順に表示</button>
-        <button id="reset-sort-button" class="download-button" style="background-color:#6b7280;display:none;">↺ 元の順に戻す</button>
-    </div>
-</div>
+        <div id="error-message" class="alert alert-error" style="display:none;"></div>
 
-<div class="main-area">
-    <div id="empty-state" class="empty-state">
-        <div>
-            <div style="font-size:64px; margin-bottom:16px;">📄</div>
-            <h2>データ統合結果がここに表示されます</h2>
-            <p>左のサイドバーからCSVファイルを読み込んでください</p>
+        <div id="success-message" class="alert alert-success" style="display:none;">
+            <div style="font-weight:500; margin-bottom:8px;">✓ 処理完了</div>
+            <div id="result-count"></div>
+            <button id="download-button" class="download-button">⬇ Excel（元の順）</button>
+            <button id="download-sorted-button" class="download-button" style="background-color:#047857;">⬇ Excel（警告レベル順）</button>
+            <button id="download-snapshot-button" class="download-button" style="background-color:#7c3aed;">📥 スナップショットをJSONで保存</button>
+            <button id="sort-button" class="download-button" style="background-color:#7c3aed; display:none;">↕ 警告レベル順に表示</button>
+            <button id="reset-sort-button" class="download-button" style="background-color:#6b7280; display:none;">↺ 元の順に戻す</button>
         </div>
     </div>
-    <div id="result-container" class="result-container" style="display:none;">
-        <div id="table-top-summary" class="table-footer" style="border-bottom:1px solid #e5e7eb;"></div>
-        <div class="table-wrapper">
-            <table id="result-table"></table>
+
+    <div class="main-area">
+        <div id="empty-state" class="empty-state">
+            <div>
+                <div style="font-size:64px; margin-bottom:16px;">📄</div>
+                <h2>データ統合結果がここに表示されます</h2>
+                <p>左のサイドバーからCSVファイルを読み込んでください</p>
+            </div>
         </div>
-        <div id="table-footer" class="table-footer" style="display:none;"></div>
+        <div id="result-container" class="result-container" style="display:none;">
+            <div id="table-top-summary" class="table-footer" style="border-bottom:1px solid #e5e7eb;"></div>
+            <div class="table-wrapper">
+                <table id="result-table"></table>
+            </div>
+            <div id="table-footer" class="table-footer" style="display:none;"></div>
+        </div>
     </div>
-</div>
 
 <script>
-// =====================================================================
-//  IndexedDB でフォルダハンドルを永続保存
-// =====================================================================
-const IDB_NAME    = 'PickingToolDB';
-const IDB_STORE   = 'folderHandles';
-const IDB_KEY     = 'saveFolder';
-const LS_FOLDER_NAME = 'picking_folder_name_v1';
-const LS_SNAPSHOT    = 'picking_snapshot_v1';
+    // ===== 状態 =====
+    let files = { picking: null, workOrder: null, purchase: null, tempReceipt: null };
+    let mergedData = null;
+    let snapshotSource = 'localStorage'; // 'localStorage' | 'json'
+    let snapshotData   = null;           // { date: string, data: { [伝票No]: warningLevel } }
+    let isSortedByWarning = false;
 
-function openDB() {
-    return new Promise((resolve, reject) => {
-        const req = indexedDB.open(IDB_NAME, 1);
-        req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
-        req.onsuccess = e => resolve(e.target.result);
-        req.onerror   = e => reject(e.target.error);
-    });
-}
-async function idbPut(value) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(IDB_STORE, 'readwrite');
-        tx.objectStore(IDB_STORE).put(value, IDB_KEY);
-        tx.oncomplete = resolve;
-        tx.onerror    = e => reject(e.target.error);
-    });
-}
-async function idbGet() {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const tx  = db.transaction(IDB_STORE, 'readonly');
-        const req = tx.objectStore(IDB_STORE).get(IDB_KEY);
-        req.onsuccess = e => resolve(e.target.result || null);
-        req.onerror   = e => reject(e.target.error);
-    });
-}
-async function idbDelete() {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(IDB_STORE, 'readwrite');
-        tx.objectStore(IDB_STORE).delete(IDB_KEY);
-        tx.oncomplete = resolve;
-        tx.onerror    = e => reject(e.target.error);
-    });
-}
+    const SNAPSHOT_LS_KEY = 'picking_snapshot_v1';
 
-// =====================================================================
-//  フォルダ管理
-// =====================================================================
-let folderHandle = null; // FileSystemDirectoryHandle | null
-const FSA_SUPPORTED = ('showDirectoryPicker' in window);
+    // ===== スナップショット読み込み元切替 =====
+    function setSnapshotSource(src) {
+        snapshotSource = src;
+        document.getElementById('btn-use-localstorage').classList.toggle('active', src === 'localStorage');
+        document.getElementById('btn-use-json').classList.toggle('active', src === 'json');
+        document.getElementById('btn-use-excel').classList.toggle('active', src === 'excel');
+        document.getElementById('snapshot-json-area').style.display   = src === 'json'  ? 'block' : 'none';
+        document.getElementById('snapshot-excel-area').style.display  = src === 'excel' ? 'block' : 'none';
 
-if (!FSA_SUPPORTED) {
-    document.getElementById('api-unsupported').style.display = 'block';
-}
-
-// ---- アコーディオン開閉 ----
-function toggleFolderAccordion() {
-    const body    = document.getElementById('folder-body');
-    const chevron = document.getElementById('folder-chevron');
-    const isOpen  = body.classList.contains('open');
-    body.classList.toggle('open', !isOpen);
-    chevron.classList.toggle('open', !isOpen);
-}
-
-// ---- UI 更新 ----
-function updateFolderUI() {
-    const box      = document.getElementById('folder-status-box');
-    const badge    = document.getElementById('folder-badge');
-    const btnSet   = document.getElementById('btn-set-folder');
-    const btnAuth  = document.getElementById('btn-reauth-folder');
-    const btnClear = document.getElementById('btn-clear-folder');
-    const savedName = localStorage.getItem(LS_FOLDER_NAME);
-
-    if (!FSA_SUPPORTED) {
-        box.className = 'folder-status-box no-folder';
-        box.textContent = '⚠ 非対応ブラウザ：ダウンロードフォルダへ保存';
-        badge.className = 'folder-badge warn'; badge.textContent = '非対応';
-        btnSet.style.display = 'none'; btnAuth.style.display = 'none'; btnClear.style.display = 'none';
-        return;
-    }
-
-    if (folderHandle) {
-        box.className = 'folder-status-box has-folder';
-        box.textContent = `✓ 保存先：${folderHandle.name}`;
-        badge.className = 'folder-badge ok'; badge.textContent = folderHandle.name;
-        btnSet.textContent = '📁 変更';
-        btnAuth.style.display  = 'none';
-        btnClear.style.display = 'inline-block';
-    } else if (savedName) {
-        box.className = 'folder-status-box need-reauth';
-        box.innerHTML = `前回の保存先：<b>${savedName}</b><br>再許可ボタンで復活できます`;
-        badge.className = 'folder-badge reauth'; badge.textContent = '再許可が必要';
-        btnSet.textContent = '📁 変更';
-        btnAuth.style.display  = 'inline-block';
-        btnClear.style.display = 'inline-block';
-    } else {
-        box.className = 'folder-status-box no-folder';
-        box.textContent = '未設定 — フォルダを選択してください';
-        badge.className = 'folder-badge warn'; badge.textContent = '未設定';
-        btnSet.textContent = '📁 フォルダを設定';
-        btnAuth.style.display  = 'none';
-        btnClear.style.display = 'none';
-    }
-}
-
-// ---- フォルダ選択 ----
-document.getElementById('btn-set-folder').addEventListener('click', async () => {
-    if (!FSA_SUPPORTED) return;
-    try {
-        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-        folderHandle = handle;
-        await idbPut(handle);
-        localStorage.setItem(LS_FOLDER_NAME, handle.name);
-        updateFolderUI();
-        // 設定完了後はアコーディオンを閉じる
-        document.getElementById('folder-body').classList.remove('open');
-        document.getElementById('folder-chevron').classList.remove('open');
-        showFolderLog(`✓ 保存先を「${handle.name}」に設定しました`, false);
-        // 設定直後にそのフォルダから最新JSONを読み込む
-        await autoLoadLatestSnapshot();
-    } catch(e) {
-        if (e.name !== 'AbortError') showFolderLog('フォルダ選択がキャンセルされました', true);
-    }
-});
-
-// ---- 再許可 ----
-document.getElementById('btn-reauth-folder').addEventListener('click', async () => {
-    try {
-        const handle = await idbGet();
-        if (!handle) {
-            showFolderLog('保存されたフォルダ情報がありません。新規設定してください。', true);
-            return;
-        }
-        // 再許可リクエスト
-        const perm = await handle.requestPermission({ mode: 'readwrite' });
-        if (perm === 'granted') {
-            folderHandle = handle;
-            localStorage.setItem(LS_FOLDER_NAME, handle.name);
-            updateFolderUI();
-            // 再許可後はアコーディオンを閉じる
-            document.getElementById('folder-body').classList.remove('open');
-            document.getElementById('folder-chevron').classList.remove('open');
-            showFolderLog(`✓ 「${handle.name}」へのアクセスが復活しました`, false);
-            await autoLoadLatestSnapshot();
+        if (src === 'localStorage') {
+            loadSnapshotFromLocalStorage();
         } else {
-            showFolderLog('フォルダへのアクセスが許可されませんでした', true);
-        }
-    } catch(e) {
-        showFolderLog('再許可に失敗しました: ' + e.message, true);
-    }
-});
-
-// ---- クリア ----
-document.getElementById('btn-clear-folder').addEventListener('click', async () => {
-    folderHandle = null;
-    await idbDelete();
-    localStorage.removeItem(LS_FOLDER_NAME);
-    updateFolderUI();
-    showFolderLog('保存先をクリアしました', false);
-});
-
-function showFolderLog(msg, isError) {
-    const el = document.getElementById('folder-save-log');
-    el.textContent = msg;
-    el.className = 'folder-save-log' + (isError ? ' error' : '');
-    el.style.display = 'block';
-    setTimeout(() => { el.style.display = 'none'; }, 5000);
-}
-
-// ---- 起動時にIndexedDBからハンドル復元試行 ----
-(async () => {
-    try {
-        const handle = await idbGet();
-        if (!handle) {
-            updateFolderUI();
-            // 未設定なら開いておく
-            document.getElementById('folder-body').classList.add('open');
-            document.getElementById('folder-chevron').classList.add('open');
-            return;
-        }
-        const perm = await handle.queryPermission({ mode: 'readwrite' });
-        if (perm === 'granted') {
-            folderHandle = handle;
-            localStorage.setItem(LS_FOLDER_NAME, handle.name);
-            showFolderLog(`✓ 保存先「${handle.name}」を自動復元しました`, false);
-            await autoLoadLatestSnapshot();
-        } else {
-            // 再許可が必要 → アコーディオンを開いて促す
-            document.getElementById('folder-body').classList.add('open');
-            document.getElementById('folder-chevron').classList.add('open');
-        }
-    } catch(e) { /* 無視 */ }
-    updateFolderUI();
-})();
-
-// =====================================================================
-//  フォルダへ保存
-// =====================================================================
-async function saveFileToFolder(filename, blob) {
-    if (!folderHandle) return false;
-    try {
-        const fh = await folderHandle.getFileHandle(filename, { create: true });
-        const w  = await fh.createWritable();
-        await w.write(blob);
-        await w.close();
-        return true;
-    } catch(e) {
-        console.warn('フォルダ保存失敗:', e);
-        return false;
-    }
-}
-
-// =====================================================================
-//  フォルダから最新スナップショット自動読み込み
-// =====================================================================
-async function autoLoadLatestSnapshot() {
-    if (!folderHandle) return;
-    try {
-        const jsonFiles = [];
-        for await (const [name, handle] of folderHandle.entries()) {
-            if (handle.kind === 'file' && name.startsWith('picking_snapshot_') && name.endsWith('.json')) {
-                jsonFiles.push({ name, handle });
-            }
-        }
-        if (!jsonFiles.length) return;
-        // 名前でソートして最新を取得（picking_snapshot_YYYY-MM-DD.json）
-        jsonFiles.sort((a, b) => b.name.localeCompare(a.name));
-        const latestHandle = jsonFiles[0].handle;
-        const file   = await latestHandle.getFile();
-        const text   = await file.text();
-        const parsed = JSON.parse(text);
-        snapshotData = parsed;
-        updateSnapshotStatus();
-        showFolderLog(`✓ フォルダから最新スナップショット「${jsonFiles[0].name}」を読み込みました`, false);
-    } catch(e) {
-        // ファイルがなければ無視
-    }
-}
-
-// =====================================================================
-//  ファイル名生成ユーティリティ
-// =====================================================================
-function todayStr()  { return new Date().toISOString().slice(0,10); }                     // YYYY-MM-DD
-function todayStamp(){ return new Date().toISOString().slice(0,10).replace(/-/g,''); }    // YYYYMMDD
-function snapFilename()  { return `picking_snapshot_${todayStr()}.json`; }
-function excelFilename(sorted) { return `ピッキング統合データ${sorted?'_警告順':''}_${todayStamp()}.xlsx`; }
-
-// =====================================================================
-//  状態
-// =====================================================================
-let files = { picking: null, workOrder: null, purchase: null, tempReceipt: null };
-let mergedData = null;
-let snapshotSource = 'localStorage';
-let snapshotData   = null;
-let isSortedByWarning = false;
-
-// =====================================================================
-//  スナップショット読み込み元切替
-// =====================================================================
-function setSnapshotSource(src) {
-    snapshotSource = src;
-    document.getElementById('btn-use-localstorage').classList.toggle('active', src==='localStorage');
-    document.getElementById('btn-use-json').classList.toggle('active',  src==='json');
-    document.getElementById('btn-use-excel').classList.toggle('active', src==='excel');
-    document.getElementById('snapshot-json-area').style.display   = src==='json'  ? 'block' : 'none';
-    document.getElementById('snapshot-excel-area').style.display  = src==='excel' ? 'block' : 'none';
-    if (src === 'localStorage') loadSnapshotFromLocalStorage();
-    else { snapshotData = null; updateSnapshotStatus(); }
-}
-
-function loadSnapshotFromLocalStorage() {
-    try {
-        const raw = localStorage.getItem(LS_SNAPSHOT);
-        snapshotData = raw ? JSON.parse(raw) : null;
-    } catch(e) { snapshotData = null; }
-    updateSnapshotStatus();
-}
-
-function updateSnapshotStatus() {
-    const el = document.getElementById('snapshot-status');
-    if (snapshotData?.data && Object.keys(snapshotData.data).length > 0) {
-        const count = Object.keys(snapshotData.data).length;
-        el.className = 'snapshot-status has-data';
-        el.textContent = `✓ 前回データ読込済 (${snapshotData.date} / ${count}件)`;
-    } else {
-        el.className = 'snapshot-status no-data';
-        el.textContent = src => ({
-            localStorage: '⚠ 前回データなし（初回実行）',
-            json:  '⚠ JSONファイルを読み込んでください',
-            excel: '⚠ 前回出力のExcelを読み込んでください',
-        }[snapshotSource] ?? '⚠ 前回データなし');
-    }
-}
-
-loadSnapshotFromLocalStorage();
-
-// =====================================================================
-//  JSONドロップゾーン
-// =====================================================================
-const snapshotDropZone  = document.getElementById('drop-snapshot-json');
-const snapshotFileInput = document.getElementById('file-snapshot-json');
-snapshotDropZone.addEventListener('click', () => snapshotFileInput.click());
-snapshotDropZone.addEventListener('dragover', e => { e.preventDefault(); snapshotDropZone.classList.add('drag-over'); });
-snapshotDropZone.addEventListener('dragleave', () => snapshotDropZone.classList.remove('drag-over'));
-snapshotDropZone.addEventListener('drop', e => {
-    e.preventDefault(); snapshotDropZone.classList.remove('drag-over');
-    const f = [...e.dataTransfer.files].find(f => f.name.toLowerCase().endsWith('.json'));
-    if (f) loadSnapshotJSON(f); else alert('JSONファイルを選択してください');
-});
-snapshotFileInput.addEventListener('change', e => { if(e.target.files[0]) loadSnapshotJSON(e.target.files[0]); });
-
-function loadSnapshotJSON(file) {
-    const reader = new FileReader();
-    reader.onload = e => {
-        try {
-            snapshotData = JSON.parse(e.target.result);
+            snapshotData = null;
             updateSnapshotStatus();
-            document.querySelector('#drop-snapshot-json .sj-text').textContent = '✓ ' + file.name;
-        } catch(err) { alert('JSONの読み込みに失敗しました: ' + err.message); }
-    };
-    reader.readAsText(file, 'UTF-8');
-}
+        }
+    }
 
-// =====================================================================
-//  Excelスナップショット読み込み
-// =====================================================================
-const excelDropZone  = document.getElementById('drop-snapshot-excel');
-const excelFileInput = document.getElementById('file-snapshot-excel');
-excelDropZone.addEventListener('click', () => excelFileInput.click());
-excelDropZone.addEventListener('dragover', e => { e.preventDefault(); excelDropZone.classList.add('drag-over'); });
-excelDropZone.addEventListener('dragleave', () => excelDropZone.classList.remove('drag-over'));
-excelDropZone.addEventListener('drop', e => {
-    e.preventDefault(); excelDropZone.classList.remove('drag-over');
-    const f = [...e.dataTransfer.files].find(f => f.name.toLowerCase().endsWith('.xlsx'));
-    if (f) loadSnapshotExcel(f); else alert('Excelファイル(.xlsx)を選択してください');
-});
-excelFileInput.addEventListener('change', e => { if(e.target.files[0]) loadSnapshotExcel(e.target.files[0]); });
-
-function loadSnapshotExcel(file) {
-    const reader = new FileReader();
-    reader.onload = e => {
+    function loadSnapshotFromLocalStorage() {
         try {
-            const wb   = XLSX.read(e.target.result, { type: 'array' });
-            const ws   = wb.Sheets[wb.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-            if (rows.length < 2) { alert('データが見つかりませんでした'); return; }
-            const headers    = rows[0];
-            const warningIdx = headers.indexOf('警告');
-            const denpyoIdx  = headers.indexOf('発注伝票№');
-            if (warningIdx===-1||denpyoIdx===-1) {
-                alert('「警告」列または「発注伝票№」列が見つかりません。\n統合ツールで出力したExcelを使用してください。'); return;
+            const raw = localStorage.getItem(SNAPSHOT_LS_KEY);
+            if (raw) {
+                snapshotData = JSON.parse(raw);
+                updateSnapshotStatus();
+            } else {
+                snapshotData = null;
+                updateSnapshotStatus();
             }
-            const labelToKey = {
-                'Lv4:工場納期超過':'RED3','Lv3:納期間に合わない':'RED2',
-                'Lv2:納期近・未入庫':'RED1','Lv1:要確認':'Yellow',
-                'Lv1:出荷日未更新・要確認':'Yellow2','':''
-            };
-            const snapObj = { date: file.name, data: {} };
-            for (let i=1;i<rows.length;i++) {
-                const row    = rows[i];
-                const denpyo = String(row[denpyoIdx]??'').trim();
-                if (!denpyo) continue;
-                snapObj.data[denpyo] = labelToKey[String(row[warningIdx]??'').trim()] ?? '';
-            }
-            snapshotData = snapObj;
+        } catch(e) {
+            snapshotData = null;
             updateSnapshotStatus();
-            excelDropZone.querySelector('.se-text').textContent = '✓ ' + file.name;
-            excelDropZone.querySelector('.se-sub').textContent  = `${Object.keys(snapObj.data).length}件読み込み完了`;
-        } catch(err) { alert('Excelの読み込みに失敗しました: ' + err.message); }
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-// =====================================================================
-//  スナップショット保存
-// =====================================================================
-function buildSnapshot(data) {
-    const snapObj = { date: todayStr(), data: {} };
-    data.forEach(row => { if (row['発注伝票№']) snapObj.data[row['発注伝票№']] = row['警告'] || ''; });
-    return snapObj;
-}
-
-async function saveSnapshotToAll(data) {
-    const snapObj = buildSnapshot(data);
-
-    // 常時 localStorage にも保存
-    try { localStorage.setItem(LS_SNAPSHOT, JSON.stringify(snapObj)); } catch(e) {}
-
-    const json = JSON.stringify(snapObj, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const fname = snapFilename();
-
-    if (folderHandle) {
-        const ok = await saveFileToFolder(fname, blob);
-        if (ok) {
-            showFolderLog(`✓ ${folderHandle.name}/ に「${fname}」を保存しました`, false);
-        } else {
-            showFolderLog(`フォルダ保存に失敗。ダウンロードで保存します。`, true);
-            triggerDownload(blob, fname);
         }
     }
-    return snapObj;
-}
 
-function triggerDownload(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a   = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
-}
-
-// 手動ダウンロードボタン
-document.getElementById('download-snapshot-button').addEventListener('click', async () => {
-    if (!mergedData) return;
-    const snapObj = buildSnapshot(mergedData);
-    const json = JSON.stringify(snapObj, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const fname = snapFilename();
-
-    if (folderHandle) {
-        const ok = await saveFileToFolder(fname, blob);
-        if (ok) { showFolderLog(`✓ 「${fname}」をフォルダに保存しました`, false); return; }
-    }
-    triggerDownload(blob, fname);
-});
-
-// =====================================================================
-//  変化フラグ
-// =====================================================================
-const warningOrder = { 'RED3':0,'RED2':1,'RED1':2,'Yellow':3,'Yellow2':4,'':5 };
-
-function calcChange(denpyoNo, currentWarning) {
-    if (!snapshotData?.data) return '';
-    const prev = snapshotData.data[denpyoNo];
-    if (prev === undefined) return currentWarning !== '' ? 'NEW' : '';
-    if (prev === currentWarning) return '';
-    return (warningOrder[currentWarning]??5) < (warningOrder[prev]??5) ? 'UP' : '';
-}
-const changeLabel = { 'NEW':'🆕 NEW','UP':'⬆ 悪化','':'' };
-const changeStyle = {
-    'NEW':'background-color:#dbeafe; color:#1e40af; font-weight:bold;',
-    'UP' :'background-color:#fee2e2; color:#b91c1c; font-weight:bold;',
-    ''   :''
-};
-
-// =====================================================================
-//  ファイル名自動判別
-// =====================================================================
-const keywordMap = [
-    { key:'picking',     keywords:['ピッキング'] },
-    { key:'workOrder',   keywords:['工番'] },
-    { key:'purchase',    keywords:['発注'] },
-    { key:'tempReceipt', keywords:['仮入庫'] },
-];
-function detectFileType(filename) {
-    for (const { key, keywords } of keywordMap)
-        if (keywords.some(kw => filename.includes(kw))) return key;
-    return null;
-}
-const idMap = {
-    picking:     { drop:'drop-picking',     selected:'selected-picking',     input:'file-picking' },
-    workOrder:   { drop:'drop-workorder',   selected:'selected-workorder',   input:'file-workorder' },
-    purchase:    { drop:'drop-purchase',    selected:'selected-purchase',    input:'file-purchase' },
-    tempReceipt: { drop:'drop-tempreceipt', selected:'selected-tempreceipt', input:'file-tempreceipt' },
-};
-function applyFile(key, file) {
-    files[key] = file;
-    const ids = idMap[key];
-    document.getElementById(ids.drop).classList.add('loaded');
-    document.getElementById(ids.selected).textContent = '✓ ' + file.name;
-    checkAllFiles();
-}
-
-// =====================================================================
-//  一括ドロップ
-// =====================================================================
-const bulkDropZone = document.getElementById('bulk-drop-zone');
-const bulkResult   = document.getElementById('bulk-result');
-bulkDropZone.addEventListener('click', () => document.getElementById('bulk-files-input').click());
-document.getElementById('bulk-files-input').addEventListener('change', e => {
-    const csvFiles = [...e.target.files].filter(f => f.name.toLowerCase().endsWith('.csv'));
-    processBulkFiles(csvFiles.length > 0 ? csvFiles : [...e.target.files]);
-});
-bulkDropZone.addEventListener('dragover', e => { e.preventDefault(); bulkDropZone.classList.add('drag-over'); });
-bulkDropZone.addEventListener('dragleave', () => bulkDropZone.classList.remove('drag-over'));
-bulkDropZone.addEventListener('drop', e => {
-    e.preventDefault(); bulkDropZone.classList.remove('drag-over');
-    processBulkFiles([...e.dataTransfer.files].filter(f => f.name.toLowerCase().endsWith('.csv')));
-});
-function processBulkFiles(fileList) {
-    if (!fileList.length) { bulkResult.innerHTML='<span class="not-found">CSVファイルが見つかりませんでした</span>'; return; }
-    const found={}, unknown=[];
-    for (const file of fileList) { const key=detectFileType(file.name); key?(found[key]=file):unknown.push(file.name); }
-    for (const [key,file] of Object.entries(found)) applyFile(key,file);
-    const labelMap = { picking:'ピッキング',workOrder:'工番',purchase:'発注',tempReceipt:'仮入庫' };
-    const lines=[];
-    for (const [key,label] of Object.entries(labelMap)) {
-        lines.push(found[key]
-            ? `<span class="found">✓ ${label}: ${found[key].name}</span>`
-            : `<span class="not-found">✗ ${label}: 未検出</span>`);
-    }
-    if (unknown.length) lines.push(`<span style="color:#9ca3af">⚠ 判別不能: ${unknown.join(', ')}</span>`);
-    bulkResult.innerHTML = lines.join('<br>');
-}
-
-// =====================================================================
-//  個別ファイル
-// =====================================================================
-document.getElementById('file-picking').addEventListener('change',     e => { if(e.target.files[0]) applyFile('picking',e.target.files[0]); });
-document.getElementById('file-workorder').addEventListener('change',   e => { if(e.target.files[0]) applyFile('workOrder',e.target.files[0]); });
-document.getElementById('file-purchase').addEventListener('change',    e => { if(e.target.files[0]) applyFile('purchase',e.target.files[0]); });
-document.getElementById('file-tempreceipt').addEventListener('change', e => { if(e.target.files[0]) applyFile('tempReceipt',e.target.files[0]); });
-['picking','workorder','purchase','tempreceipt'].forEach(id => {
-    const key = id==='workorder'?'workOrder':id==='tempreceipt'?'tempReceipt':id;
-    const dz  = document.getElementById(`drop-${id}`);
-    const fi  = document.getElementById(`file-${id}`);
-    dz.addEventListener('click', () => fi.click());
-    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
-    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-    dz.addEventListener('drop', e => {
-        e.preventDefault(); dz.classList.remove('drag-over');
-        const f=[...e.dataTransfer.files].find(f=>f.name.toLowerCase().endsWith('.csv'));
-        f?applyFile(key,f):alert('CSVファイルを選択してください');
-    });
-});
-function checkAllFiles() {
-    document.getElementById('merge-button').disabled = !Object.values(files).every(f => f!==null);
-}
-
-// =====================================================================
-//  CSV解析
-// =====================================================================
-function parseCSV(text) {
-    const lines = text.split('\n').filter(l => l.trim());
-    if (!lines.length) return [];
-    const headers = lines[0].split(',').map(h => h.trim());
-    return lines.slice(1).map(line => {
-        const values = line.split(',');
-        const row = { _columns: values.map(v => v ? v.trim() : '') };
-        headers.forEach((h, i) => { row[h] = values[i] ? values[i].trim() : ''; });
-        return row;
-    });
-}
-function getCol(row, i) { return row._columns?.[i] ?? ''; }
-function readFileAsText(file) {
-    return new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = e => res(e.target.result);
-        r.onerror = rej;
-        r.readAsText(file, 'Shift_JIS');
-    });
-}
-function parseDate(str) {
-    if (!str) return null;
-    const d = new Date(str.replace(/\//g,'-'));
-    return isNaN(d.getTime()) ? null : d;
-}
-
-// =====================================================================
-//  統合処理
-// =====================================================================
-document.getElementById('merge-button').addEventListener('click', async () => {
-    document.getElementById('error-message').style.display   = 'none';
-    document.getElementById('success-message').style.display = 'none';
-    document.getElementById('merge-button').textContent  = '処理中...';
-    document.getElementById('merge-button').disabled     = true;
-
-    try {
-        const [pickingText, workOrderText, purchaseText, tempReceiptText] = await Promise.all([
-            readFileAsText(files.picking), readFileAsText(files.workOrder),
-            readFileAsText(files.purchase), readFileAsText(files.tempReceipt)
-        ]);
-        const pickingData     = parseCSV(pickingText);
-        const workOrderData   = parseCSV(workOrderText);
-        const purchaseData    = parseCSV(purchaseText);
-        const tempReceiptData = parseCSV(tempReceiptText);
-
-        let data = pickingData.map(picking => {
-            const workOrder   = workOrderData.find(wo => wo['工番']===picking['工番']) || {};
-            const purchase    = purchaseData.find(po => po['伝票№']===picking['発注伝票№']) || {};
-            const tempReceipt = tempReceiptData.find(tr => getCol(tr,1) && getCol(tr,1)===getCol(picking,12));
-            return {
-                '発注担当':picking['発注担当']||getCol(picking,14),
-                '発注伝票№':getCol(picking,12), '発注先':getCol(purchase,16),
-                '工番':getCol(picking,2), '品目':getCol(picking,4), '品名':getCol(picking,5),
-                '仕様':getCol(picking,6), 'メーカー名':getCol(purchase,20),
-                '単位':getCol(picking,7), '注文書発行日時':getCol(purchase,27),
-                '仮注文書発行日時':getCol(purchase,28), '工場納期':getCol(picking,15),
-                'P部品納期':getCol(purchase,10), '注文納期':getCol(purchase,12),
-                '回答納期':getCol(purchase,13), '納期備考':getCol(purchase,14),
-                '品目備考':getCol(purchase,25), '発注備考':getCol(purchase,26),
-                '納期ｱﾗｰﾄ':getCol(picking,17), '単価':getCol(picking,18),
-                '工期':getCol(picking,19), '仮入庫済':tempReceipt?'〇':'',
-                '出荷予定日1':getCol(workOrder,29), '出荷予定日2':getCol(workOrder,30),
-                '製番':getCol(workOrder,10), '契約先':getCol(workOrder,3), '納入先':getCol(workOrder,4)
-            };
-        });
-
-        data = data.filter(r => !(
-            (r['工番'].startsWith('SK')||r['工番'].startsWith('MK')) && r['品目備考'].includes('#K')
-        ));
-
-        const today = new Date(); today.setHours(0,0,0,0);
-        const twoWL = new Date(today); twoWL.setDate(today.getDate()+14);
-        const oneMA = new Date(today); oneMA.setMonth(today.getMonth()-1);
-
-        data = data.filter(r => {
-            const dAH=parseDate(r['出荷予定日1']), dY=parseDate(r['P部品納期']),
-                  dX=parseDate(r['工場納期']),     dV=r['注文書発行日時'], dW=parseDate(r['仮注文書発行日時']);
-            return (dAH&&dAH<=twoWL)||(dY&&dY<=twoWL)||(dX&&dX<=twoWL)
-                ||(!dV||dV.trim()==='')||(dW&&dW>=oneMA);
-        });
-        data = data.filter(r => ['▲','△'].includes((r['納期ｱﾗｰﾄ']||'').trim()));
-
-        data = data.map(r => {
-            const dX=parseDate(r['工場納期']), dY=parseDate(r['P部品納期']),
-                  dAH=parseDate(r['出荷予定日1']), dAA=parseDate(r['回答納期']);
-            const isAGEmpty = !r['仮入庫済']||r['仮入庫済'].trim()==='';
-            const isAAEmpty = !r['回答納期']||r['回答納期'].trim()==='';
-            let warning='';
-            if      (dX&&dX<=today)                                                  warning='RED3';
-            else if (dAA&&dAH&&dAA>dAH)  warning=(dX&&dAH>=dX)?'RED3':'Yellow2';
-            else if (dAA&&((dY&&dAA>dY)||(dX&&dAA>dX)))                             warning='RED2';
-            else if ((parseDate(r['工場納期'])&&parseDate(r['工場納期'])<=twoWL||
-                      parseDate(r['P部品納期'])&&parseDate(r['P部品納期'])<=twoWL||
-                      dAH&&dAH<=twoWL)&&isAGEmpty)                                   warning='RED1';
-            else if (dY&&dY<=twoWL&&isAAEmpty&&isAGEmpty)                           warning='Yellow';
-            else if (dAH&&dAH<=twoWL)                                               warning='Yellow';
-            const change = calcChange(r['発注伝票№'], warning);
-            return { '警告':warning, '変化':change, ...r };
-        });
-
-        mergedData = data;
-
-        // ===== 統合後：フォルダへJSON・Excel自動保存 =====
-        if (folderHandle) {
-            // JSON保存
-            await saveSnapshotToAll(mergedData);
-
-            // Excel保存（元の順・警告レベル順の両方）
-            const excelBlob       = buildExcelBlob(false);
-            const excelBlobSorted = buildExcelBlob(true);
-            const excelOk       = await saveFileToFolder(excelFilename(false), excelBlob);
-            const excelOkSorted = await saveFileToFolder(excelFilename(true),  excelBlobSorted);
-            if (excelOk || excelOkSorted) {
-                const prev = document.getElementById('folder-save-log').textContent;
-                showFolderLog(prev + '  ／  Excel（元順・警告順）も保存しました', false);
+    function updateSnapshotStatus() {
+        const el = document.getElementById('snapshot-status');
+        if (snapshotData && snapshotData.data && Object.keys(snapshotData.data).length > 0) {
+            const count = Object.keys(snapshotData.data).length;
+            el.className = 'snapshot-status has-data';
+            el.textContent = `✓ 前回データ読込済 (${snapshotData.date} / ${count}件)`;
+        } else {
+            el.className = 'snapshot-status no-data';
+            if (snapshotSource === 'localStorage') {
+                el.textContent = '⚠ 前回データなし（初回実行）';
+            } else if (snapshotSource === 'json') {
+                el.textContent = '⚠ JSONファイルを読み込んでください';
+            } else {
+                el.textContent = '⚠ 前回出力のExcelを読み込んでください';
             }
-        } else {
-            // フォルダ未設定でも localStorage には保存
-            const snap = buildSnapshot(mergedData);
-            try { localStorage.setItem(LS_SNAPSHOT, JSON.stringify(snap)); } catch(e) {}
         }
+    }
 
-        if (snapshotSource==='localStorage') {
-            try { snapshotData = JSON.parse(localStorage.getItem(LS_SNAPSHOT)); } catch(e) {}
+    // 起動時にlocalStorageから読み込み
+    loadSnapshotFromLocalStorage();
+
+    // ===== JSONファイルドロップゾーン =====
+    const snapshotDropZone = document.getElementById('drop-snapshot-json');
+    const snapshotFileInput = document.getElementById('file-snapshot-json');
+
+    snapshotDropZone.addEventListener('click', () => snapshotFileInput.click());
+    snapshotDropZone.addEventListener('dragover', e => { e.preventDefault(); snapshotDropZone.classList.add('drag-over'); });
+    snapshotDropZone.addEventListener('dragleave', () => snapshotDropZone.classList.remove('drag-over'));
+    snapshotDropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        snapshotDropZone.classList.remove('drag-over');
+        const f = [...e.dataTransfer.files].find(f => f.name.toLowerCase().endsWith('.json'));
+        if (f) loadSnapshotJSON(f);
+        else alert('JSONファイルを選択してください');
+    });
+    snapshotFileInput.addEventListener('change', e => {
+        if (e.target.files[0]) loadSnapshotJSON(e.target.files[0]);
+    });
+
+    function loadSnapshotJSON(file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                snapshotData = JSON.parse(e.target.result);
+                updateSnapshotStatus();
+                document.querySelector('#drop-snapshot-json .sj-text').textContent = '✓ ' + file.name;
+            } catch(err) {
+                alert('JSONの読み込みに失敗しました: ' + err.message);
+            }
+        };
+        reader.readAsText(file, 'UTF-8');
+    }
+
+    // ===== Excelスナップショット読み込み =====
+    const excelDropZone  = document.getElementById('drop-snapshot-excel');
+    const excelFileInput = document.getElementById('file-snapshot-excel');
+
+    excelDropZone.addEventListener('click', () => excelFileInput.click());
+    excelDropZone.addEventListener('dragover', e => { e.preventDefault(); excelDropZone.classList.add('drag-over'); });
+    excelDropZone.addEventListener('dragleave', () => excelDropZone.classList.remove('drag-over'));
+    excelDropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        excelDropZone.classList.remove('drag-over');
+        const f = [...e.dataTransfer.files].find(f => f.name.toLowerCase().endsWith('.xlsx'));
+        if (f) loadSnapshotExcel(f);
+        else alert('Excelファイル(.xlsx)を選択してください');
+    });
+    excelFileInput.addEventListener('change', e => {
+        if (e.target.files[0]) loadSnapshotExcel(e.target.files[0]);
+    });
+
+    function loadSnapshotExcel(file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const wb = XLSX.read(e.target.result, { type: 'array' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+                if (rows.length < 2) {
+                    alert('データが見つかりませんでした');
+                    return;
+                }
+
+                const headers = rows[0];
+                const warningIdx  = headers.indexOf('警告');
+                const denpyoIdx   = headers.indexOf('発注伝票№');
+
+                if (warningIdx === -1 || denpyoIdx === -1) {
+                    alert('「警告」列または「発注伝票№」列が見つかりません。\n統合ツールで出力したExcelを使用してください。');
+                    return;
+                }
+
+                // Excel上の日本語警告ラベル → 内部キーへ逆引き
+                const labelToKey = {
+                    'Lv4:工場納期超過':          'RED3',
+                    'Lv3:納期間に合わない':       'RED2',
+                    'Lv2:納期近・未入庫':         'RED1',
+                    'Lv1:要確認':                'Yellow',
+                    'Lv1:出荷日未更新・要確認':   'Yellow2',
+                    '': ''
+                };
+
+                const snapObj = { date: file.name, data: {} };
+                for (let i = 1; i < rows.length; i++) {
+                    const row      = rows[i];
+                    const denpyo   = String(row[denpyoIdx] ?? '').trim();
+                    const warnText = String(row[warningIdx] ?? '').trim();
+                    if (!denpyo) continue;
+                    snapObj.data[denpyo] = labelToKey[warnText] ?? '';
+                }
+
+                snapshotData = snapObj;
+                updateSnapshotStatus();
+                excelDropZone.querySelector('.se-text').textContent = '✓ ' + file.name;
+                excelDropZone.querySelector('.se-sub').textContent  =
+                    `${Object.keys(snapObj.data).length}件読み込み完了`;
+
+            } catch(err) {
+                alert('Excelの読み込みに失敗しました: ' + err.message);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // ===== スナップショット保存 =====
+    function saveSnapshot(data) {
+        const today = new Date().toISOString().slice(0,10);
+        const snapObj = {
+            date: today,
+            data: {}
+        };
+        data.forEach(row => {
+            const key = row['発注伝票№'];
+            if (key) snapObj.data[key] = row['警告'] || '';
+        });
+
+        // localStorage に常時保存
+        try { localStorage.setItem(SNAPSHOT_LS_KEY, JSON.stringify(snapObj)); } catch(e) {}
+
+        return snapObj;
+    }
+
+    function downloadSnapshotJSON(snapObj) {
+        const json = JSON.stringify(snapObj, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `picking_snapshot_${snapObj.date}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('download-snapshot-button').addEventListener('click', () => {
+        if (!mergedData) return;
+        const snap = saveSnapshot(mergedData);
+        downloadSnapshotJSON(snap);
+    });
+
+    // ===== 変化フラグ計算 =====
+    const warningOrder = { 'RED3': 0, 'RED2': 1, 'RED1': 2, 'Yellow': 3, 'Yellow2': 4, '': 5 };
+
+    function calcChange(denpyoNo, currentWarning) {
+        if (!snapshotData || !snapshotData.data) return '';
+        const prev = snapshotData.data[denpyoNo];
+        if (prev === undefined) {
+            // 前回にない → NEW（ただし警告なしのNEWは不要）
+            return currentWarning !== '' ? 'NEW' : '';
         }
+        if (prev === currentWarning) return '';
+        // 前回より悪化（数値が小さいほど重大）
+        const prevOrder = warningOrder[prev] ?? 5;
+        const currOrder = warningOrder[currentWarning] ?? 5;
+        if (currOrder < prevOrder) return 'UP';
+        return ''; // 改善はフラグなし
+    }
 
-        displayResult();
-        const withWarning = mergedData.filter(r => r['警告']!=='');
-        const newCount = withWarning.filter(r => r['変化']==='NEW').length;
-        const upCount  = withWarning.filter(r => r['変化']==='UP').length;
-        let msg = `${withWarning.length}件のデータを統合しました`;
-        if (snapshotData) msg += ` ／ 🆕NEW: ${newCount}件 ／ ⬆悪化: ${upCount}件`;
-        document.getElementById('result-count').textContent = msg;
-        document.getElementById('success-message').style.display = 'block';
+    const changeLabel = { 'NEW': '🆕 NEW', 'UP': '⬆ 悪化', '': '' };
+    const changeStyle = {
+        'NEW': 'background-color:#dbeafe; color:#1e40af; font-weight:bold;',
+        'UP':  'background-color:#fee2e2; color:#b91c1c; font-weight:bold;',
+        '':    ''
+    };
 
-    } catch(err) {
-        document.getElementById('error-message').textContent = `エラー: ${err.message}`;
-        document.getElementById('error-message').style.display = 'block';
-    } finally {
-        document.getElementById('merge-button').textContent = 'データを統合';
+    // ===== ファイル名キーワード自動判別 =====
+    const keywordMap = [
+        { key: 'picking',     keywords: ['ピッキング'] },
+        { key: 'workOrder',   keywords: ['工番'] },
+        { key: 'purchase',    keywords: ['発注'] },
+        { key: 'tempReceipt', keywords: ['仮入庫'] },
+    ];
+    function detectFileType(filename) {
+        for (const { key, keywords } of keywordMap) {
+            if (keywords.some(kw => filename.includes(kw))) return key;
+        }
+        return null;
+    }
+
+    const idMap = {
+        picking:     { drop: 'drop-picking',     selected: 'selected-picking',     input: 'file-picking' },
+        workOrder:   { drop: 'drop-workorder',   selected: 'selected-workorder',   input: 'file-workorder' },
+        purchase:    { drop: 'drop-purchase',     selected: 'selected-purchase',   input: 'file-purchase' },
+        tempReceipt: { drop: 'drop-tempreceipt', selected: 'selected-tempreceipt', input: 'file-tempreceipt' },
+    };
+
+    function applyFile(key, file) {
+        files[key] = file;
+        const ids = idMap[key];
+        document.getElementById(ids.drop).classList.add('loaded');
+        document.getElementById(ids.selected).textContent = '✓ ' + file.name;
         checkAllFiles();
     }
-});
 
-// =====================================================================
-//  表示
-// =====================================================================
-const warningStyle = {
-    'RED3':'background-color:#ff4444; color:white; font-weight:bold;',
-    'RED2':'background-color:#ff8800; color:white; font-weight:bold;',
-    'RED1':'background-color:#ffaaaa;', 'Yellow':'background-color:#fffacd;',
-    'Yellow2':'background-color:#fffacd;', '':''
-};
-const warningLabel = {
-    'RED3':'🔴🔥 工場納期超過','RED2':'🔴 納期間に合わない','RED1':'🟠 納期近・未入庫',
-    'Yellow':'🟡 要確認','Yellow2':'🟡⚠ 出荷日未更新・要確認','':''
-};
+    // ===== 一括ドロップ =====
+    const bulkDropZone = document.getElementById('bulk-drop-zone');
+    const bulkResult   = document.getElementById('bulk-result');
 
-function displayResult(sortByWarning=false) {
-    if (!mergedData?.length) return;
-    document.getElementById('empty-state').style.display      = 'none';
-    document.getElementById('result-container').style.display = 'block';
-    document.getElementById('sort-button').style.display      = 'block';
-    document.getElementById('reset-sort-button').style.display = sortByWarning ? 'block' : 'none';
-
-    let displayData = mergedData.filter(r => (r['警告']||'')!=='');
-    if (sortByWarning) displayData.sort((a,b) => (warningOrder[a['警告']]??5)-(warningOrder[b['警告']]??5));
-
-    const headers = Object.keys(mergedData[0]).filter(h => h!=='_columns');
-    let html = '<thead><tr>';
-    headers.forEach(h => {
-        const bg = h==='警告' ? 'background-color:#374151; color:white;'
-                 : h==='変化' ? 'background-color:#4c1d95; color:white;' : '';
-        html += `<th style="${bg}">${h}</th>`;
+    bulkDropZone.addEventListener('click', () => document.getElementById('bulk-files-input').click());
+    document.getElementById('bulk-files-input').addEventListener('change', e => {
+        const csvFiles = [...e.target.files].filter(f => f.name.toLowerCase().endsWith('.csv'));
+        processBulkFiles(csvFiles.length > 0 ? csvFiles : [...e.target.files]);
     });
-    html += '</tr></thead><tbody>';
+    bulkDropZone.addEventListener('dragover', e => { e.preventDefault(); bulkDropZone.classList.add('drag-over'); });
+    bulkDropZone.addEventListener('dragleave', () => bulkDropZone.classList.remove('drag-over'));
+    bulkDropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        bulkDropZone.classList.remove('drag-over');
+        processBulkFiles([...e.dataTransfer.files].filter(f => f.name.toLowerCase().endsWith('.csv')));
+    });
 
-    const warnCount={RED3:0,RED2:0,RED1:0,Yellow:0,Yellow2:0};
-    let newCount=0,upCount=0;
+    function processBulkFiles(fileList) {
+        if (!fileList.length) { bulkResult.innerHTML = '<span class="not-found">CSVファイルが見つかりませんでした</span>'; return; }
+        const found = {}, unknown = [];
+        for (const file of fileList) {
+            const key = detectFileType(file.name);
+            key ? (found[key] = file) : unknown.push(file.name);
+        }
+        for (const [key, file] of Object.entries(found)) applyFile(key, file);
 
-    displayData.forEach(row => {
-        const level=row['警告']||'', change=row['変化']||'';
-        if (warnCount[level]!==undefined) warnCount[level]++;
-        if (change==='NEW') newCount++;
-        if (change==='UP')  upCount++;
-        html += `<tr style="${warningStyle[level]||''}">`;
-        headers.forEach(h => {
-            if (h==='警告') {
-                html += `<td style="white-space:nowrap; font-weight:bold;">${warningLabel[level]||''}</td>`;
-            } else if (h==='変化') {
-                html += `<td style="white-space:nowrap; ${changeStyle[change]||''}">${changeLabel[change]||''}</td>`;
-            } else if (h==='納期備考'&&row[h]) {
-                html += `<td style="background-color:#e0f2fe; white-space:nowrap;" title="要目視確認">📋 ${row[h]}</td>`;
-            } else { html += `<td>${row[h]}</td>`; }
+        const labelMap = { picking:'ピッキング', workOrder:'工番', purchase:'発注', tempReceipt:'仮入庫' };
+        const lines = [];
+        for (const [key, label] of Object.entries(labelMap)) {
+            lines.push(found[key]
+                ? `<span class="found">✓ ${label}: ${found[key].name}</span>`
+                : `<span class="not-found">✗ ${label}: 未検出</span>`);
+        }
+        if (unknown.length) lines.push(`<span style="color:#9ca3af">⚠ 判別不能: ${unknown.join(', ')}</span>`);
+        bulkResult.innerHTML = lines.join('<br>');
+    }
+
+    // ===== 個別ファイル =====
+    document.getElementById('file-picking').addEventListener('change', e => { if(e.target.files[0]) applyFile('picking', e.target.files[0]); });
+    document.getElementById('file-workorder').addEventListener('change', e => { if(e.target.files[0]) applyFile('workOrder', e.target.files[0]); });
+    document.getElementById('file-purchase').addEventListener('change', e => { if(e.target.files[0]) applyFile('purchase', e.target.files[0]); });
+    document.getElementById('file-tempreceipt').addEventListener('change', e => { if(e.target.files[0]) applyFile('tempReceipt', e.target.files[0]); });
+
+    ['picking','workorder','purchase','tempreceipt'].forEach(id => {
+        const key = id === 'workorder' ? 'workOrder' : id === 'tempreceipt' ? 'tempReceipt' : id;
+        const dz  = document.getElementById(`drop-${id}`);
+        const fi  = document.getElementById(`file-${id}`);
+        dz.addEventListener('click', () => fi.click());
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+        dz.addEventListener('drop', e => {
+            e.preventDefault(); dz.classList.remove('drag-over');
+            const f = [...e.dataTransfer.files].find(f => f.name.toLowerCase().endsWith('.csv'));
+            f ? applyFile(key, f) : alert('CSVファイルを選択してください');
         });
-        html += '</tr>';
     });
-    html += '</tbody>';
-    document.getElementById('result-table').innerHTML = html;
 
-    const hasSnap = !!(snapshotData?.data);
-    const changePart = hasSnap
-        ? ` ／ <span style="color:#1e40af;font-weight:bold;">🆕 NEW: ${newCount}件</span> ／ <span style="color:#b91c1c;font-weight:bold;">⬆ 悪化: ${upCount}件</span>`
-        : ' ／ <span style="color:#9ca3af;">（前回データなし）</span>';
-    const summaryHTML = `全${displayData.length}件 ／
-        <span style="color:#ff4444;font-weight:bold;">🔴🔥 Lv4: ${warnCount.RED3}件</span> ／
-        <span style="color:#ff8800;font-weight:bold;">🔴 Lv3: ${warnCount.RED2}件</span> ／
-        <span style="color:#cc4400;">🟠 Lv2: ${warnCount.RED1}件</span> ／
-        <span style="color:#997700;">🟡 Lv1: ${warnCount.Yellow}件</span> ／
-        <span style="color:#997700;">🟡⚠ 未更新疑: ${warnCount.Yellow2}件</span>
-        ${changePart}${sortByWarning?'　<strong>（警告レベル順）</strong>':''}`;
-    document.getElementById('table-top-summary').innerHTML = summaryHTML;
-    const footer = document.getElementById('table-footer');
-    footer.style.display = 'block';
-    footer.innerHTML = summaryHTML;
-}
+    function checkAllFiles() {
+        document.getElementById('merge-button').disabled = !Object.values(files).every(f => f !== null);
+    }
 
-document.getElementById('sort-button').addEventListener('click',       () => { isSortedByWarning=true;  displayResult(true);  });
-document.getElementById('reset-sort-button').addEventListener('click', () => { isSortedByWarning=false; displayResult(false); });
+    // ===== CSV解析 =====
+    function parseCSV(text) {
+        const lines = text.split('\n').filter(l => l.trim());
+        if (!lines.length) return [];
+        const headers = lines[0].split(',').map(h => h.trim());
+        return lines.slice(1).map(line => {
+            const values = line.split(',');
+            const row = { _columns: values.map(v => v ? v.trim() : '') };
+            headers.forEach((h, i) => { row[h] = values[i] ? values[i].trim() : ''; });
+            return row;
+        });
+    }
+    function getCol(row, i) { return row._columns?.[i] ?? ''; }
+    function readFileAsText(file) {
+        return new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = e => res(e.target.result);
+            r.onerror = rej;
+            r.readAsText(file, 'Shift_JIS');
+        });
+    }
+    function parseDate(str) {
+        if (!str) return null;
+        const d = new Date(str.replace(/\//g, '-'));
+        return isNaN(d.getTime()) ? null : d;
+    }
 
-// =====================================================================
-//  Excel生成
-// =====================================================================
-const BORDER_THIN   = { top:{style:'thin',color:{rgb:'000000'}},bottom:{style:'thin',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}} };
-const BORDER_HEADER = { top:{style:'medium',color:{rgb:'000000'}},bottom:{style:'medium',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}} };
-const excelWarningLabel = { 'RED3':'Lv4:工場納期超過','RED2':'Lv3:納期間に合わない','RED1':'Lv2:納期近・未入庫','Yellow':'Lv1:要確認','Yellow2':'Lv1:出荷日未更新・要確認','':'' };
-const excelChangeLabel  = { 'NEW':'NEW','UP':'悪化','':'' };
+    // ===== 統合処理 =====
+    document.getElementById('merge-button').addEventListener('click', async () => {
+        document.getElementById('error-message').style.display = 'none';
+        document.getElementById('success-message').style.display = 'none';
+        document.getElementById('merge-button').textContent = '処理中...';
+        document.getElementById('merge-button').disabled = true;
 
-function buildExcelBlob(sortByWarning) {
-    if (!mergedData?.length) return null;
-    let data = mergedData.filter(r => (r['警告']||'')!=='');
-    if (sortByWarning) data.sort((a,b) => (warningOrder[a['警告']]??5)-(warningOrder[b['警告']]??5));
+        try {
+            const [pickingText, workOrderText, purchaseText, tempReceiptText] = await Promise.all([
+                readFileAsText(files.picking),
+                readFileAsText(files.workOrder),
+                readFileAsText(files.purchase),
+                readFileAsText(files.tempReceipt)
+            ]);
 
-    const headers = Object.keys(mergedData[0]).filter(h => h!=='_columns');
-    const wb = XLSX.utils.book_new();
-    const wsData = [headers];
-    data.forEach(row => wsData.push(headers.map(h => {
-        if (h==='警告') return excelWarningLabel[row[h]||'']||'';
-        if (h==='変化') return excelChangeLabel[row[h]||'']||'';
-        return row[h]||'';
-    })));
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    for (let R=0;R<=range.e.r;R++) {
-        for (let C=0;C<=range.e.c;C++) {
-            const addr = XLSX.utils.encode_cell({r:R,c:C});
-            if (!ws[addr]) ws[addr]={t:'s',v:''};
-            if (R===0) {
-                ws[addr].s={ font:{bold:true,color:{rgb:'1f2937'}},fill:{patternType:'solid',fgColor:{rgb:'E5E7EB'}},border:BORDER_HEADER,alignment:{horizontal:'center',vertical:'center'} };
-            } else {
-                const warning=data[R-1]['警告']||'', change=data[R-1]['変化']||'';
-                let bgColor='';
-                if (warning==='RED3') bgColor='FF4444';
-                else if (warning==='RED2') bgColor='FF8800';
-                else if (warning==='RED1') bgColor='FFAAAA';
-                else if (['Yellow','Yellow2'].includes(warning)) bgColor='FFFACD';
-                const colName=headers[C];
-                let finalBg=bgColor;
-                if (colName==='変化') { if (change==='NEW') finalBg='DBEAFE'; else if (change==='UP') finalBg='FEE2E2'; }
-                ws[addr].s={
-                    border:BORDER_THIN,
-                    ...(finalBg?{fill:{patternType:'solid',fgColor:{rgb:finalBg}}}:{}),
-                    font:{ bold:colName==='変化'&&change!=='',
-                           color:{rgb:colName==='変化'&&change==='NEW'?'1E40AF':colName==='変化'&&change==='UP'?'B91C1C':'000000'} }
+            const pickingData     = parseCSV(pickingText);
+            const workOrderData   = parseCSV(workOrderText);
+            const purchaseData    = parseCSV(purchaseText);
+            const tempReceiptData = parseCSV(tempReceiptText);
+
+            let data = pickingData.map(picking => {
+                const workOrder   = workOrderData.find(wo => wo['工番'] === picking['工番']) || {};
+                const purchase    = purchaseData.find(po => po['伝票№'] === picking['発注伝票№']) || {};
+                const tempReceipt = tempReceiptData.find(tr => getCol(tr,1) && getCol(tr,1) === getCol(picking,12));
+
+                return {
+                    '発注担当':         getCol(picking,14),
+                    '発注伝票№':        getCol(picking,12),
+                    '発注先':           getCol(purchase,16),
+                    '工番':             getCol(picking,2),
+                    '品目':             getCol(picking,4),
+                    '品名':             getCol(picking,5),
+                    '仕様':             getCol(picking,6),
+                    'メーカー名':       getCol(purchase,20),
+                    '単位':             getCol(picking,7),
+                    '注文書発行日時':   getCol(purchase,27),
+                    '仮注文書発行日時': getCol(purchase,28),
+                    '工場納期':         getCol(picking,15),
+                    'P部品納期':        getCol(purchase,10),
+                    '注文納期':         getCol(purchase,12),
+                    '回答納期':         getCol(purchase,13),
+                    '納期備考':         getCol(purchase,14),
+                    '品目備考':         getCol(purchase,25),
+                    '発注備考':         getCol(purchase,26),
+                    '納期ｱﾗｰﾄ':        getCol(picking,17),
+                    '単価':             getCol(picking,18),
+                    '工期':             getCol(picking,19),
+                    '仮入庫済':         tempReceipt ? '〇' : '',
+                    '出荷予定日1':      getCol(workOrder,29),
+                    '出荷予定日2':      getCol(workOrder,30),
+                    '製番':             getCol(workOrder,10),
+                    '契約先':           getCol(workOrder,3),
+                    '納入先':           getCol(workOrder,4)
                 };
+            });
+
+            // フィルタ: SK/MK + #K
+            data = data.filter(r => !(
+                (r['工番'].startsWith('SK') || r['工番'].startsWith('MK')) &&
+                r['品目備考'].includes('#K')
+            ));
+
+            const today = new Date(); today.setHours(0,0,0,0);
+            const twoWL = new Date(today); twoWL.setDate(today.getDate()+14);
+            const oneMA = new Date(today); oneMA.setMonth(today.getMonth()-1);
+
+            data = data.filter(r => {
+                const dAH = parseDate(r['出荷予定日1']);
+                const dY  = parseDate(r['P部品納期']);
+                const dX  = parseDate(r['工場納期']);
+                const dV  = r['注文書発行日時'];
+                const dW  = parseDate(r['仮注文書発行日時']);
+                return (dAH && dAH<=twoWL) || (dY&&dY<=twoWL) || (dX&&dX<=twoWL)
+                    || (!dV||dV.trim()==='') || (dW&&dW>=oneMA);
+            });
+
+            data = data.filter(r => ['▲','△'].includes((r['納期ｱﾗｰﾄ']||'').trim()));
+
+            // 警告レベル算出
+            data = data.map(r => {
+                const dX  = parseDate(r['工場納期']);
+                const dY  = parseDate(r['P部品納期']);
+                const dAH = parseDate(r['出荷予定日1']);
+                const dAA = parseDate(r['回答納期']);
+                const isAHYellow = dAH && dAH<=twoWL;
+                const isYYellow  = dY  && dY <=twoWL;
+                const isXYellow  = dX  && dX <=twoWL;
+                const isAGEmpty  = !r['仮入庫済']||r['仮入庫済'].trim()==='';
+                const isAAEmpty  = !r['回答納期']||r['回答納期'].trim()==='';
+
+                let warning = '';
+                if      (dX && dX<=today)                                          { warning = 'RED3'; }
+                else if (dAA && dAH && dAA>dAH) {
+                    warning = (dX && dAH>=dX) ? 'RED3' : 'Yellow2';
+                }
+                else if (dAA && ((dY&&dAA>dY)||(dX&&dAA>dX)))                     { warning = 'RED2'; }
+                else if ((isXYellow||isYYellow||isAHYellow) && isAGEmpty)          { warning = 'RED1'; }
+                else if (isYYellow && isAAEmpty && isAGEmpty)                      { warning = 'Yellow'; }
+                else if (isAHYellow)                                               { warning = 'Yellow'; }
+
+                // 変化フラグ
+                const change = calcChange(r['発注伝票№'], warning);
+
+                return { '警告': warning, '変化': change, ...r };
+            });
+
+            mergedData = data;
+
+            // 統合後にlocalStorageへ自動保存
+            saveSnapshot(mergedData);
+            // ブラウザ記憶モードなら表示も更新
+            if (snapshotSource === 'localStorage') {
+                snapshotData = JSON.parse(localStorage.getItem(SNAPSHOT_LS_KEY));
+                // ただし今回の比較結果には使わない（次回のため）
             }
+
+            displayResult();
+
+            const withWarning = mergedData.filter(r => r['警告'] !== '');
+            const newCount = withWarning.filter(r => r['変化'] === 'NEW').length;
+            const upCount  = withWarning.filter(r => r['変化'] === 'UP').length;
+            let msg = `${withWarning.length}件のデータを統合しました`;
+            if (snapshotData) msg += ` ／ 🆕NEW: ${newCount}件 ／ ⬆悪化: ${upCount}件`;
+            document.getElementById('result-count').textContent = msg;
+            document.getElementById('success-message').style.display = 'block';
+
+        } catch(err) {
+            document.getElementById('error-message').textContent = `エラー: ${err.message}`;
+            document.getElementById('error-message').style.display = 'block';
+        } finally {
+            document.getElementById('merge-button').textContent = 'データを統合';
+            checkAllFiles();
+        }
+    });
+
+    // ===== 表示 =====
+    const warningStyle = {
+        'RED3':   'background-color:#ff4444; color:white; font-weight:bold;',
+        'RED2':   'background-color:#ff8800; color:white; font-weight:bold;',
+        'RED1':   'background-color:#ffaaaa;',
+        'Yellow': 'background-color:#fffacd;',
+        'Yellow2':'background-color:#fffacd;',
+        '':       ''
+    };
+    const warningLabel = {
+        'RED3':   '🔴🔥 工場納期超過',
+        'RED2':   '🔴 納期間に合わない',
+        'RED1':   '🟠 納期近・未入庫',
+        'Yellow': '🟡 要確認',
+        'Yellow2':'🟡⚠ 出荷日未更新・要確認',
+        '':       ''
+    };
+
+    function displayResult(sortByWarning = false) {
+        if (!mergedData?.length) return;
+
+        document.getElementById('empty-state').style.display = 'none';
+        document.getElementById('result-container').style.display = 'block';
+        document.getElementById('sort-button').style.display = 'block';
+        document.getElementById('reset-sort-button').style.display = sortByWarning ? 'block' : 'none';
+
+        let displayData = mergedData.filter(r => (r['警告']||'') !== '');
+        if (sortByWarning) {
+            displayData.sort((a,b) => (warningOrder[a['警告']]??5) - (warningOrder[b['警告']]??5));
+        }
+
+        const headers = Object.keys(mergedData[0]).filter(h => h !== '_columns');
+        let html = '<thead><tr>';
+        headers.forEach(h => {
+            const bg = h==='警告' ? 'background-color:#374151; color:white;'
+                     : h==='変化' ? 'background-color:#4c1d95; color:white;'
+                     : '';
+            html += `<th style="${bg}">${h}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        const warnCount = { RED3:0, RED2:0, RED1:0, Yellow:0, Yellow2:0 };
+        let newCount=0, upCount=0;
+
+        displayData.forEach(row => {
+            const level  = row['警告'] || '';
+            const change = row['変化'] || '';
+            if (warnCount[level] !== undefined) warnCount[level]++;
+            if (change === 'NEW') newCount++;
+            if (change === 'UP')  upCount++;
+
+            html += `<tr style="${warningStyle[level]||''}">`;
+            headers.forEach(h => {
+                if (h === '警告') {
+                    html += `<td style="white-space:nowrap; font-weight:bold;">${warningLabel[level]||''}</td>`;
+                } else if (h === '変化') {
+                    const cs = changeStyle[change]||'';
+                    html += `<td style="white-space:nowrap; ${cs}">${changeLabel[change]||''}</td>`;
+                } else if (h === '納期備考' && row[h]) {
+                    html += `<td style="background-color:#e0f2fe; white-space:nowrap;" title="要目視確認">📋 ${row[h]}</td>`;
+                } else {
+                    html += `<td>${row[h]}</td>`;
+                }
+            });
+            html += '</tr>';
+        });
+        html += '</tbody>';
+        document.getElementById('result-table').innerHTML = html;
+
+        const hasSnap = !!(snapshotData && snapshotData.data);
+        const changePart = hasSnap
+            ? ` ／ <span style="color:#1e40af; font-weight:bold;">🆕 NEW: ${newCount}件</span> ／ <span style="color:#b91c1c; font-weight:bold;">⬆ 悪化: ${upCount}件</span>`
+            : ' ／ <span style="color:#9ca3af;">（前回データなし）</span>';
+
+        const summaryHTML = `
+            全${displayData.length}件 ／
+            <span style="color:#ff4444; font-weight:bold;">🔴🔥 Lv4: ${warnCount.RED3}件</span> ／
+            <span style="color:#ff8800; font-weight:bold;">🔴 Lv3: ${warnCount.RED2}件</span> ／
+            <span style="color:#cc4400;">🟠 Lv2: ${warnCount.RED1}件</span> ／
+            <span style="color:#997700;">🟡 Lv1: ${warnCount.Yellow}件</span> ／
+            <span style="color:#997700;">🟡⚠ 未更新疑: ${warnCount.Yellow2}件</span>
+            ${changePart}
+            ${sortByWarning ? '　<strong>（警告レベル順）</strong>' : ''}
+        `;
+        document.getElementById('table-top-summary').innerHTML = summaryHTML;
+        const footer = document.getElementById('table-footer');
+        footer.style.display = 'block';
+        footer.innerHTML = summaryHTML;
+    }
+
+    document.getElementById('sort-button').addEventListener('click', () => { isSortedByWarning=true;  displayResult(true);  });
+    document.getElementById('reset-sort-button').addEventListener('click', () => { isSortedByWarning=false; displayResult(false); });
+
+    // ===== Excelダウンロード =====
+    const BORDER_THIN = {
+        top:{style:'thin',color:{rgb:'000000'}}, bottom:{style:'thin',color:{rgb:'000000'}},
+        left:{style:'thin',color:{rgb:'000000'}}, right:{style:'thin',color:{rgb:'000000'}}
+    };
+    const BORDER_HEADER = {
+        top:{style:'medium',color:{rgb:'000000'}}, bottom:{style:'medium',color:{rgb:'000000'}},
+        left:{style:'thin',color:{rgb:'000000'}}, right:{style:'thin',color:{rgb:'000000'}}
+    };
+
+    const excelWarningLabel = {
+        'RED3':'Lv4:工場納期超過', 'RED2':'Lv3:納期間に合わない',
+        'RED1':'Lv2:納期近・未入庫', 'Yellow':'Lv1:要確認',
+        'Yellow2':'Lv1:出荷日未更新・要確認', '':''
+    };
+    const excelChangeLabel = { 'NEW':'NEW', 'UP':'悪化', '':'' };
+
+    function downloadExcel(sortByWarning) {
+        if (!mergedData?.length) return;
+        let data = mergedData.filter(r => (r['警告']||'') !== '');
+        if (sortByWarning) {
+            data.sort((a,b) => (warningOrder[a['警告']]??5) - (warningOrder[b['警告']]??5));
+        }
+
+        try {
+            const headers = Object.keys(mergedData[0]).filter(h => h !== '_columns');
+            const wb = XLSX.utils.book_new();
+            const wsData = [headers];
+
+            data.forEach(row => {
+                wsData.push(headers.map(h => {
+                    if (h === '警告') return excelWarningLabel[row[h]||''] || '';
+                    if (h === '変化') return excelChangeLabel[row[h]||''] || '';
+                    return row[h] || '';
+                }));
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const range = XLSX.utils.decode_range(ws['!ref']);
+
+            for (let R=0; R<=range.e.r; R++) {
+                for (let C=0; C<=range.e.c; C++) {
+                    const addr = XLSX.utils.encode_cell({r:R,c:C});
+                    if (!ws[addr]) ws[addr] = {t:'s',v:''};
+                    if (R === 0) {
+                        ws[addr].s = {
+                            font: {bold:true, color:{rgb:'1f2937'}},
+                            fill: {patternType:'solid', fgColor:{rgb:'E5E7EB'}},
+                            border: BORDER_HEADER,
+                            alignment: {horizontal:'center', vertical:'center'}
+                        };
+                    } else {
+                        const warning = data[R-1]['警告'] || '';
+                        const change  = data[R-1]['変化'] || '';
+                        let bgColor = '';
+                        if      (warning==='RED3')                           bgColor='FF4444';
+                        else if (warning==='RED2')                           bgColor='FF8800';
+                        else if (warning==='RED1')                           bgColor='FFAAAA';
+                        else if (['Yellow','Yellow2'].includes(warning))     bgColor='FFFACD';
+
+                        // 変化列は専用色で上書き
+                        const colName = headers[C];
+                        let finalBg = bgColor;
+                        if (colName === '変化') {
+                            if (change==='NEW') finalBg='DBEAFE';
+                            else if (change==='UP') finalBg='FEE2E2';
+                        }
+
+                        ws[addr].s = {
+                            border: BORDER_THIN,
+                            ...(finalBg ? {fill:{patternType:'solid',fgColor:{rgb:finalBg}}} : {}),
+                            font: {
+                                bold: colName==='変化' && change!=='',
+                                color: {rgb: colName==='変化' && change==='NEW' ? '1E40AF'
+                                           : colName==='変化' && change==='UP'  ? 'B91C1C'
+                                           : '000000'}
+                            }
+                        };
+                    }
+                }
+            }
+
+            ws['!cols'] = headers.map(h => ({wch: Math.max(h.length*2, 10)}));
+            ws['!freeze'] = {xSplit:0, ySplit:1, topLeftCell:'A2', activePane:'bottomLeft', state:'frozen'};
+            XLSX.utils.book_append_sheet(wb, ws, 'ピッキング統合データ');
+
+            const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
+            XLSX.writeFile(wb, `ピッキング統合データ${sortByWarning?'_警告順':''}_${ts}.xlsx`);
+        } catch(e) {
+            alert('Excelの作成に失敗しました: ' + e.message);
         }
     }
-    ws['!cols']   = headers.map(h => ({wch:Math.max(h.length*2,10)}));
-    ws['!freeze'] = {xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft',state:'frozen'};
-    XLSX.utils.book_append_sheet(wb, ws, 'ピッキング統合データ');
 
-    const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
-    return new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-}
-
-async function downloadExcel(sortByWarning) {
-    if (!mergedData?.length) return;
-    const blob  = buildExcelBlob(sortByWarning);
-    const fname = excelFilename(sortByWarning);
-    if (!blob) return;
-
-    if (folderHandle) {
-        const ok = await saveFileToFolder(fname, blob);
-        if (ok) { showFolderLog(`✓ 「${fname}」をフォルダに保存しました`, false); return; }
-    }
-    triggerDownload(blob, fname);
-}
-
-document.getElementById('download-button').addEventListener('click',        () => downloadExcel(false));
-document.getElementById('download-sorted-button').addEventListener('click', () => downloadExcel(true));
+    document.getElementById('download-button').addEventListener('click', () => downloadExcel(false));
+    document.getElementById('download-sorted-button').addEventListener('click', () => downloadExcel(true));
 </script>
 </body>
 </html>
