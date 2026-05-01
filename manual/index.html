@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>社内HTMLツール マニュアル</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #1a202c;
+      --muted: #64748b;
+      --accent: #3b6fd4;
+      --accent-light: #ebf0fb;
+      --accent-border: #b8caee;
+      --radius: 8px;
+      --shadow: 0 1px 4px rgba(0,0,0,0.09);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header .logo { font-size: 18px; font-weight: 700; }
+    header .badge {
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    header nav { margin-left: auto; }
+    header nav a { color: var(--muted); text-decoration: none; font-size: 14px; }
+    header nav a:hover { color: var(--accent); }
+
+    .layout { display: flex; min-height: calc(100vh - 53px); }
+
+    aside {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 24px 0;
+    }
+    aside .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      padding: 16px 20px 6px;
+    }
+    aside a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 14px;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    aside a.active {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+    aside a:hover:not(.active) { background: var(--bg); }
+
+    main { flex: 1; padding: 40px; max-width: 860px; }
+    .page-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+    .page-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+
+    .overview {
+      background: linear-gradient(135deg, #ebf0fb 0%, #f4f6f9 100%);
+      border: 1px solid var(--accent-border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-bottom: 32px;
+    }
+    .overview h2 { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+    .overview p { font-size: 14px; line-height: 1.85; color: #2d3748; }
+    .overview .repo {
+      margin-top: 14px;
+      background: rgba(255,255,255,0.75);
+      border: 1px solid var(--accent-border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 13px;
+      color: #1e3a6e;
+      line-height: 1.8;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      text-decoration: none;
+      color: inherit;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .card:hover {
+      box-shadow: 0 4px 14px rgba(59,111,212,0.12);
+      border-color: var(--accent-border);
+    }
+    .card-icon { font-size: 32px; flex-shrink: 0; width: 48px; text-align: center; }
+    .card-body h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .card-body p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+    .card-arrow { margin-left: auto; font-size: 22px; color: var(--accent); align-self: center; flex-shrink: 0; }
+
+    .section-title { font-size: 17px; font-weight: 700; margin: 32px 0 16px; }
+
+    .step-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+    .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .step-num { font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+    .step h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .step p { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 8px; }
+    .step a { color: var(--accent); text-decoration: none; font-size: 12px; font-weight: 600; }
+
+    footer { border-top: 1px solid var(--border); padding: 16px 40px; font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">📘 社内HTMLツール マニュアル</span>
+  <span class="badge">GitHub管理</span>
+  <a href="admin-manual.html" target="_blank" title="管理者マニュアル" style="font-size:13px; color:var(--muted); text-decoration:none; opacity:0.4; margin-left:2px;">🔧</a>
+  <nav><a href="../index.html">← ツール一覧に戻る</a></nav>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="section-label">MENU</div>
+    <a href="index.html" class="active">🏠 マニュアルTOP</a>
+    <div class="section-label">PAGES</div>
+    <a href="git-basic.html">📖 Git入門・初回セットアップ</a>
+    <a href="workflow.html">🔄 日常の作業手順・運用ルール</a>
+  </aside>
+
+  <main>
+    <div class="page-title">マニュアル TOP</div>
+    <div class="page-subtitle">社内HTMLツールをGitHubで複数人で管理するための手順をまとめています。</div>
+
+    <div class="overview">
+      <h2>📌 このプロジェクトについて</h2>
+      <p>
+        社内業務で使う<strong>HTMLツール群</strong>を、<strong>GitHub</strong> を使ってチームで共同管理するプロジェクトです。<br>
+        ツールの追加・修正はGitでバージョン管理し、誰でも最新版を取得・更新できます。<br>
+        編集にはプログラミングの知識は不要で、HTML/CSSが少し読めれば参加できます。
+      </p>
+      <div class="repo">
+        📁 ローカルパス： C:\Users\[ユーザー名]\source\kamacho-internal-html<br>
+        ☁️ GitHub：　　  kintone-kamacho / internal-html
+      </div>
+    </div>
+
+    <div class="section-title">📚 マニュアルページ一覧</div>
+
+    <a href="git-basic.html" class="card">
+      <div class="card-icon">📖</div>
+      <div class="card-body">
+        <h3>Git入門・初回セットアップ</h3>
+        <p>Gitが初めての方向け。インストールから最初のクローン（ファイルの取得）まで手順を説明します。初回だけ行う作業です。</p>
+      </div>
+      <div class="card-arrow">›</div>
+    </a>
+
+    <a href="workflow.html" class="card">
+      <div class="card-icon">🔄</div>
+      <div class="card-body">
+        <h3>日常の作業手順・運用ルール</h3>
+        <p>毎回の作業フロー（pull → 編集 → commit → push）と、チームで守るべきルール、よくあるエラーの対処法を掲載。</p>
+      </div>
+      <div class="card-arrow">›</div>
+    </a>
+
+    <div class="section-title">🚀 はじめての方はこの順番で読んでください</div>
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">STEP 01</div>
+        <h4>事前準備</h4>
+        <p>GitとVS Codeのインストール確認</p>
+        <a href="git-basic.html#prep">→ 読む</a>
+      </div>
+      <div class="step">
+        <div class="step-num">STEP 02</div>
+        <h4>初回セットアップ</h4>
+        <p>Gitの初期設定とリポジトリのクローン</p>
+        <a href="git-basic.html#setup">→ 読む</a>
+      </div>
+      <div class="step">
+        <div class="step-num">STEP 03</div>
+        <h4>日常の作業手順</h4>
+        <p>pull → 編集 → commit → push の流れ</p>
+        <a href="workflow.html#daily">→ 読む</a>
+      </div>
+      <div class="step">
+        <div class="step-num">STEP 04</div>
+        <h4>困ったときは</h4>
+        <p>よくあるエラーと対処法</p>
+        <a href="workflow.html#errors">→ 読む</a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer>社内HTMLツール マニュアル　|　更新日: 2026-05-01</footer>
+</body>
+</html>

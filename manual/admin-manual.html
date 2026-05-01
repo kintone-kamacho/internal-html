@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理者マニュアル｜GitHub管理手順</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #1a202c;
+      --muted: #64748b;
+      --accent: #3b6fd4;
+      --accent-light: #ebf0fb;
+      --accent-border: #b8caee;
+      --warn: #b45309;
+      --warn-light: #fef3c7;
+      --warn-border: #fcd34d;
+      --success: #166534;
+      --success-light: #dcfce7;
+      --success-border: #86efac;
+      --danger: #991b1b;
+      --danger-light: #fee2e2;
+      --danger-border: #fca5a5;
+      --radius: 8px;
+      --shadow: 0 1px 4px rgba(0,0,0,0.09);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header .logo { font-size: 18px; font-weight: 700; }
+    header .badge {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+    header nav { margin-left: auto; }
+    header nav a { color: var(--muted); text-decoration: none; font-size: 14px; }
+    header nav a:hover { color: var(--accent); }
+
+    .layout { display: flex; min-height: calc(100vh - 53px); }
+
+    aside {
+      width: 230px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 24px 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    aside .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      padding: 16px 20px 6px;
+    }
+    aside a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 13px;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    aside a:hover { background: var(--bg); }
+    aside a.active {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+
+    main { flex: 1; padding: 40px; max-width: 860px; }
+    .page-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+    .page-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+
+    /* セクション */
+    .section { margin-bottom: 48px; }
+    .section-title {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ステップブロック */
+    .steps { display: flex; flex-direction: column; gap: 12px; }
+    .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .step-num {
+      background: var(--accent);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-body h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .step-body p { font-size: 13px; color: #2d3748; line-height: 1.75; }
+
+    /* コードブロック */
+    .code-block {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.9;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    .code-block .comment { color: #94a3b8; }
+    .code-block .url { color: #7dd3fc; }
+    .code-block .key { color: #86efac; }
+
+    /* 注意・補足ボックス */
+    .callout {
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-size: 13px;
+      line-height: 1.8;
+      margin: 12px 0;
+      display: flex;
+      gap: 10px;
+    }
+    .callout.warn {
+      background: var(--warn-light);
+      border: 1px solid var(--warn-border);
+      color: #78350f;
+    }
+    .callout.danger {
+      background: var(--danger-light);
+      border: 1px solid var(--danger-border);
+      color: #7f1d1d;
+    }
+    .callout.info {
+      background: var(--accent-light);
+      border: 1px solid var(--accent-border);
+      color: #1e3a6e;
+    }
+    .callout.success {
+      background: var(--success-light);
+      border: 1px solid var(--success-border);
+      color: #14532d;
+    }
+    .callout-icon { font-size: 18px; flex-shrink: 0; }
+    .callout-body strong { display: block; margin-bottom: 4px; font-size: 14px; }
+
+    /* テーブル */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin: 12px 0;
+    }
+    th {
+      background: var(--accent-light);
+      color: var(--accent);
+      font-weight: 700;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--accent-border);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: #2d3748;
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    /* チェックリスト */
+    .checklist { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .checklist li {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow);
+    }
+    .checklist li::before {
+      content: "□";
+      font-size: 16px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 40px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">🔧 管理者マニュアル</span>
+  <span class="badge">作成者専用</span>
+  <nav><a href="../index.html">← ツール一覧に戻る</a></nav>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="section-label">MENU</div>
+    <a href="#overview" class="active">📋 概要・リポジトリ情報</a>
+    <div class="section-label">管理作業</div>
+    <a href="#private">🔒 Private化の手順</a>
+    <a href="#invite">👤 メンバーの追加・削除</a>
+    <a href="#pages">🌐 GitHub Pages確認</a>
+    <div class="section-label">運用</div>
+    <a href="#roles">🎖 権限の使い分け</a>
+    <a href="#checklist">✅ 新メンバー追加チェックリスト</a>
+    <a href="#trouble">🚨 よくあるトラブル</a>
+  </aside>
+
+  <main>
+    <div class="page-title">管理者マニュアル</div>
+    <div class="page-subtitle">リポジトリ作成者・管理担当者向け。GitHub管理作業の手順をまとめています。</div>
+
+    <!-- 概要 -->
+    <div class="section" id="overview">
+      <div class="section-title">📋 概要・リポジトリ情報</div>
+      <div class="code-block">
+        <span class="comment"># リポジトリ</span><br>
+        <span class="key">GitHub</span>　　：　<span class="url">https://github.com/kintone-kamacho/internal-html</span><br>
+        <span class="key">公開URL</span>　：　<span class="url">https://kintone-kamacho.github.io/internal-html/</span><br>
+        <span class="key">ローカル</span>　：　C:\Users\[ユーザー名]\source\kamacho-internal-html<br><br>
+        <span class="comment"># 現在の設定</span><br>
+        <span class="key">公開設定</span>　：　Private（ソースコードは非公開）<br>
+        <span class="key">Pages</span>　　：　Public（URLは誰でもアクセス可能）
+      </div>
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>Privateにしても公開URLは維持される</strong>
+          リポジトリをPrivateにしても、GitHub PagesのURLは引き続き誰でもアクセスできます。ソースコードが見えなくなるだけです。
+        </div>
+      </div>
+    </div>
+
+    <!-- Private化 -->
+    <div class="section" id="private">
+      <div class="section-title">🔒 リポジトリのPrivate化</div>
+      <div class="callout success">
+        <span class="callout-icon">✅</span>
+        <div class="callout-body">
+          <strong>対応済み（2026-05-01）</strong>
+          既にPrivateに変更済みです。再度変更が必要な場合のみ以下の手順を使用してください。
+        </div>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Settingsを開く</h4>
+            <p>リポジトリページ上部の「Settings」タブをクリック</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>Danger Zoneまでスクロール</h4>
+            <p>ページ最下部の赤い枠「Danger Zone」セクションまでスクロール</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>「Change repository visibility」をクリック</h4>
+            <p>「Change to private」を選択し、確認ダイアログで操作を完了する</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- メンバー追加 -->
+    <div class="section" id="invite">
+      <div class="section-title">👤 メンバーの追加・削除</div>
+
+      <h3 style="font-size:15px; font-weight:700; margin:16px 0 10px;">メンバーを追加する</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Manage accessを開く</h4>
+            <p>Settings → Collaborators → Manage access</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>「Add people」をクリック</h4>
+            <p>相手のGitHubユーザー名またはメールアドレスを入力して検索</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>権限を選択して招待</h4>
+            <p>通常は「Write」で十分。招待メールが相手に届くので、承認してもらう。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h4>相手に連絡する</h4>
+            <p>GitHubに登録しているメールに招待が届く。届かない場合は <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">https://github.com/notifications</code> を確認してもらう。</p>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size:15px; font-weight:700; margin:24px 0 10px;">メンバーを削除する</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Manage accessを開く</h4>
+            <p>Settings → Collaborators → Manage access</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>対象メンバーの「Remove」をクリック</h4>
+            <p>即時アクセス不可になる。相手への通知は自動では届かないので必要に応じて連絡する。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>招待の有効期限に注意</strong>
+          招待を承認しないまま放置すると一定期間で失効します。未承認のまま時間が経ったら再招待してください。
+        </div>
+      </div>
+    </div>
+
+    <!-- GitHub Pages -->
+    <div class="section" id="pages">
+      <div class="section-title">🌐 GitHub Pages確認・設定</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Pages設定を確認する</h4>
+            <p>Settings → Pages → 「Your site is published at〜」が表示されていればOK</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>公開URLにアクセスして確認</h4>
+            <p><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">https://kintone-kamacho.github.io/internal-html/</code></p>
+          </div>
+        </div>
+      </div>
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>pushしてから反映まで数分かかる場合がある</strong>
+          編集内容をpushした後、GitHub Pagesへの反映には最大5分程度かかることがあります。
+        </div>
+      </div>
+    </div>
+
+    <!-- 権限の使い分け -->
+    <div class="section" id="roles">
+      <div class="section-title">🎖 権限の使い分け</div>
+      <table>
+        <tr>
+          <th>権限</th>
+          <th>できること</th>
+          <th>用途</th>
+        </tr>
+        <tr>
+          <td><strong>Admin</strong></td>
+          <td>Settings変更・メンバー管理・削除も含む全操作</td>
+          <td>管理者（自分）</td>
+        </tr>
+        <tr>
+          <td><strong>Write</strong></td>
+          <td>ファイルの編集・push・pull</td>
+          <td>引き継ぎメンバー（通常はこれでOK）</td>
+        </tr>
+        <tr>
+          <td><strong>Read</strong></td>
+          <td>閲覧のみ</td>
+          <td>参照だけさせたい場合</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- チェックリスト -->
+    <div class="section" id="checklist">
+      <div class="section-title">✅ 新メンバー追加チェックリスト</div>
+      <ul class="checklist">
+        <li>相手のGitHubアカウントを確認済み</li>
+        <li>Manage access → Add people で招待済み（権限：Write）</li>
+        <li>相手が招待メールを承認したことを確認</li>
+        <li>マニュアルURL（<code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:11px;">https://kintone-kamacho.github.io/internal-html/</code>）を共有済み</li>
+        <li>ローカルへのクローン手順をマニュアルで案内済み</li>
+      </ul>
+    </div>
+
+    <!-- トラブル -->
+    <div class="section" id="trouble">
+      <div class="section-title">🚨 よくあるトラブル</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">Q</div>
+          <div class="step-body">
+            <h4>招待メールが届かない</h4>
+            <p>相手に <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">https://github.com/notifications</code> を確認してもらう。それでもなければ一度削除して再招待。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">Q</div>
+          <div class="step-body">
+            <h4>GitHub Pagesが更新されない</h4>
+            <p>pushから最大5分待つ。それでも更新されない場合はActions → Pages buildのログを確認。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">Q</div>
+          <div class="step-body">
+            <h4>メンバーが「pushできない」と言っている</h4>
+            <p>Manage accessで権限が「Write」以上になっているか確認する。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">Q</div>
+          <div class="step-body">
+            <h4>自分がSettingsを操作できなくなった</h4>
+            <p>アカウントの切り替えや別ブラウザでログインし直すと解決することが多い。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<footer>管理者マニュアル（作成者専用）　|　更新日: 2026-05-01</footer>
+
+<script>
+  // サイドバーのアクティブ状態をスクロールに合わせて更新
+  const sections = document.querySelectorAll('.section');
+  const links = document.querySelectorAll('aside a');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`aside a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
