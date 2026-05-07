@@ -97,6 +97,8 @@
             display: none;
         }
         .folder-save-log.error { background: #fee2e2; color: #991b1b; }
+        /* ダイアログ保存モード用ログ */
+        .folder-save-log.info { background: #dbeafe; color: #1e40af; }
 
         /* スナップショット */
         .snapshot-section {
@@ -716,6 +718,42 @@ function triggerDownload(blob, filename) {
     URL.revokeObjectURL(url);
 }
 
+// フォルダ未設定時：ダイアログを開いてフォルダ選択→保存→記憶
+async function selectFolderAndSave(jsonBlob, jsonName, excelBlob, excelName) {
+    if (!FSA_SUPPORTED) {
+        // 非対応ブラウザはそのままDL
+        triggerDownload(jsonBlob, jsonName);
+        triggerDownload(excelBlob, excelName);
+        return;
+    }
+    try {
+        const handle = await window.showDirectoryPicker({
+            mode: 'readwrite',
+            startIn: 'documents'
+        });
+        folderHandle = handle;
+        await idbPut(handle);
+        localStorage.setItem(LS_FOLDER_NAME, handle.name);
+        updateFolderUI();
+
+        // 選択したフォルダに保存
+        await saveFileToFolder(jsonName,   jsonBlob);
+        await saveFileToFolder(excelName,  excelBlob);
+        showFolderLog(`✓ 「${handle.name}」に保存しました`, false);
+
+        // フォルダから最新スナップショットを読み込み
+        await autoLoadLatestSnapshot();
+    } catch(e) {
+        if (e.name === 'AbortError') {
+            // キャンセル時はDLフォルダへ
+            triggerDownload(jsonBlob, jsonName);
+            triggerDownload(excelBlob, excelName);
+        } else {
+            showFolderLog('保存に失敗しました: ' + e.message, true);
+        }
+    }
+}
+
 // 手動ダウンロードボタン
 document.getElementById('download-snapshot-button').addEventListener('click', async () => {
     if (!mergedData) return;
@@ -939,24 +977,28 @@ document.getElementById('merge-button').addEventListener('click', async () => {
 
         mergedData = data;
 
-        // ===== 統合後：フォルダへJSON・Excel自動保存 =====
-        if (folderHandle) {
-            // JSON保存
-            await saveSnapshotToAll(mergedData);
+        // ===== 統合後：JSON・Excel（警告順のみ）保存 =====
+        const snapObj   = buildSnapshot(mergedData);
+        const jsonBlob  = new Blob([JSON.stringify(snapObj, null, 2)], { type: 'application/json' });
+        const jsonName  = snapFilename();
+        const excelBlob = buildExcelBlob(true);   // 警告レベル順のみ
+        const excelName = excelFilename(true);
 
-            // Excel保存（元の順・警告レベル順の両方）
-            const excelBlob       = buildExcelBlob(false);
-            const excelBlobSorted = buildExcelBlob(true);
-            const excelOk       = await saveFileToFolder(excelFilename(false), excelBlob);
-            const excelOkSorted = await saveFileToFolder(excelFilename(true),  excelBlobSorted);
-            if (excelOk || excelOkSorted) {
-                const prev = document.getElementById('folder-save-log').textContent;
-                showFolderLog(prev + '  ／  Excel（元順・警告順）も保存しました', false);
+        // localStorage には常時保存
+        try { localStorage.setItem(LS_SNAPSHOT, JSON.stringify(snapObj)); } catch(e) {}
+
+        if (folderHandle) {
+            // フォルダ設定済み → 自動保存
+            const jsonOk  = await saveFileToFolder(jsonName,  jsonBlob);
+            const excelOk = await saveFileToFolder(excelName, excelBlob);
+            if (jsonOk && excelOk) {
+                showFolderLog(`✓ 「${folderHandle.name}」にJSON・Excelを保存しました`, false);
+            } else {
+                showFolderLog('一部の保存に失敗しました。再許可してください。', true);
             }
         } else {
-            // フォルダ未設定でも localStorage には保存
-            const snap = buildSnapshot(mergedData);
-            try { localStorage.setItem(LS_SNAPSHOT, JSON.stringify(snap)); } catch(e) {}
+            // フォルダ未設定 → ダイアログを開いてフォルダ選択
+            await selectFolderAndSave(jsonBlob, jsonName, excelBlob, excelName);
         }
 
         if (snapshotSource==='localStorage') {
