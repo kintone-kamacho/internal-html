@@ -656,9 +656,8 @@ function loadSnapshotExcel(file) {
             const headers    = rows[0];
             const warningIdx = headers.indexOf('警告');
             const denpyoIdx  = headers.indexOf('発注伝票№');
-            const kobanIdx   = headers.indexOf('工番');
-            if (warningIdx===-1||denpyoIdx===-1||kobanIdx===-1) {
-                alert('「警告」「発注伝票№」「工番」列のいずれかが見つかりません。\n統合ツールで出力したExcelを使用してください。'); return;
+            if (warningIdx===-1||denpyoIdx===-1) {
+                alert('「警告」列または「発注伝票№」列が見つかりません。\n統合ツールで出力したExcelを使用してください。'); return;
             }
             const labelToKey = {
                 'Lv4:工場納期超過':'RED3','Lv3:納期間に合わない':'RED2',
@@ -668,11 +667,9 @@ function loadSnapshotExcel(file) {
             const snapObj = { date: file.name, data: {} };
             for (let i=1;i<rows.length;i++) {
                 const row    = rows[i];
-            const denpyo = String(row[denpyoIdx]??'').trim();
-            const koban  = String(row[kobanIdx]??'').trim();
-            if (!denpyo) continue;
-            const key = `${denpyo}__${koban}`;
-            snapObj.data[key] = labelToKey[String(row[warningIdx]??'').trim()] ?? '';
+                const denpyo = String(row[denpyoIdx]??'').trim();
+                if (!denpyo) continue;
+                snapObj.data[denpyo] = labelToKey[String(row[warningIdx]??'').trim()] ?? '';
             }
             snapshotData = snapObj;
             updateSnapshotStatus();
@@ -688,12 +685,7 @@ function loadSnapshotExcel(file) {
 // =====================================================================
 function buildSnapshot(data) {
     const snapObj = { date: todayStr(), data: {} };
-    data.forEach(row => {
-        if (row['発注伝票№']) {
-            const key = `${row['発注伝票№']}__${row['工番'] || ''}`;
-            snapObj.data[key] = row['警告'] || '';
-        }
-    });
+    data.forEach(row => { if (row['発注伝票№']) snapObj.data[row['発注伝票№']] = row['警告'] || ''; });
     return snapObj;
 }
 
@@ -782,10 +774,9 @@ document.getElementById('download-snapshot-button').addEventListener('click', as
 // =====================================================================
 const warningOrder = { 'RED3':0,'RED2':1,'RED1':2,'Yellow':3,'Yellow2':4,'':5 };
 
-function calcChange(denpyoNo, koban, currentWarning) {
+function calcChange(denpyoNo, currentWarning) {
     if (!snapshotData?.data) return '';
-    const key = `${denpyoNo}__${koban || ''}`;
-    const prev = snapshotData.data[key];
+    const prev = snapshotData.data[denpyoNo];
     if (prev === undefined) return currentWarning !== '' ? 'NEW' : '';
     if (prev === currentWarning) return '';
     return (warningOrder[currentWarning]??5) < (warningOrder[prev]??5) ? 'UP' : '';
@@ -980,7 +971,7 @@ document.getElementById('merge-button').addEventListener('click', async () => {
                       dAH&&dAH<=twoWL)&&isAGEmpty)                                   warning='RED1';
             else if (dY&&dY<=twoWL&&isAAEmpty&&isAGEmpty)                           warning='Yellow';
             else if (dAH&&dAH<=twoWL)                                               warning='Yellow';
-            const change = calcChange(r['発注伝票№'], r['工番'], warning);
+            const change = calcChange(r['発注伝票№'], warning);
             return { '警告':warning, '変化':change, ...r };
         });
 
