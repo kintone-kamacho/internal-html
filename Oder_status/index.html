@@ -688,7 +688,7 @@ function loadSnapshotExcel(file) {
 // =====================================================================
 function buildSnapshot(data) {
     const snapObj = { date: todayStr(), data: {} };
-    data.forEach(row => {
+    data.filter(r => r['警告'] !== '').forEach(row => {
         if (row['発注伝票№']) {
             const key = `${row['発注伝票№']}__${row['工番'] || ''}`;
             snapObj.data[key] = row['警告'] || '';
