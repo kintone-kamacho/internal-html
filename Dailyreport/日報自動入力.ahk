@@ -48,7 +48,7 @@ ClickWait()
 Sleep(300)
 
 CloseErrorPopup()
-Sleep(200)
+Sleep(300)
 
 isRunning := true
 stopRequested := false
@@ -87,24 +87,24 @@ try {
         first := StrUpper(first)
         
         Send(first)
-        Sleep(100)
+        Sleep(350)
         
-        Sleep(200)
+        Sleep(350)
         if CheckForError() {
             MsgBox "エラーを検出しました。`n行番号: " (processedRows + 1) "`nデータ: " row, "エラー検出", "T5"
             break
         }
         
         Send("{Tab}")
-        Sleep(100)
+        Sleep(450)
         
         ; Work number input
         if cols.Length >= 2 {
             Send(StrUpper(cols[2]))
-            Sleep(100)
+            Sleep(350)
             
             Send("{Tab}")
-            Sleep(500)
+            Sleep(400)
             
             ; Debug: Check what window is active
             activeTitle := WinGetTitle("A")
@@ -128,7 +128,7 @@ try {
                     if enterPressed {
                         break
                     }
-                    Sleep(50)
+                    Sleep(300)
                 }
                 
                 ToolTip
@@ -138,21 +138,21 @@ try {
                     break
                 }
                 
-                Sleep(500)
+                Sleep(450)
                 
                 ; Input work time
                 if cols.Length >= 3 {
                     workTime := Trim(cols[3])
                     Send(workTime)
-                    Sleep(100)
+                    Sleep(300)
                 }
                 
                 ; Move to next row
                 Send("{Tab}{Tab}{Tab}")
-                Sleep(150)
+                Sleep(300)
                 
                 Send("+{Tab}+{Tab}+{Tab}")
-                Sleep(150)
+                Sleep(300)
                 
                 processedRows++
                 continue
@@ -163,7 +163,7 @@ try {
         if cols.Length >= 3 {
             workTime := Trim(cols[3])
             Send(workTime)
-            Sleep(100)
+            Sleep(300)
             
             if CheckForError() {
                 MsgBox "エラーを検出しました（作業時間入力時）。`n行番号: " (processedRows + 1), "エラー検出", "T5"
@@ -173,10 +173,10 @@ try {
         
         ; Move to next row
         Send("{Tab}{Tab}{Tab}")
-        Sleep(150)
-        
+        Sleep(300)
+                
         Send("+{Tab}+{Tab}+{Tab}")
-        Sleep(150)
+        Sleep(300)
         
         processedRows++
     }
@@ -205,7 +205,7 @@ ClickWait() {
         else if (state = 1) {
             return
         }
-        Sleep(10)
+        Sleep(300)
     }
 }
 
@@ -229,7 +229,7 @@ CloseErrorPopup() {
             WinActivate("警告")
             Sleep(100)
             Send("{Enter}")
-            Sleep(200)
+            Sleep(400)
         } else {
             return true
         }
