@@ -96,6 +96,16 @@
     .status strong {
       color: #667eea;
     }
+
+    .warn-item {
+      margin-top: 8px;
+      color: #c0392b;
+      font-weight: bold;
+      background: #fdecea;
+      border-left: 4px solid #e74c3c;
+      padding: 6px 10px;
+      border-radius: 4px;
+    }
     
     .table-container {
       max-height: 400px;
@@ -237,6 +247,7 @@
     
     let extractedData = [];
     let fileCount = 0;
+    let fileResults = [];
 
     // 全角英数字を半角に変換する関数
     function toHalfWidth(str) {
@@ -293,7 +304,10 @@
             const workbook = XLSX.read(data, { type: 'array' });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
             
+            const beforeCount = extractedData.length;
             extractDataFromSheet(firstSheet);
+            const afterCount = extractedData.length;
+            fileResults.push({ name: file.name, count: afterCount - beforeCount });
             fileCount++;
             updateUI();
             resolve();
@@ -357,7 +371,11 @@
 
     function updateUI() {
       // ステータス更新
-      status.innerHTML = `処理済みファイル: <strong>${fileCount}</strong> 件 | 抽出データ: <strong>${extractedData.length}</strong> 行`;
+      const zeroFiles = fileResults.filter(f => f.count === 0);
+      const warningHtml = zeroFiles.map(f => 
+        `<div class="warn-item">⚠️ ${f.name}：0件注意</div>`
+      ).join('');
+      status.innerHTML = `処理済みファイル: <strong>${fileCount}</strong> 件 | 抽出データ: <strong>${extractedData.length}</strong> 行  ${warningHtml}`;
       
       // テーブル更新
       if (extractedData.length === 0) {
@@ -409,6 +427,7 @@
       if (confirm('すべてのデータをクリアしますか?')) {
         extractedData = [];
         fileCount = 0;
+        fileResults = [];
         updateUI();
       }
     });
