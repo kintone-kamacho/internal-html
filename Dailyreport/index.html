@@ -106,6 +106,35 @@
       padding: 6px 10px;
       border-radius: 4px;
     }
+
+    .error-box {
+      background: #fdecea;
+      border: 2px solid #e74c3c;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .error-box-title {
+      color: #c0392b;
+      font-weight: bold;
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+
+    .error-item {
+      background: white;
+      border-left: 4px solid #e74c3c;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #333;
+    }
+
+    .error-item:last-child {
+      margin-bottom: 0;
+    }
     
     .table-container {
       max-height: 400px;
@@ -211,6 +240,11 @@
         処理済みファイル: <strong>0</strong> 件 | 抽出データ: <strong>0</strong> 行
         <div class="warn-item">⚠️ 読み込み後、0件のファイルがないか確認してください</div>
       </div>
+
+      <div class="error-box" id="errorBox" style="display: none;">
+        <div class="error-box-title">🚨 合計の計算式が消えている行があります</div>
+        <div id="errorList"></div>
+      </div>
       
       <div class="table-container">
         <table id="dataTable">
@@ -243,12 +277,21 @@
     const fileInput = document.getElementById('fileInput');
     const tableBody = document.getElementById('tableBody');
     const status = document.getElementById('status');
+    const errorBox = document.getElementById('errorBox');
+    const errorList = document.getElementById('errorList');
     const exportBtn = document.getElementById('exportBtn');
     const clearBtn = document.getElementById('clearBtn');
     
     let extractedData = [];
+    let extractedErrors = [];
     let fileCount = 0;
     let fileResults = [];
+
+    const HEADER_ROW = 5;     // 6行目（0始まり）に「合計」の文字がある想定
+    const KOBAN_COL_START = 1; // B列
+    const KOBAN_COL_END = 3;   // D列
+    const DATA_START_ROW = 6;  // 7行目からデータ開始
+    const HOUR_COL_START = 4;  // E列（工数が入り得る最初の列）
 
     // 全角英数字を半角に変換する関数
     function toHalfWidth(str) {
@@ -256,6 +299,24 @@
       return String(str).replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
         return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
       });
+    }
+
+    // セルの文字列からスペース（半角・全角・タブ）を除去して比較用に正規化
+    function normalizeLabel(v) {
+      return String(v).replace(/[\s\u3000]/g, '');
+    }
+
+    // 6行目を走査して「合計」列を探す（"合計"/"合 計"/"合　計" などの表記ゆれに対応）
+    function findTotalColumn(sheet, range) {
+      for (let col = 0; col <= range.e.c; col++) {
+        const cell = sheet[XLSX.utils.encode_cell({ r: HEADER_ROW, c: col })];
+        if (cell && cell.v !== undefined && cell.v !== null) {
+          if (normalizeLabel(cell.v) === '合計') {
+            return col;
+          }
+        }
+      }
+      return null; // 見つからなければフォールバック
     }
 
     // ドラッグ&ドロップイベント
@@ -306,7 +367,7 @@
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
             
             const beforeCount = extractedData.length;
-            extractDataFromSheet(firstSheet);
+            extractDataFromSheet(firstSheet, file.name);
             const afterCount = extractedData.length;
             fileResults.push({ name: file.name, count: afterCount - beforeCount });
             fileCount++;
@@ -323,50 +384,82 @@
       });
     }
 
-    function extractDataFromSheet(sheet) {
+    function extractDataFromSheet(sheet, fileName) {
       const range = XLSX.utils.decode_range(sheet['!ref']);
-      
-      // A列7行目以降をスキャン
-      for (let row = 6; row <= range.e.r; row++) {
+      const totalCol = findTotalColumn(sheet, range);
+
+      for (let row = DATA_START_ROW; row <= range.e.r; row++) {
         const wcCell = sheet[XLSX.utils.encode_cell({ r: row, c: 0 })]; // A列
-        
+
         if (!wcCell || !wcCell.v) continue;
-        
-        const wc = toHalfWidth(String(wcCell.v).trim()); // 全角→半角変換
+
+        const wc = toHalfWidth(String(wcCell.v).trim());
         if (!wc || wc === 'W/C') continue; // ヘッダー行をスキップ
-        
+
         // 工番を取得 (B～D列の結合セル)
         let koban = '';
-        for (let col = 1; col <= 3; col++) {
+        for (let col = KOBAN_COL_START; col <= KOBAN_COL_END; col++) {
           const cell = sheet[XLSX.utils.encode_cell({ r: row, c: col })];
           if (cell && cell.v) {
-            koban = toHalfWidth(String(cell.v).trim()); // 全角→半角変換
+            koban = toHalfWidth(String(cell.v).trim());
             break;
           }
         }
-        
+
         if (!koban) continue;
-        
-        // 合計を探す（同じ行の右側の列から）
-        let total = null;
-        for (let col = 4; col <= range.e.c; col++) {
+
+        if (totalCol === null) {
+          // 「合計」の文字が見つからない場合のフォールバック（従来ロジック）
+          let total = null;
+          for (let col = HOUR_COL_START; col <= range.e.c; col++) {
+            const cell = sheet[XLSX.utils.encode_cell({ r: row, c: col })];
+            if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') {
+              const value = typeof cell.v === 'number' ? cell.v : parseFloat(cell.v);
+              if (!isNaN(value) && value > 0) {
+                total = value;
+              }
+            }
+          }
+          if (total === null || total === 0) continue;
+          extractedData.push({ wc, koban, total });
+          continue;
+        }
+
+        // 工数の有無をチェック（E列～合計列の手前まで）
+        let hasHours = false;
+        for (let col = HOUR_COL_START; col < totalCol; col++) {
           const cell = sheet[XLSX.utils.encode_cell({ r: row, c: col })];
           if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') {
             const value = typeof cell.v === 'number' ? cell.v : parseFloat(cell.v);
             if (!isNaN(value) && value > 0) {
-              total = value;
+              hasHours = true;
+              break;
             }
           }
         }
-        
-        // 合計が0または空欄の場合はスキップ
-        if (total === null || total === 0) continue;
-        
-        extractedData.push({
-          wc: wc,
-          koban: koban,
-          total: total
-        });
+
+        // 合計列の値を取得
+        const totalCell = sheet[XLSX.utils.encode_cell({ r: row, c: totalCol })];
+        let total = null;
+        if (totalCell && totalCell.v !== undefined && totalCell.v !== null && totalCell.v !== '') {
+          const value = typeof totalCell.v === 'number' ? totalCell.v : parseFloat(totalCell.v);
+          if (!isNaN(value) && value > 0) total = value;
+        }
+
+        if (hasHours && total === null) {
+          // 工数はあるのに合計が空欄 → エラー行として記録
+          extractedErrors.push({
+            file: fileName,
+            row: row + 1, // Excel上の行番号（1始まり）
+            wc: wc,
+            koban: koban
+          });
+          continue;
+        }
+
+        if (total === null) continue; // 工数も合計もない行はスキップ
+
+        extractedData.push({ wc, koban, total });
       }
     }
 
@@ -377,6 +470,17 @@
         `<div class="warn-item">⚠️ ${f.name}：0件注意</div>`
       ).join('');
       status.innerHTML = `処理済みファイル: <strong>${fileCount}</strong> 件 | 抽出データ: <strong>${extractedData.length}</strong> 行  ${warningHtml}`;
+
+      // エラー一覧更新
+      if (extractedErrors.length > 0) {
+        errorBox.style.display = 'block';
+        errorList.innerHTML = extractedErrors.map(err =>
+          `<div class="error-item">📄 ${err.file}　${err.row}行目　W/C: ${err.wc}　工番: ${err.koban}　→ 工数はありますが合計が空欄です</div>`
+        ).join('');
+      } else {
+        errorBox.style.display = 'none';
+        errorList.innerHTML = '';
+      }
       
       // テーブル更新
       if (extractedData.length === 0) {
@@ -405,6 +509,11 @@
 
     exportBtn.addEventListener('click', () => {
       if (extractedData.length === 0) return;
+
+      if (extractedErrors.length > 0) {
+        const proceed = confirm(`合計が空欄のエラー行が ${extractedErrors.length} 件あります。このまま出力しますか？`);
+        if (!proceed) return;
+      }
       
       const now = new Date();
       const dateStr = `${now.getFullYear()}年${String(now.getMonth() + 1).padStart(2, '0')}月${String(now.getDate()).padStart(2, '0')}日`;
@@ -427,6 +536,7 @@
     clearBtn.addEventListener('click', () => {
       if (confirm('すべてのデータをクリアしますか?')) {
         extractedData = [];
+        extractedErrors = [];
         fileCount = 0;
         fileResults = [];
         updateUI();
