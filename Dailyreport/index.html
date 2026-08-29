@@ -685,8 +685,16 @@
 
         if (!wcCell || !wcCell.v) continue;
 
-        const wc = toHalfWidth(String(wcCell.v).trim());
+        let wc = toHalfWidth(String(wcCell.v).trim());
         if (!wc || wc === 'W/C') continue; // ヘッダー行をスキップ
+
+        // 先頭がWでない場合は強制的にWを付与(大文字小文字どちらでも判定し、常に大文字のWで統一)
+        if (!/^W/i.test(wc)) {
+          wc = 'W' + wc;
+        } else if (wc[0] === 'w') {
+          // 念のため小文字wで始まっていた場合も大文字Wに統一
+          wc = 'W' + wc.slice(1);
+        }
 
         // 工番を取得 (B～D列の結合セル)
         let koban = '';
