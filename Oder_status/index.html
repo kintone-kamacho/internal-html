@@ -322,7 +322,7 @@ const IDB_STORE   = 'folderHandles';
 const IDB_KEY     = 'saveFolder';
 const LS_FOLDER_NAME = 'picking_folder_name_v1';
 const LS_SNAPSHOT    = 'picking_snapshot_v1';
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 
 function openDB() {
     return new Promise((resolve, reject) => {
@@ -612,7 +612,7 @@ function updateSnapshotStatus() {
 loadSnapshotFromLocalStorage();
 // バージョン表示をDOMに反映
 document.getElementById('app-version').textContent  = APP_VERSION;
-document.getElementById('app-build-date').textContent = '更新: 2026-05-27';
+document.getElementById('app-build-date').textContent = '更新: 2026-10-14';
 
 // =====================================================================
 //  JSONドロップゾーン
@@ -950,9 +950,12 @@ document.getElementById('merge-button').addEventListener('click', async () => {
                 '工番':getCol(picking,2), '品目':getCol(picking,4), '品名':getCol(picking,5),
                 '仕様':getCol(picking,6), 'メーカー名':getCol(purchase,20),
                 '発注数':(() => {
-                    const qty  = getCol(purchase,21);   // 発注一覧 V列（A=0 → V=21）
+                    const raw  = getCol(purchase,21);   // 発注一覧 V列（A=0 → V=21）
                     const unit = getCol(picking,7);     // 元の単位
-                    return qty ? `${qty}${unit}` : '';
+                    if (!raw) return '';
+                    const n = parseFloat(raw.replace(/,/g,''));
+                    const qty = isNaN(n) ? raw : String(n);
+                    return `${qty}${unit}`;
                 })(),
                 '注文書発行日時':getCol(purchase,27),
                 '仮注文書発行日時':getCol(purchase,28), '工場納期':getCol(picking,15),
