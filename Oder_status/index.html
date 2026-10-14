@@ -949,7 +949,12 @@ document.getElementById('merge-button').addEventListener('click', async () => {
                 '発注伝票№':getCol(picking,12), '発注先':getCol(purchase,16),
                 '工番':getCol(picking,2), '品目':getCol(picking,4), '品名':getCol(picking,5),
                 '仕様':getCol(picking,6), 'メーカー名':getCol(purchase,20),
-                '単位':getCol(picking,7), '注文書発行日時':getCol(purchase,27),
+                '発注数':(() => {
+                    const qty  = getCol(purchase,21);   // 発注一覧 V列（A=0 → V=21）
+                    const unit = getCol(picking,7);     // 元の単位
+                    return qty ? `${qty}${unit}` : '';
+                })(),
+                '注文書発行日時':getCol(purchase,27),
                 '仮注文書発行日時':getCol(purchase,28), '工場納期':getCol(picking,15),
                 'P部品納期':getCol(purchase,10), '注文納期':getCol(purchase,12),
                 '回答納期':getCol(purchase,13), '納期備考':getCol(purchase,14),
