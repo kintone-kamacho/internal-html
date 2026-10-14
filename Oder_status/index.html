@@ -601,11 +601,11 @@ function updateSnapshotStatus() {
         el.textContent = `✓ 前回データ読込済 (${snapshotData.date} / ${count}件)`;
     } else {
         el.className = 'snapshot-status no-data';
-        el.textContent = src => ({
+        el.textContent = {
             localStorage: '⚠ 前回データなし（初回実行）',
             json:  '⚠ JSONファイルを読み込んでください',
             excel: '⚠ 前回出力のExcelを読み込んでください',
-        }[snapshotSource] ?? '⚠ 前回データなし');
+        }[snapshotSource] ?? '⚠ 前回データなし';
     }
 }
 
