@@ -1010,12 +1010,12 @@ document.getElementById('merge-button').addEventListener('click', async () => {
 
         mergedData = data;
 
-        // ===== 統合後：JSON・Excel（警告順のみ）保存 =====
+        // ===== 統合後：JSON・Excel（発注担当者順）保存 =====
         const snapObj   = buildSnapshot(mergedData);
         const jsonBlob  = new Blob([JSON.stringify(snapObj, null, 2)], { type: 'application/json' });
         const jsonName  = snapFilename();
-        const excelBlob = await buildExcelBlob('warning');   // 警告レベル順のみ
-        const excelName = excelFilename('warning');
+        const excelBlob = await buildExcelBlob('staff');   // 発注担当者順
+        const excelName = excelFilename('staff');
 
         // localStorage には常時保存
         try { localStorage.setItem(LS_SNAPSHOT, JSON.stringify(snapObj)); } catch(e) {}
