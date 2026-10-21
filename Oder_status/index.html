@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ピッキング状況データ統合ツール</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -283,6 +284,7 @@
         <div id="result-count"></div>
         <button id="download-button"          class="download-button">⬇ Excel（元の順）</button>
         <button id="download-sorted-button"   class="download-button" style="background-color:#047857;">⬇ Excel（警告レベル順）</button>
+        <button id="download-staff-button"    class="download-button" style="background-color:#0f766e;">⬇ Excel（発注担当者順）</button>
         <button id="download-snapshot-button" class="download-button" style="background-color:#7c3aed;">📥 スナップショットをJSONで保存</button>
         <button id="sort-button"       class="download-button" style="background-color:#7c3aed;display:none;">↕ 警告レベル順に表示</button>
         <button id="reset-sort-button" class="download-button" style="background-color:#6b7280;display:none;">↺ 元の順に戻す</button>
@@ -560,7 +562,10 @@ async function autoLoadLatestSnapshot() {
 function todayStr()  { return new Date().toISOString().slice(0,10); }                     // YYYY-MM-DD
 function todayStamp(){ return new Date().toISOString().slice(0,10).replace(/-/g,''); }    // YYYYMMDD
 function snapFilename()  { return `picking_snapshot_${todayStr()}.json`; }
-function excelFilename(sorted) { return `ピッキング統合データ${sorted?'_警告順':''}_${todayStamp()}.xlsx`; }
+function excelFilename(mode) {
+    const suffix = { original:'', warning:'_警告順', staff:'_担当者順' }[mode] ?? '';
+    return `ピッキング統合データ${suffix}_${todayStamp()}.xlsx`;
+}
 
 // =====================================================================
 //  状態
@@ -1009,8 +1014,8 @@ document.getElementById('merge-button').addEventListener('click', async () => {
         const snapObj   = buildSnapshot(mergedData);
         const jsonBlob  = new Blob([JSON.stringify(snapObj, null, 2)], { type: 'application/json' });
         const jsonName  = snapFilename();
-        const excelBlob = buildExcelBlob(true);   // 警告レベル順のみ
-        const excelName = excelFilename(true);
+        const excelBlob = await buildExcelBlob('warning');   // 警告レベル順のみ
+        const excelName = excelFilename('warning');
 
         // localStorage には常時保存
         try { localStorage.setItem(LS_SNAPSHOT, JSON.stringify(snapObj)); } catch(e) {}
@@ -1135,10 +1140,59 @@ const BORDER_HEADER = { top:{style:'medium',color:{rgb:'000000'}},bottom:{style:
 const excelWarningLabel = { 'RED3':'Lv4:工場納期超過','RED2':'Lv3:納期間に合わない','RED1':'Lv2:納期近・未入庫','Yellow':'Lv1:要確認','Yellow2':'Lv1:出荷日未更新・要確認','':'' };
 const excelChangeLabel  = { 'NEW':'NEW','UP':'悪化','':'' };
 
-function buildExcelBlob(sortByWarning) {
+// 添付Excelの列幅（列名で指定）
+const EXCEL_COL_WIDTHS = {
+    '警告':20.140625,'変化':8.140625,'発注担当':6.85546875,'発注伝票№':10.85546875,
+    '発注先':17.7109375,'工番':10.85546875,'品目':17.42578125,'品名':23,'仕様':20.28515625,
+    'メーカー名':11.140625,'発注数':8.42578125,'注文書発行日時':10.42578125,
+    '仮注文書発行日時':10.85546875,'工場納期':10.85546875,'P部品納期':10.85546875,
+    '注文納期':10.85546875,'回答納期':10.85546875,'納期備考':10.85546875,
+    '品目備考':13.42578125,'発注備考':19.42578125,'納期ｱﾗｰﾄ':12.85546875,
+    '単価':10.85546875,'工期':10.85546875,'仮入庫済':10.85546875,
+    '出荷予定日1':12.85546875,'出荷予定日2':12.85546875,
+    '製番':10.85546875,'契約先':10.85546875,'納入先':10.85546875
+};
+const EXCEL_COL_WIDTH_DEFAULT = 10.85546875;
+
+// 並び順: 'original'=元の順 / 'warning'=警告レベル順 / 'staff'=発注担当者昇順
+function sortForExcel(data, mode) {
+    const arr = [...data];
+    if (mode === 'warning') {
+        arr.sort((a,b) => (warningOrder[a['警告']]??5)-(warningOrder[b['警告']]??5));
+    } else if (mode === 'staff') {
+        arr.sort((a,b) => {
+            const sa = a['発注担当']||'', sb = b['発注担当']||'';
+            if (sa === '' && sb !== '') return 1;     // 担当者なしは最後
+            if (sa !== '' && sb === '') return -1;
+            const c = sa.localeCompare(sb, 'ja');
+            if (c !== 0) return c;
+            // 同一担当者内は警告レベルの高い順
+            return (warningOrder[a['警告']]??5)-(warningOrder[b['警告']]??5);
+        });
+    }
+    return arr;
+}
+
+// 先頭行のウィンドウ枠固定をXMLに直接追加（xlsx-js-styleは !freeze 非対応のため）
+async function addFreezePane(arrayBuf) {
+    try {
+        const zip  = await JSZip.loadAsync(arrayBuf);
+        const path = 'xl/worksheets/sheet1.xml';
+        let xml = await zip.file(path).async('string');
+        const pane = '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>'
+                   + '<selection pane="bottomLeft" activeCell="A2" sqref="A2"/>';
+        xml = xml.replace(/<sheetView([^>]*?)\/>/, (m, a) => `<sheetView${a}>${pane}</sheetView>`);
+        zip.file(path, xml);
+        return await zip.generateAsync({ type:'uint8array', compression:'DEFLATE' });
+    } catch(e) {
+        console.warn('枠固定の付与に失敗:', e);
+        return arrayBuf;
+    }
+}
+
+async function buildExcelBlob(mode) {
     if (!mergedData?.length) return null;
-    let data = mergedData.filter(r => (r['警告']||'')!=='');
-    if (sortByWarning) data.sort((a,b) => (warningOrder[a['警告']]??5)-(warningOrder[b['警告']]??5));
+    const data = sortForExcel(mergedData.filter(r => (r['警告']||'')!==''), mode);
 
     const headers = Object.keys(mergedData[0]).filter(h => h!=='_columns');
     const wb = XLSX.utils.book_new();
@@ -1175,18 +1229,20 @@ function buildExcelBlob(sortByWarning) {
             }
         }
     }
-    ws['!cols']   = headers.map(h => ({wch:Math.max(h.length*2,10)}));
-    ws['!freeze'] = {xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft',state:'frozen'};
+    // ===== 全並び順 共通の整形 =====
+    ws['!cols']       = headers.map(h => ({ width: EXCEL_COL_WIDTHS[h] ?? EXCEL_COL_WIDTH_DEFAULT }));
+    ws['!autofilter'] = { ref: ws['!ref'] };   // 添付例と同じくオートフィルタ付き
     XLSX.utils.book_append_sheet(wb, ws, 'ピッキング統合データ');
 
-    const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
-    return new Blob([wbout], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const wbout  = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+    const frozen = await addFreezePane(wbout);   // 先頭行固定
+    return new Blob([frozen], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
 
-async function downloadExcel(sortByWarning) {
+async function downloadExcel(mode) {
     if (!mergedData?.length) return;
-    const blob  = buildExcelBlob(sortByWarning);
-    const fname = excelFilename(sortByWarning);
+    const blob  = await buildExcelBlob(mode);
+    const fname = excelFilename(mode);
     if (!blob) return;
 
     if (folderHandle) {
@@ -1196,8 +1252,9 @@ async function downloadExcel(sortByWarning) {
     triggerDownload(blob, fname);
 }
 
-document.getElementById('download-button').addEventListener('click',        () => downloadExcel(false));
-document.getElementById('download-sorted-button').addEventListener('click', () => downloadExcel(true));
+document.getElementById('download-button').addEventListener('click',        () => downloadExcel('original'));
+document.getElementById('download-sorted-button').addEventListener('click', () => downloadExcel('warning'));
+document.getElementById('download-staff-button').addEventListener('click',  () => downloadExcel('staff'));
 </script>
 </body>
 </html>
