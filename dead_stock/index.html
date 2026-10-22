@@ -149,7 +149,7 @@ function processData(baseText, masterText, o){
     const mm=map.get(normKey(r[bi['品目']]));
     if(!mm){ noMaster++; continue; }
     const modoru=String(mm.note||'').normalize('NFKC').includes('#戻');  // 備考に「#戻」（＃全角も可）→ 条件に関係なく取得
-    if(mm.eff===0) continue;             // 有効在庫数0を削除
+    if(!mm.eff) continue;             // 有効在庫数0もしくは空欄を削除
     const d=parseDateUTC(r[bi['最終']]);
     if(!modoru&&(d===null||d>cutoff)) continue;    // 最終が基準日のN年前以前
     if(modoru) nModoru++;
