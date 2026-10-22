@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>滞留在庫抽出ツール</title>
+<link rel="icon" href="../assets/icons/nanbu.png" type="image/png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+  body{margin:0;background:#f5f7fa;color:#1f2933;font:14px/1.6 "Yu Gothic UI","Meiryo UI",system-ui,sans-serif}
+  main{max-width:560px;margin:32px auto;padding:0 16px}
+  h1{font-size:18px;margin:0 0 12px}
+  #drop{border:2px dashed #aab7c4;border-radius:10px;background:#fff;padding:16px;cursor:pointer;transition:.15s}
+  #drop.over{border-color:#2b6cb0;background:#e8f1fb}
+  #drop b{display:block;text-align:center;margin-bottom:10px}
+  .slot{border:1px solid #d8dee6;border-radius:6px;padding:6px 10px;margin-top:6px;font-size:13px;color:#6b7785;word-break:break-all}
+  .slot.ok{border-color:#9ad1b3;background:#e6f4ec;color:#1f2933}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-top:14px}
+  label{font-size:12px;color:#6b7785;display:block}
+  input{font:inherit;padding:5px 8px;border:1px solid #d8dee6;border-radius:6px}
+  #years{width:60px}
+  #fname{width:240px}
+  button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:8px 20px;background:#2b6cb0;color:#fff;cursor:pointer}
+  button:disabled{background:#b8c4d0;cursor:not-allowed}
+  #msg{margin-top:12px;font-size:13px;color:#6b7785}
+  #msg.err{color:#c53030}
+  #msg.ok{color:#2f855a}
+</style>
+</head>
+<body>
+<main>
+  <h1>滞留在庫抽出ツール</h1>
+
+  <div id="drop">
+    <b>ここに2つのCSVをドラッグ＆ドロップ（クリックで選択）</b>
+    <div class="slot" id="slotBase">在庫一覧（ベース）：未読み込み</div>
+    <div class="slot" id="slotMaster">品目マスター一覧（抽出先）：未読み込み</div>
+  </div>
+  <input id="picker" type="file" accept=".csv" multiple hidden>
+
+  <div class="row">
+    <div><label>何年前以前</label><input id="years" type="number" min="0" value="2"></div>
+    <div><label>基準日</label><input id="refDate" type="date"></div>
+    <div><label>出力ファイル名</label><input id="fname"></div>
+    <button id="run" disabled>実行</button>
+  </div>
+  <div id="msg"></div>
+</main>
+
+<script>
+//CORE_START
+const OUT_COLS = [
+  {key:'品目', w:22}, {key:'品名', w:22}, {key:'仕様', w:22}, {key:'単位', w:6},
+  {key:'基準在庫数', w:11}, {key:'在庫数', w:9}, {key:'単価', w:10}, {key:'金額', w:13},
+  {key:'有効在庫数', w:11}, {key:'発注残数', w:10}, {key:'保管場所', w:11}, {key:'最終', w:12}, {key:'備考', w:24}
+];
+
+function decodeBuffer(buf){
+  try { return new TextDecoder('utf-8',{fatal:true}).decode(buf).replace(/^﻿/,''); }
+  catch(e){ return new TextDecoder('shift_jis').decode(buf); }
+}
+
+// CSVパーサ（ダブルクォート・CRLF対応）。pick(header)で返した列番号だけ保持する。
+function parseCSV(text, pick){
+  const rows=[]; let header=null, keep=null, idx=null;
+  let row=[], col=0, i=0; const n=text.length;
+  function endRow(blank){
+    if(header===null){ header=row; idx=pick(header).slice().sort((a,b)=>a-b); keep=new Set(idx); }
+    else if(!blank) rows.push(row);
+    row=[]; col=0;
+  }
+  while(i<n){
+    let val;
+    if(text.charCodeAt(i)===34){
+      i++; let s='';
+      while(i<n){
+        const j=text.indexOf('"',i);
+        if(j===-1){ s+=text.slice(i); i=n; break; }
+        if(text.charCodeAt(j+1)===34){ s+=text.slice(i,j+1); i=j+2; continue; }
+        s+=text.slice(i,j); i=j+1; break;
+      }
+      val=s;
+      while(i<n){ const d=text.charCodeAt(i); if(d===44||d===10||d===13) break; i++; }
+    } else {
+      let j=i;
+      while(j<n){ const d=text.charCodeAt(j); if(d===44||d===10||d===13) break; j++; }
+      val=(header===null||keep.has(col))?text.slice(i,j):'';
+      i=j;
+    }
+    const blank=(col===0&&val==='');
+    if(header===null||keep.has(col)) row.push(val);
+    const d=text.charCodeAt(i);
+    if(d===44){ i++; col++; continue; }
+    if(d===13&&text.charCodeAt(i+1)===10) i+=2; else i++;
+    endRow(blank);
+  }
+  if(row.length||col>0) endRow(false);
+  return {header, idx, rows};
+}
+
+const normHeader=s=>String(s).replace(/[↑↓\s　]/g,'').replace(/^﻿/,'');
+const normKey=s=>String(s==null?'':s).trim().toUpperCase();
+function toNum(s){
+  if(s==null) return null;
+  const t=String(s).replace(/[,\s¥円]/g,'');
+  if(t==='') return null;
+  const v=Number(t); return Number.isNaN(v)?null:v;
+}
+function parseDateUTC(s){
+  const m=/^\s*(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/.exec(s||'');
+  return m?Date.UTC(+m[1],+m[2]-1,+m[3]):null;
+}
+
+function detectKind(text){
+  const cols=text.slice(0,4000).split(/\r?\n/)[0].split(',').map(normHeader);
+  if(cols.includes('棚札')&&cols.includes('金額')) return 'base';
+  if(cols.includes('有効在庫数')&&cols.includes('品目')) return 'master';
+  return null;
+}
+
+function processData(baseText, masterText, o){
+  const need=['品目','品名','仕様','単位','基準在庫数','在庫数','単価','金額','発注残数','保管場所','最終'];
+
+  // ベース：A列（棚札）は読み込まない＝削除。品目が空／「入出庫日」の行も削除
+  const b=parseCSV(baseText,h=>h.map((_,i)=>i));
+  const bn=b.header.map(normHeader), bi={};
+  for(const k of need){ bi[k]=bn.indexOf(k); if(bi[k]<0) throw new Error('在庫一覧に「'+k+'」列がありません'); }
+  const tana=bn.indexOf('棚札');
+  const base=b.rows.filter(r=>String(r[bi['品目']]).trim()!==''&&String(r[tana]).trim()!=='入出庫日');
+
+  // マスタ：品目・有効在庫数・備考だけ保持
+  let cp={};
+  const m=parseCSV(masterText,h=>{
+    const nn=h.map(normHeader);
+    cp={a:nn.indexOf('品目'),e:nn.indexOf('有効在庫数'),t:nn.indexOf('備考')};
+    if(cp.a<0||cp.e<0) throw new Error('品目マスターに「品目」「有効在庫数」列がありません');
+    return cp.t<0?[cp.a,cp.e]:[cp.a,cp.e,cp.t];
+  });
+  const pa=m.idx.indexOf(cp.a), pe=m.idx.indexOf(cp.e), pt=cp.t<0?-1:m.idx.indexOf(cp.t);
+  const map=new Map();
+  for(const r of m.rows){ const k=normKey(r[pa]); if(k&&!map.has(k)) map.set(k,{eff:toNum(r[pe]),note:pt>=0?r[pt]:''}); }
+
+  // 結合
+  const [ry,rm,rd]=o.refDate.split('-').map(Number);
+  const cutoff=Date.UTC(ry-o.years,rm-1,rd);
+  let noMaster=0;
+  const out=[];
+  for(const r of base){
+    const mm=map.get(normKey(r[bi['品目']]));
+    if(!mm){ noMaster++; continue; }
+    if(mm.eff===0) continue;                       // 有効在庫数0を削除
+    const d=parseDateUTC(r[bi['最終']]);
+    if(d===null||d>cutoff) continue;               // 最終が基準日のN年前以前
+    const num=k=>{ const v=toNum(r[bi[k]]); return v===null?(r[bi[k]]===''?null:r[bi[k]]):v; };
+    const str=k=>String(r[bi[k]]).trim();
+    out.push({品目:str('品目'),品名:str('品名'),仕様:str('仕様'),単位:str('単位'),
+      基準在庫数:num('基準在庫数'),在庫数:num('在庫数'),単価:num('単価'),金額:num('金額'),
+      有効在庫数:mm.eff,発注残数:num('発注残数'),保管場所:str('保管場所'),最終:d,備考:mm.note||''});
+  }
+  out.sort((x,y)=>(typeof y.金額==='number'?y.金額:-Infinity)-(typeof x.金額==='number'?x.金額:-Infinity)); // 金額降順
+  return {rows:out, baseRows:base.length, noMaster, cutoff};
+}
+
+const textWidth=s=>{ let w=0; for(const ch of String(s)) w+=ch.charCodeAt(0)>0xFF?2:1; return w; };
+
+function buildWorkbook(ExcelJS, rows){
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet('滞留在庫',{views:[{state:'frozen',ySplit:1}]});   // 先頭行固定
+  ws.addRow(OUT_COLS.map(c=>c.key));
+  for(const r of rows) ws.addRow(OUT_COLS.map(c=>{
+    const v=r[c.key];
+    return c.key==='最終'?(v===null?null:new Date(v)):(v===undefined?null:v);
+  }));
+  const thin={style:'thin',color:{argb:'FFBFBFBF'}};
+  const border={top:thin,left:thin,bottom:thin,right:thin};
+  const iKin=OUT_COLS.findIndex(c=>c.key==='金額')+1, iDate=OUT_COLS.findIndex(c=>c.key==='最終')+1;
+  ws.eachRow((row,rn)=>{
+    for(let cn=1;cn<=OUT_COLS.length;cn++){
+      const cell=row.getCell(cn);
+      cell.border=border;                                                        // 罫線
+      if(rn===1){
+        cell.font={bold:true};
+        cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFDDEBF7'}};     // 先頭行を薄い色
+        cell.alignment={horizontal:'center',vertical:'middle'};
+      } else {
+        if(cn===iKin) cell.numFmt='¥#,##0';                                      // 通貨
+        if(cn===iDate) cell.numFmt='yyyy/mm/dd';
+      }
+    }
+  });
+  OUT_COLS.forEach((c,i)=>{
+    let w=Math.max(c.w,textWidth(c.key)+4);
+    for(const r of rows.slice(0,500)){ const v=r[c.key]; if(typeof v==='string') w=Math.max(w,Math.min(40,textWidth(v)+2)); }
+    ws.getColumn(i+1).width=w;
+  });
+  ws.autoFilter={from:{row:1,column:1},to:{row:Math.max(ws.rowCount,1),column:OUT_COLS.length}}; // フィルタ
+  return wb;
+}
+//CORE_END
+
+(function(){
+  if(typeof document==='undefined') return;
+  const $=id=>document.getElementById(id);
+  const state={base:null,master:null};
+  const pad=n=>String(n).padStart(2,'0');
+  const t=new Date();
+  $('refDate').value=t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate());
+  const setName=()=>{ $('fname').value='滞留在庫抽出_'+$('refDate').value.replace(/-/g,'')+'.xlsx'; };
+  setName(); $('refDate').addEventListener('change',setName);
+
+  const drop=$('drop'), picker=$('picker');
+  const msg=(s,c)=>{ $('msg').textContent=s; $('msg').className=c||''; };
+  drop.addEventListener('click',()=>picker.click());
+  picker.addEventListener('change',()=>{ load([...picker.files]); picker.value=''; });
+  ['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over');}));
+  ['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over');}));
+  drop.addEventListener('drop',ev=>load([...ev.dataTransfer.files]));
+  window.addEventListener('dragover',e=>e.preventDefault());
+  window.addEventListener('drop',e=>{ if(!drop.contains(e.target)){ e.preventDefault(); load([...e.dataTransfer.files]); }});
+
+  async function load(files){
+    for(const f of files){
+      msg('読み込み中… '+f.name);
+      await new Promise(r=>setTimeout(r,20));
+      try{
+        const text=decodeBuffer(await f.arrayBuffer());
+        const kind=detectKind(text);
+        if(!kind){ msg('「'+f.name+'」は在庫一覧でも品目マスターでもありません。','err'); continue; }
+        state[kind]=text;
+        const s=$(kind==='base'?'slotBase':'slotMaster');
+        s.classList.add('ok');
+        s.textContent=(kind==='base'?'在庫一覧（ベース）：':'品目マスター一覧（抽出先）：')+f.name;
+      }catch(e){ msg('読み込み失敗: '+e.message,'err'); return; }
+    }
+    const ready=!!(state.base&&state.master);
+    $('run').disabled=!ready;
+    msg(ready?'準備OK。「実行」を押してください。':'もう1つのCSVを読み込んでください。');
+  }
+
+  $('run').addEventListener('click',async()=>{
+    if(typeof ExcelJS==='undefined'){ msg('Excel出力ライブラリを読み込めません（ネット接続を確認してください）。','err'); return; }
+    msg('処理中…'); $('run').disabled=true;
+    await new Promise(r=>setTimeout(r,30));
+    try{
+      const years=Math.max(0,parseInt($('years').value,10)||0);
+      if(!$('refDate').value) throw new Error('基準日を入力してください');
+      const {rows,baseRows,noMaster,cutoff}=processData(state.base,state.master,{years,refDate:$('refDate').value});
+      const buf=await buildWorkbook(ExcelJS,rows).xlsx.writeBuffer();
+      let fn=($('fname').value||'滞留在庫抽出.xlsx').trim(); if(!/\.xlsx$/i.test(fn)) fn+='.xlsx';
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+      a.download=fn; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+      const d=new Date(cutoff);
+      msg('完了：'+fn+'（'+rows.length.toLocaleString()+'件 / 在庫一覧 '+baseRows.toLocaleString()+'行、'+
+        d.getUTCFullYear()+'/'+(d.getUTCMonth()+1)+'/'+d.getUTCDate()+' 以前）'+
+        (noMaster?' ※マスターに無い品目が'+noMaster+'行あり、除外しました':''),'ok');
+    }catch(e){ console.error(e); msg('エラー: '+e.message,'err'); }
+    $('run').disabled=false;
+  });
+})();
+</script>
+</body>
+</html>
