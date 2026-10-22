@@ -143,15 +143,16 @@ function processData(baseText, masterText, o){
   // 結合
   const [ry,rm,rd]=o.refDate.split('-').map(Number);
   const cutoff=Date.UTC(ry-o.years,rm-1,rd);
-  let noMaster=0;
+  let noMaster=0, nModoru=0;
   const out=[];
   for(const r of base){
     const mm=map.get(normKey(r[bi['品目']]));
     if(!mm){ noMaster++; continue; }
-    if(mm.eff===0) continue;                       // 有効在庫数0を削除
+    const modoru=String(mm.note||'').normalize('NFKC').includes('#戻');  // 備考に「#戻」（＃全角も可）→ 条件に関係なく取得
+    if(mm.eff===0) continue;             // 有効在庫数0を削除
     const d=parseDateUTC(r[bi['最終']]);
-    const modoru=String(mm.note||'').includes('#戻');  // 備考に「#戻」を含む行は日付に関係なく取得
     if(!modoru&&(d===null||d>cutoff)) continue;    // 最終が基準日のN年前以前
+    if(modoru) nModoru++;
     const num=k=>{ const v=toNum(r[bi[k]]); return v===null?(r[bi[k]]===''?null:r[bi[k]]):v; };
     const str=k=>String(r[bi[k]]).trim();
     out.push({品目:str('品目'),品名:str('品名'),仕様:str('仕様'),単位:str('単位'),
@@ -159,7 +160,7 @@ function processData(baseText, masterText, o){
       有効在庫数:mm.eff,発注残数:num('発注残数'),保管場所:str('保管場所'),最終:d,備考:mm.note||''});
   }
   out.sort((x,y)=>(typeof y.金額==='number'?y.金額:-Infinity)-(typeof x.金額==='number'?x.金額:-Infinity)); // 金額降順
-  return {rows:out, baseRows:base.length, noMaster, cutoff};
+  return {rows:out, baseRows:base.length, noMaster, nModoru, cutoff};
 }
 
 const textWidth=s=>{ let w=0; for(const ch of String(s)) w+=ch.charCodeAt(0)>0xFF?2:1; return w; };
@@ -245,7 +246,7 @@ function buildWorkbook(ExcelJS, rows){
     try{
       const years=Math.max(0,parseInt($('years').value,10)||0);
       if(!$('refDate').value) throw new Error('基準日を入力してください');
-      const {rows,baseRows,noMaster,cutoff}=processData(state.base,state.master,{years,refDate:$('refDate').value});
+      const {rows,baseRows,noMaster,nModoru,cutoff}=processData(state.base,state.master,{years,refDate:$('refDate').value});
       const buf=await buildWorkbook(ExcelJS,rows).xlsx.writeBuffer();
       let fn=($('fname').value||'滞留在庫抽出.xlsx').trim(); if(!/\.xlsx$/i.test(fn)) fn+='.xlsx';
       const a=document.createElement('a');
@@ -254,7 +255,7 @@ function buildWorkbook(ExcelJS, rows){
       setTimeout(()=>URL.revokeObjectURL(a.href),5000);
       const d=new Date(cutoff);
       msg('完了：'+fn+'（'+rows.length.toLocaleString()+'件 / 在庫一覧 '+baseRows.toLocaleString()+'行、'+
-        d.getUTCFullYear()+'/'+(d.getUTCMonth()+1)+'/'+d.getUTCDate()+' 以前）'+
+        d.getUTCFullYear()+'/'+(d.getUTCMonth()+1)+'/'+d.getUTCDate()+' 以前、うち#戻 '+nModoru+'件）'+
         (noMaster?' ※マスターに無い品目が'+noMaster+'行あり、除外しました':''),'ok');
     }catch(e){ console.error(e); msg('エラー: '+e.message,'err'); }
     $('run').disabled=false;
