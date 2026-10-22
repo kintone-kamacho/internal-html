@@ -39,7 +39,7 @@
   <input id="picker" type="file" accept=".csv" multiple hidden>
 
   <div class="row">
-    <div><label>何年前以前</label><input id="years" type="number" min="0" value="2"></div>
+    <div><label>何年前以前</label><input id="years" type="number" min="0" value="1"></div>
     <div><label>基準日</label><input id="refDate" type="date"></div>
     <div><label>出力ファイル名</label><input id="fname"></div>
     <button id="run" disabled>実行</button>
@@ -50,7 +50,7 @@
 <script>
 //CORE_START
 const OUT_COLS = [
-  {key:'品目', w:22}, {key:'品名', w:22}, {key:'仕様', w:22}, {key:'単位', w:6},
+  {key:'品目', w:22}, {key:'品名', w:22}, {key:'仕様', w:22}, {key:'メーカー', w:14}, {key:'単位', w:6},
   {key:'基準在庫数', w:11}, {key:'在庫数', w:9}, {key:'単価', w:10}, {key:'金額', w:13},
   {key:'有効在庫数', w:11}, {key:'発注残数', w:10}, {key:'保管場所', w:11}, {key:'最終', w:12}, {key:'備考', w:24}
 ];
@@ -132,13 +132,13 @@ function processData(baseText, masterText, o){
   let cp={};
   const m=parseCSV(masterText,h=>{
     const nn=h.map(normHeader);
-    cp={a:nn.indexOf('品目'),e:nn.indexOf('有効在庫数'),t:nn.indexOf('備考')};
+    cp={a:nn.indexOf('品目'),e:nn.indexOf('有効在庫数'),t:nn.indexOf('備考'),k:nn.indexOf('メーカー名')};
     if(cp.a<0||cp.e<0) throw new Error('品目マスターに「品目」「有効在庫数」列がありません');
-    return cp.t<0?[cp.a,cp.e]:[cp.a,cp.e,cp.t];
+    return [cp.a,cp.e,cp.t,cp.k].filter(i=>i>=0);
   });
-  const pa=m.idx.indexOf(cp.a), pe=m.idx.indexOf(cp.e), pt=cp.t<0?-1:m.idx.indexOf(cp.t);
+  const pa=m.idx.indexOf(cp.a), pe=m.idx.indexOf(cp.e), pt=cp.t<0?-1:m.idx.indexOf(cp.t), pk=cp.k<0?-1:m.idx.indexOf(cp.k);
   const map=new Map();
-  for(const r of m.rows){ const k=normKey(r[pa]); if(k&&!map.has(k)) map.set(k,{eff:toNum(r[pe]),note:pt>=0?r[pt]:''}); }
+  for(const r of m.rows){ const k=normKey(r[pa]); if(k&&!map.has(k)) map.set(k,{eff:toNum(r[pe]),note:pt>=0?r[pt]:'',maker:pk>=0?String(r[pk]).trim():''}); }
 
   // 結合
   const [ry,rm,rd]=o.refDate.split('-').map(Number);
@@ -155,7 +155,7 @@ function processData(baseText, masterText, o){
     if(modoru) nModoru++;
     const num=k=>{ const v=toNum(r[bi[k]]); return v===null?(r[bi[k]]===''?null:r[bi[k]]):v; };
     const str=k=>String(r[bi[k]]).trim();
-    out.push({品目:str('品目'),品名:str('品名'),仕様:str('仕様'),単位:str('単位'),
+    out.push({品目:str('品目'),品名:str('品名'),仕様:str('仕様'),メーカー:mm.maker,単位:str('単位'),
       基準在庫数:num('基準在庫数'),在庫数:num('在庫数'),単価:num('単価'),金額:num('金額'),
       有効在庫数:mm.eff,発注残数:num('発注残数'),保管場所:str('保管場所'),最終:d,備考:mm.note||''});
   }
