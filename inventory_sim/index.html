@@ -79,9 +79,9 @@ select,input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--ln)
 /* グラフ */
 .bars{display:flex;gap:4px;align-items:flex-end;height:130px;margin-top:8px}
 .bars div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:11px;min-width:0}
-.bars i{display:block;width:100%;background:var(--bar);border-radius:3px 3px 0 0;min-height:1px}
-.bars small{color:var(--sub);font-size:11px;margin-top:3px;white-space:nowrap}
-.bars.y i{background:var(--ac)}
+.bars i{display:block;width:60%;background:var(--bar);border-radius:3px 3px 0 0}
+.bars small{font-size:10px;color:var(--sub);text-align:center;line-height:1.2}
+.bars .yy{font-size:9px}
 
 /* データ取得バー */
 .bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 16px}
@@ -151,7 +151,7 @@ h3{font-size:13px;margin:16px 0 0;color:var(--sub)}
     <button class="btn s" id="bCh" hidden>登録先を変更</button>
     <input type="file" id="fi" accept=".csv,.CSV,text/csv" hidden>
     <div class="note" id="sd" style="flex:1;min-width:200px"></div>
-    <div class="ld" id="ld" hidden><span class="sp"></span><span id="ldt">読み込み中…</span></div>
+    <div class="ld" id="ld" hidden><span class="sp"></span><span id="ldt">読み込み中…</span><button class="btn s sm" id="bCan" style="margin-left:12px">キャンセル</button></div>
     <div class="pl" id="pl" hidden></div>
   </div>
 </section>
@@ -187,10 +187,10 @@ h3{font-size:13px;margin:16px 0 0;color:var(--sub)}
     <div class="f3">
       <label class="l">安全係数（α）</label>
       <select id="al">
-        <option value="2.33">2.33　欠品率1%　主要部品</option>
-        <option value="2.06">2.06　欠品率2%　代替困難</option>
-        <option value="1.65" selected>1.65　欠品率5%　標準（初期値）</option>
-        <option value="1.29">1.29　欠品率10%　汎用品</option>
+        <option value="2.33">欠品すると生産ラインが即停止する主要部品　許容率1%　2.33</option>
+        <option value="2.06">代替困難　許容率2%　2.06</option>
+        <option value="1.65" selected>通常の標準部品・資材（初期値）　許容率5%　1.65</option>
+        <option value="1.29">汎用品　許容率10%　1.29</option>
       </select>
     </div>
   </div>
@@ -250,8 +250,23 @@ let D=[
 /* ============ 共通 ============ */
 const $=i=>document.getElementById(i),
       fmt=n=>Math.round(n).toLocaleString('ja-JP');
-const MO=['10月','11月','12月','1月','2月','3月','4月','5月','6月','7月','8月','9月'],
-      YR=['2021','2022','2023','2024','2025'];
+/* 年度（4月始まり）。月・年度ラベルは今日の日付から自動生成 */
+const MON_END=1;  // 1＝CSVの12カ月の末尾が先月 / 0＝当月
+const YR_END=1;   // 1＝5年の末尾が昨年 / 0＝今年
+const fyOf=(y,mo)=>mo>=3?y:y-1;   // mo: 0=1月 … 3=4月
+function monthLabels(){
+  const t=new Date(), a=[];
+  for(let k=11+MON_END;k>=MON_END;k--){
+    const x=new Date(t.getFullYear(),t.getMonth()-k,1);
+    a.push((x.getMonth()+1)+'月<br><span class="yy">('+fyOf(x.getFullYear(),x.getMonth())+')</span>');
+  }
+  return a;
+}
+function yearLabels(){
+  const y=new Date().getFullYear()-YR_END, a=[];
+  for(let k=4;k>=0;k--)a.push(String(y-k));
+  return a;
+}
 let ci=0;
 
 let IDX=new Map(), UC=[];
@@ -277,7 +292,7 @@ fillCodes();
 function bars(a,l,c){
   const m=Math.max(...a,1);
   return `<div class="bars ${c}">`
-    +a.map((v,i)=>`<div title="${l[i]} ${v}">${fmt(v)}<i style="height:${Math.max(v/m*85,1)}%"></i><small>${l[i]}</small></div>`).join('')
+    +a.map((v,i)=>`<div title="${l[i].replace(/<[^>]*>/g,' ')} ${v}">${fmt(v)}<i style="height:${Math.max(v/m*85,1)}%"></i><small>${l[i]}</small></div>`).join('')
     +'</div>';
 }
 
@@ -295,7 +310,7 @@ function run(){
         moq=Math.max(+$('moq').value||0,0),
         al=+$('al').value,
         L=lt/30;
-  $('ltm').textContent=lt>0?'＝ '+L.toFixed(2)+'カ月':'';
+        $('ltm').textContent = lt>0 ? '= '+L.toFixed(2)+'カ月' : '';
 
   // 月平均・標準偏差（STDEV.S）
   const m=d.m,
@@ -316,10 +331,10 @@ function run(){
     +(op
       ? k('発注点（基準在庫数）',fmt(base),u,'main')
         +k('最大在庫数（MAX）',moq>0?fmt(mx):'MOQを入力',moq>0?u:'',moq>0?'':'na')
-        +k('安全在庫数',fmt(ss),u)
+        +k('うち安全在庫数',fmt(ss),u)
       : k('基準在庫数（目標維持在庫）',fmt(base),u,'main')
         +k('最大在庫数（MAX）','設定不要','','na')
-        +k('安全在庫数',fmt(ss),u))
+        +k('うち安全在庫数',fmt(ss),u))
     +'</div>'
     +`<div class="note">LT内消費 ${fmt(lc)}${u} ＋ 安全在庫 ${fmt(ss)}${u}${op&&moq>0?' ／ MAX＝基準在庫＋MOQ '+fmt(moq)+u:''}</div>`;
   if(!(lt>0)){
@@ -356,13 +371,13 @@ function run(){
 
   $('ref').innerHTML=
     `<div class="ind">
-      <div><span>年間使用量 ／ 月平均</span><strong>${fmt(tot)}${u}</strong>月平均 ${fmt(avg)}${u}</div>
-      <div><span>需要変動係数（CV）</span><strong>${cv===null?'－':cv.toFixed(2)}</strong><i class="tag ${cc}" style="font-style:normal">${cl}</i><div class="note">${cm}</div></div>
-      <div><span>増減トレンド</span><strong>${tr===null?'－':tr.toFixed(2)}</strong><i class="tag ${tc}" style="font-style:normal">${tl}</i></div>
+      <div><span>年間使用量 ／ 月平均</span><strong>${fmt(tot)}${u}</strong>／ 月平均 ${fmt(avg)}${u}</div>
+      <div><span>需要変動（CV）</span><strong>${cl}</strong><i class="tag ${cc}" style="font-style:normal">${cv===null?'－':cv.toFixed(2)}</i><div class="note">${cm}</div></div>
+      <div><span>増減トレンド</span><strong>${tl}</strong><i class="tag ${tc}" style="font-style:normal">${tr===null?'－':tr.toFixed(2)}</i></div>
     </div>
     <div class="adv ${tc||'ok'}">${adv}</div>
-    <h3>過去12カ月の出庫推移（${u}）</h3>${bars(m,MO,'')}
-    <h3>過去5年間の出庫推移（${u}／年度）</h3>${bars(d.y,YR,'y')}`;
+    <h3>過去12カ月の出庫推移（${u}／カッコ内は年度）</h3>${bars(m,monthLabels(),'')}
+    <h3>過去5年間の出庫推移（${u}／年）</h3>${bars(d.y,yearLabels(),'y')}`;
 }
 
 function pick(){
@@ -432,8 +447,9 @@ svg .s{fill:var(--sub);font-size:12px}
 .flow .e{background:var(--acbg);border-color:var(--ac)}
 .bars{display:flex;gap:4px;align-items:flex-end;height:90px;margin-top:6px}
 .bars div{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0}
-.bars i{display:block;width:100%;background:var(--bar);border-radius:3px 3px 0 0}
-.bars small{font-size:10px;color:var(--sub)}
+.bars i{display:block;width:60%;background:var(--bar);border-radius:3px 3px 0 0}
+.bars small{font-size:10px;color:var(--sub);text-align:center;line-height:1.2}
+.bars .yy{font-size:9px}
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
 .cols>div{border:1px solid var(--ln);border-radius:10px;padding:12px}
 .cols h4{margin:0 0 4px;font-size:14px;color:var(--ac)}
@@ -470,18 +486,18 @@ th{color:var(--sub);font-weight:600;font-size:12px}
   </div>
   <div class="ex"><b>この解説の計算例</b>　納期7日（0.23カ月）／MOQ 30個／安全係数1.65／過去12カ月の出庫は下図（月平均 627個、ばらつきσ 85）
     <div class="bars">
-      <div><i style="height:67%"></i><small>10月</small></div>
-      <div><i style="height:74%"></i><small>11月</small></div>
-      <div><i style="height:71%"></i><small>12月</small></div>
-      <div><i style="height:78%"></i><small>1月</small></div>
-      <div><i style="height:76%"></i><small>2月</small></div>
-      <div><i style="height:79%"></i><small>3月</small></div>
-      <div><i style="height:77%"></i><small>4月</small></div>
-      <div><i style="height:74%"></i><small>5月</small></div>
-      <div><i style="height:76%"></i><small>6月</small></div>
-      <div><i style="height:95%"></i><small>7月</small></div>
-      <div><i style="height:97%"></i><small>8月</small></div>
-      <div><i style="height:100%"></i><small>9月</small></div>
+      <div><i style="height:67%"></i><small>10月<br><span class="yy">(2025)</span></small></div>
+      <div><i style="height:74%"></i><small>11月<br><span class="yy">(2025)</span></small></div>
+      <div><i style="height:71%"></i><small>12月<br><span class="yy">(2025)</span></small></div>
+      <div><i style="height:78%"></i><small>1月<br><span class="yy">(2026)</span></small></div>
+      <div><i style="height:76%"></i><small>2月<br><span class="yy">(2026)</span></small></div>
+      <div><i style="height:79%"></i><small>3月<br><span class="yy">(2026)</span></small></div>
+      <div><i style="height:77%"></i><small>4月<br><span class="yy">(2026)</span></small></div>
+      <div><i style="height:74%"></i><small>5月<br><span class="yy">(2026)</span></small></div>
+      <div><i style="height:76%"></i><small>6月<br><span class="yy">(2026)</span></small></div>
+      <div><i style="height:95%"></i><small>7月<br><span class="yy">(2026)</span></small></div>
+      <div><i style="height:97%"></i><small>8月<br><span class="yy">(2026)</span></small></div>
+      <div><i style="height:100%"></i><small>9月<br><span class="yy">(2026)</span></small></div>
     </div>
   </div>
 </section>
@@ -627,6 +643,55 @@ function dec(b){
   return t;
 }
 
+/* ファイル読込（共有フォルダ経由だと遅い）→ 解析。所要時間を計測して返す */
+let cancelled=false, rd=null;
+$('bCan').onclick=()=>{
+  cancelled=true;
+  $('ldt').textContent='キャンセル中…';
+  if(rd)rd.cancel().catch(()=>{});
+};
+const emsg=e=>e&&e.message==='CANCEL'?'キャンセルしました（データは前回のまま）':'読込失敗：'+(e&&e.message);
+async function readFile(f){
+  const chunks=[];
+  let got=0,tp=0;
+  rd=f.stream().getReader();
+  const r0=rd;
+  try{
+    for(;;){
+      if(cancelled)break;
+      const {done,value}=await r0.read();
+      if(done)break;
+      chunks.push(value);
+      got+=value.length;
+      if(performance.now()-tp>200){
+        tp=performance.now();
+        $('ldt').textContent='ファイル読込中… '+(got/1048576).toFixed(0)+' / '+(f.size/1048576).toFixed(0)+'MB';
+      }
+    }
+  }finally{
+    rd=null;
+    try{await r0.cancel()}catch(e){}
+  }
+  if(cancelled)throw new Error('CANCEL');
+  const buf=new Uint8Array(got);
+  let o=0;
+  for(const c of chunks){buf.set(c,o);o+=c.length}
+  return buf;
+}
+/* ファイル読込（共有フォルダ経由だと遅い）→ 解析。所要時間を計測して返す */
+async function readItems(f){
+  cancelled=false;
+  const t0=performance.now();
+  $('ldt').textContent='ファイル読込中…（共有フォルダは時間がかかります）';
+  const buf=await readFile(f);
+  const t1=performance.now();
+  $('ldt').textContent='解析中…';
+  await new Promise(r=>setTimeout(r,30));
+  const items=await parseItems(dec(buf),prog);
+  return {items,read:t1-t0,parse:performance.now()-t1,mb:buf.length/1048576};
+}
+const sec=ms=>(ms/1000).toFixed(1)+'秒';
+
 /* CSV → 品目配列（数十万行でも固まらないよう、一定時間ごとに画面へ制御を戻し進捗を表示） */
 async function parseItems(t,prog){
   const out=[], L=t.length;
@@ -648,6 +713,7 @@ async function parseItems(t,prog){
     if(rows%1000===0&&Date.now()-tm>60){
       if(prog)prog(rows,i/L);
       await new Promise(r=>setTimeout(r,0));
+      if(cancelled)throw new Error('CANCEL');
       tm=Date.now();
     }
   };
@@ -682,23 +748,53 @@ async function parseItems(t,prog){
 }
 const prog=(r,p)=>{$('ldt').textContent='読み込み中… '+fmt(r)+'行（'+Math.round(p*100)+'%）'};
 
-function setData(a,info){
-  if(!a.length)throw new Error('品目が0件です');
-  const cur=D[ci]&&D[ci].c;
-  D=a;
-  reindex();
-  fillCodes('');
-  const cu=cur?cur.toUpperCase():'',
-        i=IDX.has(cu)?IDX.get(cu):-1;
-  ci=i>=0?i:Math.max(D.findIndex(d=>d.m.some(v=>v>0)),0);
-  const lv=$('lt').value, mv=$('moq').value;
-  $('item').value=D[ci].c;
-  pick();
-  if(i>=0){$('lt').value=lv;$('moq').value=mv;run()}
-  setSt(info);
-  dput({a:D,info}).catch(()=>{$('sd').textContent+='（※端末への保存に失敗）'});
+let fromSaved=false;
+function sameItem(a,b){
+  if(a.n!==b.n||a.s!==b.s||a.u!==b.u||a.t!==b.t||a.k!==b.k||a.p!==b.p||a.lt!==b.lt||a.moq!==b.moq)return false;
+  for(let i=0;i<12;i++)if(a.m[i]!==b.m[i])return false;
+  for(let i=0;i<5;i++)if(a.y[i]!==b.y[i])return false;
+  return true;
 }
-
+function diffItems(o,nw){
+  const om=new Map();
+  for(const d of o)om.set(d.c,d);
+  let add=0,chg=0;
+  for(const d of nw){
+    const e=om.get(d.c);
+    if(!e)add++;
+    else if(!sameItem(e,d))chg++;
+  }
+  return {add,chg,del:Math.max(o.length-(nw.length-add),0)};
+}
+/* 新しいデータを前回保存分と比較し、変更があるときだけ入れ替え・保存する */
+function setData(a,info,mod,tm){
+  if(!a.length)throw new Error('品目が0件です');
+  const dif=fromSaved?diffItems(D,a):null,
+        same=!!dif&&!dif.add&&!dif.chg&&!dif.del;
+  const dtx=dif?(same?'　［データに変更なし］':'　［変更'+fmt(dif.chg)+'・追加'+fmt(dif.add)+'・削除'+fmt(dif.del)+'件］'):'';
+  const ttx=ex=>tm?'　［'+Math.round(tm.mb)+'MB 読込'+sec(tm.read)+'／解析'+sec(tm.parse)+ex+'］':'';
+  if(!same){
+    const cur=D[ci]&&D[ci].c;
+    D=a;
+    reindex();
+    fillCodes('');
+    const cu=cur?cur.toUpperCase():'',
+          i=IDX.has(cu)?IDX.get(cu):-1;
+    ci=i>=0?i:Math.max(D.findIndex(d=>d.m.some(v=>v>0)),0);
+    const lv=$('lt').value, mv=$('moq').value;
+    $('item').value=D[ci].c;
+    pick();
+    if(i>=0){$('lt').value=lv;$('moq').value=mv;run()}
+  }
+  fromSaved=true;
+  setSt(info);
+  $('sd').textContent=info+dtx+ttx(same?'':'／保存中…');
+  const ts=performance.now();
+  (same?Promise.resolve():dput({a:D}))
+    .then(()=>dsetK('meta',{info,mod:mod||0}))
+    .then(()=>{$('sd').textContent=info+dtx+ttx(same?'':'／保存'+sec(performance.now()-ts))})
+    .catch(()=>{$('sd').textContent+='（※端末への保存に失敗）'});
+}
 const now=()=>new Date().toLocaleString('ja-JP');
 
 /* ============ 登録先パス表示 ============ */
@@ -747,10 +843,11 @@ $('fi').onchange=async e=>{
   $('pl').hidden=true;
   try{
     await new Promise(r=>setTimeout(r,50));
-    setData(await parseItems(dec(await f.arrayBuffer()),prog),`✅ 読み込み完了 ${now()}　${f.name}　${D.length}件`);
+    const r=await readItems(f);
+    setData(r.items,`✅ 読み込み完了 ${now()}　${f.name}　${r.items.length}件`,0,r);
     markOk();
   }catch(x){
-    setSt('読込失敗：'+x.message,1);
+    setSt(emsg(x),1);
   }
   busy(false);
   e.target.value='';
@@ -781,24 +878,25 @@ async function hget(){
 }
 
 /* 取込データの保存（IndexedDB：容量が大きく、次に開いたときも残る） */
-async function dput(v){
+async function dsetK(k,v){
   const d=await idb();
   return new Promise((ok,ng)=>{
     const t=d.transaction('h','readwrite');
-    t.objectStore('h').put(v,'d');
+    t.objectStore('h').put(v,k);
     t.oncomplete=ok;
     t.onerror=()=>ng(t.error);
     t.onabort=()=>ng(t.error);
   });
 }
-async function dget(){
+async function dgetK(k){
   const d=await idb();
   return new Promise(ok=>{
-    const q=d.transaction('h').objectStore('h').get('d');
+    const q=d.transaction('h').objectStore('h').get(k);
     q.onsuccess=()=>ok(q.result);
     q.onerror=()=>ok(null);
   });
 }
+const dput=v=>dsetK('d',v), dget=()=>dgetK('d');
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 
 let fh=null, lastMod=0, timer=null;
@@ -808,6 +906,7 @@ const auto=()=>document.querySelector('[name=um]:checked').value==='a';
    invLast : 最後に成功した日時
    invTry  : {d:日付, n:本日の自動失敗回数} */
 const MAXTRY=10;
+const AUTOHOUR=12; // 開いたままの場合に自動更新を確認する時刻（時）
 const dayKey=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
 function lastOk(){let l=0;try{l=+localStorage.getItem('invLast')||0}catch(e){}return l}
 function getTry(){
@@ -827,58 +926,71 @@ function showFail(){
   const o=getTry(), el=$('fl');
   if(!o.n){el.hidden=true;return}
   const l=lastOk(), ld=l?new Date(l).toLocaleDateString('ja-JP'):'なし';
-  el.textContent='⚠ 自動読込に失敗（'+o.n+'/'+MAXTRY+'回）　最終成功：'+ld
-    +(o.n>=MAXTRY?'　本日の自動実行は停止。手動で更新してください':'');
+  el.textContent=o.c
+    ?'⚠ 自動更新をキャンセルしました　最終成功：'+ld+'　手動で更新できます'
+    :'⚠ 自動読込に失敗（'+o.n+'/'+MAXTRY+'回）　最終成功：'+ld
+      +(o.n>=MAXTRY?'　本日の自動実行は停止。手動で更新してください':'');
   el.hidden=false;
 }
 
-/* force:手動操作（即時読み込み） / quiet:自動実行（エラーでパネルを開かない）
-   成功したら true を返す */
+/* force:手動操作（更新の有無にかかわらず読み直す） / quiet:自動実行
+   成功→true、失敗→false、キャンセル→'cancel' */
 async function loadFH(force,quiet){
-  if(force)busy(true);
   try{
-    const f=await fh.getFile();
-    if(!force&&f.lastModified===lastMod){markOk();return true}
+    const f=await fh.getFile();   // ここでは更新日時など情報だけ取得（中身は読まない）
+    if(!force&&f.lastModified===lastMod){
+      // 前回取込時から更新されていなければ、中身は読まない（共有フォルダ対策）
+      $('sd').textContent='前回の取込から共有CSVの更新なし（'+new Date(f.lastModified).toLocaleString('ja-JP')+'）。再読込は省略しました';
+      markOk();
+      return true;
+    }
+    busy(true);
+    const r=await readItems(f);
     lastMod=f.lastModified;
-    await new Promise(r=>setTimeout(r,50));
     setData(
-      await parseItems(dec(await f.arrayBuffer()),prog),
-      `✅ 読み込み完了 ${now()}　${f.name}　${D.length}件（ファイル更新 ${new Date(f.lastModified).toLocaleString('ja-JP')}）`
+      r.items,
+      `✅ 読み込み完了 ${now()}　${f.name}　${r.items.length}件（ファイル更新 ${new Date(f.lastModified).toLocaleString('ja-JP')}）`,
+      f.lastModified,r
     );
     showPath();
     markOk();
     return true;
   }catch(e){
-    setSt('読込失敗：'+e.message,1,quiet);
+    if(e&&e.message==='CANCEL'){
+      setSt(emsg(e),1,true);
+      putTry({d:dayKey(new Date()),n:MAXTRY,c:1});   // キャンセル後は本日の自動実行を止める
+      showFail();
+      return 'cancel';
+    }
+    setSt(emsg(e),1,quiet);
     return false;
   }finally{
     busy(false);
   }
 }
 
-/* 毎日6:00以降に自動読み込み
-   ・自動モードでない／登録（fh）がなければ何もしない
-   ・本日6:00以降 かつ 最終成功が本日6:00より前 のときだけ実行
-   ・失敗したら1分後に再試行、本日10回失敗したらその日は諦める
-   ・同日の再実行は手動（今すぐ更新）、翌日6:00に自動実行が復活 */
+/* 自動更新（自動モード・登録済みのとき）
+   ・ページを開いたとき／開いたまま正午を過ぎたときに実行
+   ・共有CSVの更新日時が前回取込時と同じなら、中身は読まない
+   ・失敗したら1分後に再試行、本日10回失敗したら諦める（同日の再実行は手動）
+   ・キャンセルしたら本日の自動実行は停止 */
 let running=false;
-async function daily(){
+async function autoRun(){
   if(running||!auto()||!fh)return;
-  const n=new Date(),
-        t=new Date(n.getFullYear(),n.getMonth(),n.getDate(),6).getTime();
-  if(n.getTime()<t||lastOk()>=t)return;
-  const o=getTry();
-  if(o.n>=MAXTRY)return;
+  if(getTry().n>=MAXTRY)return;
   running=true;
   let ok=false;
   try{
     if((await fh.queryPermission({mode:'read'}))==='granted'){
       ok=await loadFH(false,true);
     }else{
-      setSt('読込失敗：読み取り許可がありません',1,true);
+      // 許可が必要（クリック操作が必要）。失敗回数には数えない
+      $('sd').textContent='共有CSVへのアクセス許可が必要です。「今すぐ更新」を押してください';
+      $('pn').hidden=false;
+      ok='perm';
     }
   }catch(e){
-    setSt('読込失敗：'+e.message,1,true);
+    setSt(emsg(e),1,true);
   }
   if(!ok){
     const o2=getTry();
@@ -887,6 +999,14 @@ async function daily(){
     showFail();
   }
   running=false;
+}
+/* 開いたままの場合：毎日 AUTOHOUR 時以降、未確認なら1回確認 */
+async function daily(){
+  if(!auto()||!fh)return;
+  const n=new Date(),
+        t=new Date(n.getFullYear(),n.getMonth(),n.getDate(),AUTOHOUR).getTime();
+  if(n.getTime()<t||lastOk()>=t)return;
+  await autoRun();
 }
 
 function startAuto(){
@@ -917,8 +1037,13 @@ $('bUp').onclick=async()=>{
       await hput(x);
     }
     if(await ready()){
-      await loadFH(true);
-      startAuto();
+      const f=await fh.getFile();
+      if(f.lastModified===lastMod&&!confirm('共有CSVは前回の取込から更新されていません。それでも再読込しますか？')){
+        startAuto();
+      }else{
+        await loadFH(true);
+        startAuto();
+      }
     }
     ui();
   }catch(e){
@@ -935,7 +1060,7 @@ document.querySelectorAll('[name=um]').forEach(r=>r.onchange=async()=>{
   if(auto()&&fh){
     try{
       if((await fh.queryPermission({mode:'read'}))==='granted'){
-        await loadFH(true);
+        await loadFH(false);
         startAuto();
       }
     }catch(e){}
@@ -963,8 +1088,13 @@ async function init(){
   $('st').textContent='保存データを復元中…';
   // 前回取り込んだデータを復元（なければ内蔵データ）
   try{
-    const sv=await dget();
-    if(sv&&sv.a&&sv.a.length){D=sv.a;stTxt=sv.info}
+    const sv=await dget(), mt=await dgetK('meta');
+    if(sv&&sv.a&&sv.a.length){
+      D=sv.a;
+      stTxt=(mt&&mt.info)||sv.info;
+      lastMod=(mt?mt.mod:sv.mod)||0;
+      fromSaved=true;
+    }
   }catch(e){}
   try{localStorage.removeItem(LS)}catch(e){}
   reindex();
@@ -981,9 +1111,9 @@ async function init(){
       document.querySelector('[name=um][value=a]').checked=true;
       fh=await hget();
       ui();
-      if(fh&&(await fh.queryPermission({mode:'read'}))==='granted'){
-        startAuto();
-        daily();
+      if(fh){
+        if((await fh.queryPermission({mode:'read'}))==='granted')startAuto();
+        autoRun();   // 開いたタイミングで、共有CSVが更新されていれば自動更新
       }
     }
   }catch(e){}
