@@ -187,10 +187,10 @@ h3{font-size:13px;margin:16px 0 0;color:var(--sub)}
     <div class="f3">
       <label class="l">安全係数（α）</label>
       <select id="al">
-        <option value="2.33">欠品すると生産ラインが即停止する主要部品　許容率1%　2.33</option>
-        <option value="2.06">代替困難　許容率2%　2.06</option>
-        <option value="1.65" selected>通常の標準部品・資材（初期値）　許容率5%　1.65</option>
-        <option value="1.29">汎用品　許容率10%　1.29</option>
+        <option value="2.33">許容率 1%　欠品すると生産ラインが即停止する主要部品</option>
+        <option value="2.06">許容率 2%　調達が難しく代替がきかない部品</option>
+        <option value="1.65" selected>許容率 5%　通常の標準部品・資材（初期値）</option>
+        <option value="1.29">許容率10%　汎用品・即時代替手配が可能な品目</option>
       </select>
     </div>
   </div>
@@ -525,10 +525,10 @@ th{color:var(--sub);font-weight:600;font-size:12px}
   </svg>
   <div class="sw"><table>
     <tr><th>欠品を許す割合</th><th>安全係数</th><th>目安</th></tr>
-    <tr><td>1%</td><td>2.33</td><td>欠品すると生産ラインが止まる主要部品</td></tr>
+    <tr><td>1%</td><td>2.33</td><td>欠品すると生産ラインが即停止する主要部品</td></tr>
     <tr><td>2%</td><td>2.06</td><td>調達が難しく代替がきかない部品</td></tr>
     <tr><td>5%</td><td>1.65</td><td>通常の標準部品・資材（初期値）</td></tr>
-    <tr><td>10%</td><td>1.29</td><td>汎用品・すぐ代替手配できる品目</td></tr>
+    <tr><td>10%</td><td>1.29</td><td>汎用品・即時代替手配が可能な品目</td></tr>
   </table></div>
   <div class="ex"><b>計算例</b>　1.65 × 85 × √0.233 ＝ 1.65 × 85 × 0.483 ＝ <b>68個</b>（小数点以下は切り上げ）</div>
 </section>
