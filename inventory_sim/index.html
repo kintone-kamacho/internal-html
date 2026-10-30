@@ -347,12 +347,21 @@ function run(){
   const cc=cv===null?'':cv<=.5?'g':cv<.8?'':cv<1?'o':'r',
         tc=tr===null?'':tr>=1.5||tr<.5?'r':tr>=1.2||tr<.8?'o':'g';
 
-  let cl,cm;
-  if(cv===null){cl='判定不可';cm='使用実績がありません'}
-  else if(cv<=.5){cl='安定需要';cm='安定需要 ⇒ 適した方式：発注点'}
-  else if(cv<.8){cl='軽度の変動';cm='適した方式：発注点'}
-  else if(cv<1){cl='中度の変動';cm='適した方式：所要量検討'}
-  else{cl='変動大';cm='適した発注方式：所要量'}
+  let cl,cm,cadv;
+  if(cv===null){cl='判定不可';cm='使用実績がありません';cadv=''}
+  else if(cv<=.5){
+    cl='安定需要';cm='安定需要 ⇒ 適した方式：発注点';
+    cadv='毎月の使用量のブレが小さいため、欠品や過剰在庫のリスクが少なく安心して運用できます。';
+  }else if(cv<.8){
+    cl='軽度の変動';cm='適した方式：発注点';
+    cadv='毎月の使用量に軽度の変動があります。安全係数を少し高めに設定するか、定期的な基準見直しを推奨します。';
+  }else if(cv<1){
+    cl='中度の変動';cm='適した方式：所要量検討';
+    cadv='毎月の使用量に中度の変動があります。定期的に需要トレンドをチェックする必要があります。';
+  }else{
+    cl='変動大';cm='適した発注方式：所要量';
+    cadv='毎月の使用量の変動が大きいため、過剰在庫や欠品のリスクに注意してください。';
+  }
 
   let tl,adv;
   if(tr===null){
@@ -375,7 +384,8 @@ function run(){
       <div><span>需要変動（CV）</span><strong>${cl}</strong><i class="tag ${cc}" style="font-style:normal">${cv===null?'－':cv.toFixed(2)}</i><div class="note">${cm}</div></div>
       <div><span>増減トレンド</span><strong>${tl}</strong><i class="tag ${tc}" style="font-style:normal">${tr===null?'－':tr.toFixed(2)}</i></div>
     </div>
-    <div class="adv ${tc||'ok'}">${adv}</div>
+    ${cadv?`<div class="adv ${cc||'ok'}"><b>【需要変動】</b>${cadv}</div>`:''}
+    <div class="adv ${tc||'ok'}"><b>【増減トレンド】</b>${adv}</div>
     <h3>過去12カ月の出庫推移（${u}／カッコ内は年度）</h3>${bars(m,monthLabels(),'')}
     <h3>過去5年間の出庫推移（${u}／年）</h3>${bars(d.y,yearLabels(),'y')}`;
 }
