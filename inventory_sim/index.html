@@ -151,7 +151,7 @@ h3{font-size:13px;margin:16px 0 0;color:var(--sub)}
     <button class="btn s" id="bCh" hidden>登録先を変更</button>
     <input type="file" id="fi" accept=".csv,.CSV,text/csv" hidden>
     <div class="note" id="sd" style="flex:1;min-width:200px"></div>
-    <div class="ld" id="ld" hidden><span class="sp"></span>読み込み中…</div>
+    <div class="ld" id="ld" hidden><span class="sp"></span><span id="ldt">読み込み中…</span></div>
     <div class="pl" id="pl" hidden></div>
   </div>
 </section>
@@ -254,8 +254,23 @@ const MO=['10月','11月','12月','1月','2月','3月','4月','5月','6月','7�
       YR=['2021','2022','2023','2024','2025'];
 let ci=0;
 
-function fillCodes(){
-  $('codes').innerHTML=D.map(d=>`<option value="${d.c}">${d.n}</option>`).join('');
+let IDX=new Map(), UC=[];
+function reindex(){
+  UC=new Array(D.length);
+  IDX=new Map();
+  for(let i=0;i<D.length;i++){
+    const u=D[i].c.toUpperCase();
+    UC[i]=u;
+    if(!IDX.has(u))IDX.set(u,i);
+  }
+}
+reindex();
+function fillCodes(q){
+  const v=(q||'').trim().toUpperCase(), a=[];
+  for(let i=0;i<D.length;i++){
+    if(!v||UC[i].includes(v)){a.push(D[i]);if(a.length>=100)break}
+  }
+  $('codes').innerHTML=a.map(d=>`<option value="${d.c}">${d.n}</option>`).join('');
 }
 fillCodes();
 
@@ -358,10 +373,11 @@ function pick(){
 
 $('item').oninput=()=>{
   const v=$('item').value.trim().toUpperCase(),
-        i=D.findIndex(d=>d.c.toUpperCase()===v);
+        i=IDX.has(v)?IDX.get(v):-1;
   if(i>=0){ci=i;pick()}
+  fillCodes($('item').value);
 };
-$('item').onfocus=()=>$('item').select();
+$('item').onfocus=()=>{$('item').select();fillCodes('')};
 ['lt','moq','al'].forEach(i=>$(i).oninput=run);
 document.querySelectorAll('[name=md]').forEach(r=>r.onchange=run);
 
@@ -591,10 +607,6 @@ $('ovx').onclick=()=>{$('ov').hidden=true};
 
 /* ============ 取込データの復元 ============ */
 let stTxt='内蔵データ '+D.length+'件';
-try{
-  const s=JSON.parse(localStorage.getItem(LS));
-  if(s&&s.a&&s.a.length){D=s.a;stTxt=s.info;fillCodes()}
-}catch(e){}
 
 function setSt(t,e,q){
   stTxt=t;
@@ -606,27 +618,6 @@ function setSt(t,e,q){
 $('barT').onclick=()=>{$('pn').hidden=!$('pn').hidden};
 
 /* ============ CSV解析 ============ */
-function parseCSV(t){
-  const R=[];
-  let r=[],f='',q=false;
-  for(let i=0;i<t.length;i++){
-    const c=t[i];
-    if(q){
-      if(c==='"'){
-        if(t[i+1]==='"'){f+='"';i++}
-        else q=false;
-      }else f+=c;
-    }else if(c==='"')q=true;
-    else if(c===','){r.push(f);f=''}
-    else if(c==='\n'||c==='\r'){
-      if(c==='\r'&&t[i+1]==='\n')i++;
-      r.push(f);f='';R.push(r);r=[];
-    }else f+=c;
-  }
-  if(f!==''||r.length){r.push(f);R.push(r)}
-  return R;
-}
-
 function dec(b){
   let t=new TextDecoder('shift_jis').decode(b);
   if(!t.includes('品目コード')){
@@ -636,34 +627,76 @@ function dec(b){
   return t;
 }
 
-function toItems(t){
-  const R=parseCSV(t);
-  if(!R.length||(R[0][1]||'').trim()!=='品目コード')throw new Error('品目状況一覧のCSVではありません');
+/* CSV → 品目配列（数十万行でも固まらないよう、一定時間ごとに画面へ制御を戻し進捗を表示） */
+async function parseItems(t,prog){
+  const out=[], L=t.length;
   const n=v=>{const x=parseFloat(String(v==null?'':v).replace(/,/g,''));return isNaN(x)?0:Math.round(x)},
         s=v=>(v||'').trim();
-  return R.slice(1)
-    .filter(r=>r.length>35&&s(r[1])&&!s(r[0]))
-    .map(r=>({
-      c:s(r[1]), n:s(r[2]), s:s(r[3]), u:s(r[4])||'個',
-      t:s(r[7]), p:n(r[11]), k:s(r[13]), lt:n(r[15]), moq:n(r[16]),
-      m:Array.from({length:12},(_,i)=>n(r[34-i])),
-      y:Array.from({length:5},(_,i)=>n(r[39-i]))
-    }));
+  let i=0,row=[],first=true,rows=0,tm=Date.now();
+  const endRow=async()=>{
+    const r=row; row=[];
+    if(first){
+      if((r[1]||'').trim()!=='品目コード')throw new Error('品目状況一覧のCSVではありません');
+      first=false;
+    }else if(r.length>35&&s(r[1])&&!s(r[0])){
+      const m=new Array(12), y=new Array(5);
+      for(let k=0;k<12;k++)m[k]=n(r[34-k]);
+      for(let k=0;k<5;k++)y[k]=n(r[39-k]);
+      out.push({c:s(r[1]),n:s(r[2]),s:s(r[3]),u:s(r[4])||'個',t:s(r[7]),p:n(r[11]),k:s(r[13]),lt:n(r[15]),moq:n(r[16]),m,y});
+    }
+    rows++;
+    if(rows%1000===0&&Date.now()-tm>60){
+      if(prog)prog(rows,i/L);
+      await new Promise(r=>setTimeout(r,0));
+      tm=Date.now();
+    }
+  };
+  while(i<L){
+    let f;
+    if(t.charCodeAt(i)===34){
+      i++; f='';
+      for(;;){
+        const j=t.indexOf('"',i);
+        if(j<0){f+=t.slice(i);i=L;break}
+        f+=t.slice(i,j);
+        if(t.charCodeAt(j+1)===34){f+='"';i=j+2}
+        else{i=j+1;break}
+      }
+    }else{
+      let j=i;
+      while(j<L){const c=t.charCodeAt(j);if(c===44||c===10||c===13)break;j++}
+      f=t.slice(i,j); i=j;
+    }
+    row.push(f);
+    const c=t.charCodeAt(i);
+    if(c===44){i++;if(i>=L)row.push('')}
+    else if(c===10||c===13){
+      if(c===13&&t.charCodeAt(i+1)===10)i++;
+      i++;
+      await endRow();
+    }
+  }
+  if(row.length&&!(row.length===1&&row[0]===''))await endRow();
+  if(first)throw new Error('品目状況一覧のCSVではありません');
+  return out;
 }
+const prog=(r,p)=>{$('ldt').textContent='読み込み中… '+fmt(r)+'行（'+Math.round(p*100)+'%）'};
 
 function setData(a,info){
   if(!a.length)throw new Error('品目が0件です');
   const cur=D[ci]&&D[ci].c;
   D=a;
-  fillCodes();
-  const i=D.findIndex(d=>d.c===cur);
+  reindex();
+  fillCodes('');
+  const cu=cur?cur.toUpperCase():'',
+        i=IDX.has(cu)?IDX.get(cu):-1;
   ci=i>=0?i:Math.max(D.findIndex(d=>d.m.some(v=>v>0)),0);
   const lv=$('lt').value, mv=$('moq').value;
   $('item').value=D[ci].c;
   pick();
   if(i>=0){$('lt').value=lv;$('moq').value=mv;run()}
   setSt(info);
-  try{localStorage.setItem(LS,JSON.stringify({a:D,info}))}catch(e){}
+  dput({a:D,info}).catch(()=>{$('sd').textContent+='（※端末への保存に失敗）'});
 }
 
 const now=()=>new Date().toLocaleString('ja-JP');
@@ -714,7 +747,7 @@ $('fi').onchange=async e=>{
   $('pl').hidden=true;
   try{
     await new Promise(r=>setTimeout(r,50));
-    setData(toItems(dec(await f.arrayBuffer())),`✅ 読み込み完了 ${now()}　${f.name}　${D.length}件`);
+    setData(await parseItems(dec(await f.arrayBuffer()),prog),`✅ 読み込み完了 ${now()}　${f.name}　${D.length}件`);
     markOk();
   }catch(x){
     setSt('読込失敗：'+x.message,1);
@@ -746,6 +779,27 @@ async function hget(){
     q.onerror=()=>ok(null);
   });
 }
+
+/* 取込データの保存（IndexedDB：容量が大きく、次に開いたときも残る） */
+async function dput(v){
+  const d=await idb();
+  return new Promise((ok,ng)=>{
+    const t=d.transaction('h','readwrite');
+    t.objectStore('h').put(v,'d');
+    t.oncomplete=ok;
+    t.onerror=()=>ng(t.error);
+    t.onabort=()=>ng(t.error);
+  });
+}
+async function dget(){
+  const d=await idb();
+  return new Promise(ok=>{
+    const q=d.transaction('h').objectStore('h').get('d');
+    q.onsuccess=()=>ok(q.result);
+    q.onerror=()=>ok(null);
+  });
+}
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 
 let fh=null, lastMod=0, timer=null;
 const auto=()=>document.querySelector('[name=um]:checked').value==='a';
@@ -788,7 +842,7 @@ async function loadFH(force,quiet){
     lastMod=f.lastModified;
     await new Promise(r=>setTimeout(r,50));
     setData(
-      toItems(dec(await f.arrayBuffer())),
+      await parseItems(dec(await f.arrayBuffer()),prog),
       `✅ 読み込み完了 ${now()}　${f.name}　${D.length}件（ファイル更新 ${new Date(f.lastModified).toLocaleString('ja-JP')}）`
     );
     showPath();
@@ -905,26 +959,36 @@ $('bCh').onclick=async()=>{
 };
 
 /* ============ 起動時 ============ */
-try{
-  if(localStorage.getItem('invMode')==='a'){
-    document.querySelector('[name=um][value=a]').checked=true;
-    hget().then(async x=>{
-      fh=x;
+async function init(){
+  $('st').textContent='保存データを復元中…';
+  // 前回取り込んだデータを復元（なければ内蔵データ）
+  try{
+    const sv=await dget();
+    if(sv&&sv.a&&sv.a.length){D=sv.a;stTxt=sv.info}
+  }catch(e){}
+  try{localStorage.removeItem(LS)}catch(e){}
+  reindex();
+  fillCodes('');
+  ci=Math.max(D.findIndex(d=>d.m.some(v=>v>0)),0);
+  $('item').value=D[ci].c;
+  pick();
+  setSt(stTxt);
+  ui();
+  showFail();
+  // 自動モードの復元（データ復元のあとに開始）
+  try{
+    if(localStorage.getItem('invMode')==='a'){
+      document.querySelector('[name=um][value=a]').checked=true;
+      fh=await hget();
       ui();
       if(fh&&(await fh.queryPermission({mode:'read'}))==='granted'){
         startAuto();
         daily();
       }
-    }).catch(()=>{});
-  }
-}catch(e){}
-
-ci=Math.max(D.findIndex(d=>d.m.some(v=>v>0)),0);
-$('item').value=D[ci].c;
-pick();
-setSt(stTxt);
-ui();
-showFail();
+    }
+  }catch(e){}
+}
+init();
 </script>
 </body>
 </html>
