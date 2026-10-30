@@ -36,7 +36,7 @@ h3{font-size:13px;margin:16px 0 0;color:var(--sub)}.note{font-size:13px;color:va
 <div class="ov" id="ov" hidden><div class="ovb"><button class="btn" id="ovx">✕ 閉じる</button><iframe id="fr" title="計算ロジックの解説"></iframe></div></div>
 <section class="card bar"><div class="t" id="barT" style="cursor:pointer" title="クリックでデータ取得を開く"><b>品目状況一覧</b>　<span id="st">内蔵データ</span> <span style="color:var(--sub)">▾</span></div>
 <div class="pn" id="pn" hidden><div class="um"><label><input type="radio" name="um" value="m" checked>手動</label><label><input type="radio" name="um" value="a">自動</label></div>
-<button class="btn" id="bUp">CSVを読み込んで更新</button><input type="file" id="fi" accept=".csv,.CSV,text/csv" hidden><div class="note" id="sd" style="flex:1;min-width:200px"></div></div></section>
+<button class="btn" id="bUp">CSVを読み込んで更新</button><button class="btn s" id="bCh" hidden>登録先を変更</button><input type="file" id="fi" accept=".csv,.CSV,text/csv" hidden><div class="note" id="sd" style="flex:1;min-width:200px"></div></div></section>
 <section class="card"><label class="l">品目コード</label><input type="text" id="item" list="codes" autocomplete="off" placeholder="品目コードを入力"><datalist id="codes"></datalist>
 <div class="pr"><div class="r"><div><span>品名</span><p id="iN"></p></div><div><span>仕様</span><p id="iS"></p></div></div><div class="r"><div><span>メーカー</span><p id="iK"></p></div><div><span>手配先</span><p id="iT"></p></div></div><div class="r"><div><span>在庫評価単価</span><p id="iP"></p></div></div></div>
 <div class="row"><div class="f1"><label class="l">納期（LT）日</label><input type="number" id="lt" min="1"><div class="note" id="ltm"></div></div>
@@ -94,11 +94,12 @@ let fh=null,lastMod=0,timer=null;const auto=()=>document.querySelector('[name=um
 async function loadFH(force){const f=await fh.getFile();if(!force&&f.lastModified===lastMod)return;lastMod=f.lastModified;setData(toItems(dec(await f.arrayBuffer())),`${f.name}　${D.length}件　自動取得（ファイル更新 ${new Date(f.lastModified).toLocaleString('ja-JP')}）`)}
 function startAuto(){clearInterval(timer);timer=setInterval(()=>{if(auto()&&fh)loadFH().catch(()=>{})},30000)}
 async function ready(){if(!fh)return false;return (await fh.queryPermission({mode:'read'}))==='granted'||(await fh.requestPermission({mode:'read'}))==='granted'}
-function ui(){$('bUp').textContent=!auto()?'CSVを読み込んで更新':fh?'今すぐ更新':'共有CSVを選択（初回のみ）';if(!auto())clearInterval(timer)}
+function ui(){$('bUp').textContent=!auto()?'CSVを読み込んで更新':fh?'今すぐ更新':'共有CSVを選択（初回のみ）';if(!auto())clearInterval(timer);$('bCh').hidden=!(auto()&&fh)}
 $('bUp').onclick=async()=>{if(!auto()){$('fi').click();return}
  try{if(!fh){const[x]=await showOpenFilePicker({types:[{description:'CSV',accept:{'text/csv':['.csv','.CSV']}}]});fh=x;await hput(x)}
  if(await ready()){await loadFH(true);startAuto()}ui()}catch(e){if(e.name!=='AbortError')setSt('この画面では自動取得できません。ダウンロードしたHTMLをChrome／Edgeで開いてください。',1)}};
 document.querySelectorAll('[name=um]').forEach(r=>r.onchange=async()=>{try{localStorage.setItem('invMode',auto()?'a':'m')}catch(e){}ui();if(auto()&&!fh){try{fh=await hget();ui()}catch(e){}}if(auto()&&fh){try{if((await fh.queryPermission({mode:'read'}))==='granted'){await loadFH(true);startAuto()}}catch(e){}}});
+$('bCh').onclick=async()=>{try{const[x]=await showOpenFilePicker({types:[{description:'CSV',accept:{'text/csv':['.csv','.CSV']}}]});fh=x;lastMod=0;await hput(x);if(await ready()){await loadFH(true);startAuto()}ui()}catch(e){if(e.name!=='AbortError')setSt('この画面では自動取得できません。ダウンロードしたHTMLをChrome／Edgeで開いてください。',1)}};
 window.addEventListener('focus',()=>{if(auto()&&fh)loadFH().catch(()=>{})});
 try{if(localStorage.getItem('invMode')==='a'){document.querySelector('[name=um][value=a]').checked=true;hget().then(async x=>{fh=x;ui();if(fh&&(await fh.queryPermission({mode:'read'}))==='granted'){await loadFH(true);startAuto()}}).catch(()=>{})}}catch(e){}
 ci=Math.max(D.findIndex(d=>d.m.some(v=>v>0)),0);$('item').value=D[ci].c;pick();setSt(stTxt);ui();
