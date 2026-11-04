@@ -1,599 +1,221 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>計算ロジックの解説</title>
-  <link rel="icon" href="../assets/icons/saboten.png" type="image/png">
-  <style>
-    /* ===== カラー変数 ===== */
-    :root {
-      --bg: #f4f6f9;
-      --card: #fff;
-      --tx: #1d2433;
-      --sub: #667085;
-      --ln: #e3e7ee;
-      --ac: #1f5fbf;
-      --acbg: #e8f0fc;
-      --bar: #7fa6e0;
-      --gr: #18794e;
-      --or: #b54708;
-      --rd: #c0261b;
-      color-scheme: light;
-      padding-top: env(safe-area-inset-top, 0px);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme="light"]) {
-        --bg: #12161d;
-        --card: #1b212b;
-        --tx: #e8ecf3;
-        --sub: #98a2b3;
-        --ln: #2d3644;
-        --ac: #6ea2f0;
-        --acbg: #1d2c47;
-        --bar: #4a73b8;
-        --gr: #4cc38a;
-        --or: #f5a65b;
-        --rd: #ff8f85;
-        color-scheme: dark;
-      }
-    }
-
-    :root[data-theme="dark"] {
-      --bg: #12161d;
-      --card: #1b212b;
-      --tx: #e8ecf3;
-      --sub: #98a2b3;
-      --ln: #2d3644;
-      --ac: #6ea2f0;
-      --acbg: #1d2c47;
-      --bar: #4a73b8;
-      --gr: #4cc38a;
-      --or: #f5a65b;
-      --rd: #ff8f85;
-      color-scheme: dark;
-    }
-
-    /* ===== 基本 ===== */
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--tx);
-      font: 15px/1.7 "Hiragino Sans", "Yu Gothic", Meiryo, system-ui, sans-serif;
-    }
-
-    main {
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 20px 14px 40px;
-    }
-
-    h1 {
-      font-size: 28px;
-      font-weight: 800;
-      margin: 6px 0 4px;
-      padding-left: 14px;
-      border-left: 6px solid var(--ac);
-      line-height: 1.3;
-    }
-
-    .lead {
-      color: var(--sub);
-      margin: 0 0 18px 20px;
-    }
-
-    /* ===== カード ===== */
-    .card {
-      background: var(--card);
-      border: 1px solid var(--ln);
-      border-radius: 12px;
-      padding: 18px;
-      margin-bottom: 16px;
-    }
-
-    h2 {
-      font-size: 18px;
-      margin: 0 0 6px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    h2 b {
-      background: var(--ac);
-      color: #fff;
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      flex: none;
-    }
-
-    .what {
-      color: var(--sub);
-      margin: 0 0 12px;
-    }
-
-    .fx {
-      background: var(--acbg);
-      border-radius: 10px;
-      padding: 12px 14px;
-      font-weight: 700;
-      font-size: 17px;
-      margin: 10px 0;
-      color: var(--ac);
-    }
-
-    .ex {
-      border: 1px dashed var(--ln);
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 14px;
-      margin-top: 10px;
-    }
-
-    .ex b {
-      color: var(--ac);
-    }
-
-    /* ===== SVG ===== */
-    svg {
-      width: 100%;
-      height: auto;
-      display: block;
-      margin: 8px 0;
-    }
-
-    svg text {
-      fill: var(--tx);
-      font-size: 13px;
-      font-family: inherit;
-    }
-
-    svg .s {
-      fill: var(--sub);
-      font-size: 12px;
-    }
-
-    /* ===== 全体の流れ ===== */
-    .flow {
-      display: flex;
-      gap: 6px;
-      align-items: stretch;
-      flex-wrap: wrap;
-      margin: 10px 0;
-    }
-
-    .flow div {
-      flex: 1;
-      min-width: 88px;
-      border: 1px solid var(--ln);
-      border-radius: 10px;
-      padding: 8px;
-      text-align: center;
-      font-size: 13px;
-    }
-
-    .flow div b {
-      display: block;
-      font-size: 13px;
-    }
-
-    .flow i {
-      align-self: center;
-      font-style: normal;
-      color: var(--sub);
-    }
-
-    .flow .e {
-      background: var(--acbg);
-      border-color: var(--ac);
-    }
-
-    /* ===== 棒グラフ ===== */
-    .bars {
-      display: flex;
-      gap: 4px;
-      align-items: flex-end;
-      height: 90px;
-      margin-top: 6px;
-    }
-
-    .bars div {
-      flex: 1;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      align-items: center;
-      min-width: 0;
-    }
-
-    .bars i {
-      display: block;
-      width: 60%;
-      background: var(--bar);
-      border-radius: 3px 3px 0 0;
-    }
-
-    .bars small {
-      font-size: 10px;
-      color: var(--sub);
-      text-align:center;
-      line-height:1.2
-    }
-
-    .bars .yy{
-      font-size:9px
-    }
-
-    /* ===== 説明カラム ===== */
-    .cols {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 12px;
-    }
-
-    .cols > div {
-      border: 1px solid var(--ln);
-      border-radius: 10px;
-      padding: 12px;
-    }
-
-    .cols h4 {
-      margin: 0 0 4px;
-      font-size: 14px;
-      color: var(--ac);
-    }
-
-    .cols p {
-      margin: 0;
-      font-size: 14px;
-    }
-
-    /* ===== スケールバー ===== */
-    .sc {
-      display: flex;
-      margin: 22px 0 4px;
-      position: relative;
-    }
-
-    .sc div {
-      flex: 1;
-      padding: 8px 4px;
-      text-align: center;
-      font-size: 12px;
-      color: #fff;
-      font-weight: 700;
-    }
-
-    .sc small {
-      display: block;
-      font-weight: 400;
-      opacity: .95;
-    }
-
-    .mk {
-      position: absolute;
-      top: -18px;
-      transform: translateX(-50%);
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--tx);
-    }
-
-    .g { background: #2e9e6b; }
-    .b { background: #3b7bd6; }
-    .o { background: #d9822b; }
-    .r { background: #c9382d; }
-
-    /* ===== テーブル ===== */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-
-    th, td {
-      border-bottom: 1px solid var(--ln);
-      padding: 8px;
-      text-align: left;
-    }
-
-    th {
-      color: var(--sub);
-      font-weight: 600;
-      font-size: 12px;
-    }
-
-    .sw {
-      overflow-x: auto;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>判定ロジックの解説</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--tx:#1d2433;--sub:#667085;--ln:#e3e7ee;--ac:#1f5fbf;--acbg:#e8f0fc;--bar:#7fa6e0;--gr:#18794e;--or:#b54708;--rd:#c0261b;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#12161d;--card:#1b212b;--tx:#e8ecf3;--sub:#98a2b3;--ln:#2d3644;--ac:#6ea2f0;--acbg:#1d2c47;--bar:#4a73b8;--gr:#4cc38a;--or:#f5a65b;--rd:#ff8f85;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.7 "Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif}
+main{max-width:820px;margin:0 auto;padding:20px 14px 40px}
+h1{font-size:28px;font-weight:800;margin:6px 0 4px;padding-left:14px;border-left:6px solid var(--ac);line-height:1.3}
+.lead{color:var(--sub);margin:0 0 18px 20px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:18px;margin-bottom:16px}
+h2{font-size:18px;margin:0 0 6px;display:flex;align-items:center;gap:10px}
+h2 b{background:var(--ac);color:#fff;border-radius:50%;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex:none}
+.what{color:var(--sub);margin:0 0 12px}
+.fx{background:var(--acbg);border-radius:10px;padding:10px 14px;font-weight:700;color:var(--ac);margin:10px 0}
+.ex{border:1px dashed var(--ln);border-radius:10px;padding:10px 14px;font-size:14px;margin-top:10px}
+.ex b{color:var(--ac)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:10px 0}
+.cols>div{border:1px solid var(--ln);border-radius:10px;padding:12px}
+.cols h4{margin:0 0 6px;font-size:14px;color:var(--ac)}
+.cols p{margin:6px 0 0;font-size:14px}
+.nums{font-size:13px;color:var(--sub)}.nums b{color:var(--tx);font-size:15px}
+.flow{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap;margin:10px 0}
+.flow div{flex:1;min-width:110px;border:1px solid var(--ln);border-radius:10px;padding:8px;text-align:center;font-size:13px}
+.flow div b{display:block}.flow i{align-self:center;font-style:normal;color:var(--sub)}.flow .e{background:var(--acbg);border-color:var(--ac)}
+.ch{position:relative;display:flex;gap:3px;align-items:flex-end;height:120px;margin:22px 0 4px;border-bottom:1px solid var(--sub)}
+.ch div.c{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0;font-size:10px}
+.ch i{display:block;width:62%;background:var(--bar);border-radius:3px 3px 0 0}
+.ch i.sp{background:var(--rd)}.ch i.fx2{background:var(--gr)}
+.ln{position:absolute;left:0;right:0;border-top:2px dashed var(--or);pointer-events:none}
+.ln span{position:absolute;right:0;top:-18px;font-size:11px;font-weight:700;color:var(--or)}
+.ln.a{border-color:var(--ac)}.ln.a span{color:var(--ac)}
+.cap{font-size:12px;color:var(--sub);text-align:center;margin:0 0 6px}
+.sc{display:flex;margin:22px 0 4px;position:relative}
+.sc div{flex:1;padding:8px 4px;text-align:center;font-size:12px;color:#fff;font-weight:700}
+.sc small{display:block;font-weight:400}
+.g{background:#2e9e6b}.b{background:#3b7bd6}.o{background:#d9822b}.r{background:#c9382d}.k{background:#667085}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border-bottom:1px solid var(--ln);padding:8px;text-align:left;vertical-align:top}
+th{color:var(--sub);font-weight:600;font-size:12px}
+.sw{overflow-x:auto}
+.tg{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:700;color:#fff;white-space:nowrap}
+.w{color:var(--or);font-size:13px}
+</style>
 </head>
-
 <body>
-  <main>
+<main>
+<h1>判定ロジックの解説</h1>
+<p class="lead">「適正在庫 一括判定」で、区分・提案値・在庫状態がどう決まるかを図で説明します。</p>
 
-    <h1>計算ロジックの解説</h1>
-    <p class="lead">適正在庫シミュレーションの各項目が、どう計算されているかを図で説明します。</p>
+<section class="card">
+  <h2>全体の流れ</h2>
+  <p class="what">品目ごとに、過去12カ月の出庫を次の順に処理します。</p>
+  <div class="flow">
+    <div><b>① スパイク除外</b>たまたま多い月を除く</div><i>→</i>
+    <div><b>② 区分を決める</b>出庫月数でA〜D</div><i>→</i>
+    <div class="e"><b>③ 提案値</b>A・Bは計算／他は0</div><i>→</i>
+    <div><b>④ 在庫状態</b>過剰・不足など</div><i>→</i>
+    <div><b>⑤ 参考指標</b>CV・増減トレンド</div><i>→</i>
+    <div class="e"><b>⑥ 担当者が記入</b>決定在庫・理由</div>
+  </div>
+  <p class="what">提案はあくまで目安です。最後に責任者が決めた値と理由を記録し、その記録を見て閾値を調整していきます。</p>
+</section>
 
-    <!-- ===================== 全体の流れ ===================== -->
-    <section class="card">
-      <h2>全体の流れ</h2>
-      <p class="what">過去の出庫実績と納期から、在庫の目安を3つ求めます。</p>
+<section class="card">
+  <h2><b>1</b>標準偏差σ（ばらつき）</h2>
+  <p class="what">毎月の出庫が、平均からどれだけ離れているかを表す数字です。大きいほど、毎月の出庫が不安定です。</p>
+  <div class="fx">σ ＝ √｛ （各月の出庫 − 平均）² の合計 ÷ 11 ｝　（Excelの STDEV.S と同じ）</div>
+  <div class="cols">
+    <div><h4>安定している品目</h4><div class="ch" id="c1"></div><p class="cap">12カ月の出庫（左が古い月）</p><p class="nums">月平均 <b>60</b>　σ <b>1.8</b></p></div>
+    <div><h4>ばらつく品目</h4><div class="ch" id="c2"></div><p class="cap">12カ月の出庫（左が古い月）</p><p class="nums">月平均 <b>60</b>　σ <b>39.3</b></p></div>
+  </div>
+  <p class="what">平均はどちらも60個ですが、ばらつく品目はσが大きく、安全在庫（α × σ × √L）も大きくなります。ただし、たった1カ月だけ飛び抜けて多い場合もσは大きくなります。次の「スパイク除外」はこれを防ぐ処理です。</p>
+</section>
 
-      <div class="flow">
-        <div>過去12カ月の出庫<b>平均・ばらつき</b></div>
-        <i>＋</i>
-        <div>納期（LT）<b>日 ÷ 30</b></div>
-        <i>＋</i>
-        <div>安全係数<b>α</b></div>
-        <i>→</i>
-        <div class="e">① 安全在庫<b>欠品を防ぐ予備</b></div>
-        <i>→</i>
-        <div class="e">② 基準在庫<b>消費分＋予備</b></div>
-        <i>→</i>
-        <div class="e">③ 最大在庫<b>基準＋MOQ</b></div>
-      </div>
+<section class="card">
+  <h2><b>2</b>スパイク除外</h2>
+  <p class="what">年に1〜2回だけの大口出庫で、σと平均が引きずられないようにします。</p>
+  <div class="fx">スパイク ＝ 出庫が「中央値 × 倍率（初期値3）」を超えた月　→　中央値に置き換えて計算</div>
+  <p class="what">中央値は、12カ月を小さい順に並べた真ん中の値です。大口が1〜2回あっても、ほとんど動きません。</p>
+  <div class="cols">
+    <div><h4>除外前</h4><div class="ch" id="c3"></div><p class="cap">赤＝スパイク候補　破線＝しきい値（中央値4 × 3 ＝ 12）</p><p class="nums">月平均 <b>8.5</b>　σ <b>16.2</b>　安全在庫 <b>19</b>　基準在庫 <b>23個</b></p></div>
+    <div><h4>除外後（60 → 4に置換）</h4><div class="ch" id="c4"></div><p class="cap">緑＝中央値に置き換えた月</p><p class="nums">月平均 <b>3.8</b>　σ <b>0.7</b>　安全在庫 <b>1</b>　基準在庫 <b>3個</b></p></div>
+  </div>
+  <div class="ex"><b>計算例</b>　納期14日、α＝1.65　<br>除外前：1.65 × 16.2 × √0.467 ＝ 19、月平均 8.5 × 0.467 ＝ 4 → 4 ＋ 19 ＝ <b>23個</b><br>除外後：1.65 × 0.7 × √0.467 ＝ 1、月平均 3.8 × 0.467 ＝ 2 → 2 ＋ 1 ＝ <b>3個</b>（画面の「除外月」列に除外した月数が出ます）</div>
+  <p class="w">※ 中央値が0の品目はスパイク除外をしません。出庫が少ない品目は、次の「区分」で扱います。</p>
+</section>
 
-      <div class="ex">
-        <b>この解説の計算例</b>
-        　納期7日（0.23カ月）／MOQ 30個／安全係数1.65／過去12カ月の出庫は下図（月平均 627個、ばらつきσ 85）
-        <div class="bars">
-          <div><i style="height:67%"></i><small>10月</small></div>
-          <div><i style="height:74%"></i><small>11月</small></div>
-          <div><i style="height:71%"></i><small>12月</small></div>
-          <div><i style="height:78%"></i><small>1月</small></div>
-          <div><i style="height:76%"></i><small>2月</small></div>
-          <div><i style="height:79%"></i><small>3月</small></div>
-          <div><i style="height:77%"></i><small>4月</small></div>
-          <div><i style="height:74%"></i><small>5月</small></div>
-          <div><i style="height:76%"></i><small>6月</small></div>
-          <div><i style="height:95%"></i><small>7月</small></div>
-          <div><i style="height:97%"></i><small>8月</small></div>
-          <div><i style="height:100%"></i><small>9月</small></div>
-        </div>
-      </div>
-    </section>
+<section class="card">
+  <h2><b>3</b>区分（A〜D）</h2>
+  <p class="what">12カ月のうち、出庫があった月の数（出庫月数）で、品目の動き方を4つに分けます。</p>
+  <div class="sc"><div class="g">9カ月以上<small>A 定常</small></div><div class="b">5〜8カ月<small>B 変動</small></div><div class="o">2〜4カ月<small>C 間欠</small></div><div class="r">0〜1カ月<small>D 稀少</small></div></div>
+  <p class="cap">区分の閾値（AとBの境目は画面上部で変更できます）</p>
+  <div class="cols">
+    <div><h4>A 定常の例（出庫月数12）</h4><div class="ch" id="c5"></div></div>
+    <div><h4>C 間欠の例（出庫月数2）</h4><div class="ch" id="c6"></div></div>
+  </div>
+  <div class="sw"><table>
+    <tr><th>区分</th><th>どんな品目か</th></tr>
+    <tr><td><span class="tg k">D 一品</span></td><td>CSVの「一品」が付いた品目（受注ごとの手配）。出庫月数に関係なく在庫を持たない扱い</td></tr>
+    <tr><td><span class="tg k">対象外</span></td><td>CSVの「在庫管理」が空欄の品目</td></tr>
+    <tr><td><span class="tg g">A 定常</span></td><td>ほぼ毎月動く。計算式がよく当てはまる</td></tr>
+    <tr><td><span class="tg b">B 変動</span></td><td>半年以上は動く。計算式を使うが、スパイク除外が効く</td></tr>
+    <tr><td><span class="tg o">C 間欠</span></td><td>年に数回だけ動く。大口が多く、式では過大になりやすい</td></tr>
+    <tr><td><span class="tg r">D 稀少</span></td><td>ほとんど動かない。持つ理由が乏しい</td></tr>
+  </table></div>
+</section>
 
-    <!-- ===================== 1 安全在庫数 ===================== -->
-    <section class="card">
-      <h2><b>1</b>安全在庫数</h2>
-      <p class="what">需要が急に増えても欠品しないための予備在庫です。</p>
+<section class="card">
+  <h2><b>4</b>区分ごとの提案値</h2>
+  <p class="what">区分によって、提案の出し方を変えます。</p>
+  <div class="sw"><table>
+    <tr><th>区分</th><th>提案 基準在庫</th><th>提案 MAX</th></tr>
+    <tr><td>A・B</td><td>スパイク除外後の「月平均 × L ＋ 安全在庫」</td><td>基準在庫 ＋ MOQ</td></tr>
+    <tr><td>C・D・一品・対象外</td><td><b>0（在庫を持たず、都度手配）</b></td><td>－</td></tr>
+  </table></div>
+  <p class="what" style="margin-top:12px">たとえば「年に2回だけ30個・25個出る」品目は、従来の式では基準在庫16個と出ます。新しい判定では区分Cになり、提案は0個になります。</p>
+  <div class="cols">
+    <div><h4>年2回だけ大口の例</h4><div class="ch" id="c7"></div><p class="cap">出庫月数2 → 区分C</p><p class="nums">従来の式 <b>16個</b>　→　新しい提案 <b>0個</b></p></div>
+  </div>
+  <p class="w">※ 「念のため少し持ちたい」品目は、担当者が決定在庫数に書き込みます（理由：長納期のため念のため保有 など）。</p>
+</section>
 
-      <div class="fx">安全在庫 ＝ α × σ × √L</div>
+<section class="card">
+  <h2><b>5</b>在庫状態</h2>
+  <p class="what">CSVの現在庫と発注残を、提案値と比べて判定します。上から順に調べ、最初に当てはまったものになります。</p>
+  <div class="sw"><table>
+    <tr><th>順</th><th>状態</th><th>条件</th><th>見方</th></tr>
+    <tr><td>1</td><td><span class="tg r">不良在庫候補</span></td><td>在庫あり、かつ12カ月の出庫がすべて0</td><td>動いていない在庫。先に使う・再発注しない候補</td></tr>
+    <tr><td>2</td><td><span class="tg o">過剰</span></td><td>在庫 ＞ 提案基準在庫</td><td>提案より多く持っている</td></tr>
+    <tr><td>3</td><td><span class="tg o">不足</span></td><td>A・Bで、在庫 ＋ 発注残 ＜ 提案基準在庫</td><td>発注済み分を足しても足りない</td></tr>
+    <tr><td>4</td><td><span class="tg g">適正</span></td><td>上のどれにも当てはまらない</td><td>提案の範囲内</td></tr>
+  </table></div>
+  <div class="ex"><b>例</b>　区分Cで提案0、在庫が5個 → 在庫 ＞ 提案 なので<b>過剰</b>。区分Aで提案30、在庫20、発注残5 → 25 ＜ 30 なので<b>不足</b>。</div>
+</section>
 
-      <div class="cols">
-        <div>
-          <h4>α　安全係数</h4>
-          <p>欠品をどこまで許すか。大きいほど手厚くなります。</p>
-        </div>
-        <div>
-          <h4>σ　標準偏差</h4>
-          <p>過去12カ月の出庫のばらつき。Excelの STDEV.S と同じです。</p>
-        </div>
-        <div>
-          <h4>L　納期（月換算）</h4>
-          <p>納期の日数 ÷ 30。納期が長いほど予備が増えます。</p>
-        </div>
-      </div>
+<section class="card">
+  <h2><b>6</b>参考指標：需要変動（CV）と増減トレンド</h2>
+  <p class="what">詳細画面で1品目ずつ判断するときの参考指標です。区分・提案値・在庫状態には影響しません。一覧には、CVとトレンドの列、およびトレンドの絞り込みがあります。</p>
 
-      <svg viewBox="0 0 600 190" role="img" aria-label="需要の分布と安全在庫">
-        <!-- 安全在庫の領域（青） -->
-        <polygon points="300.0,150 300.0,30.0 304.0,30.1 308.0,30.6 312.0,31.3 316.0,32.4 320.0,33.7 324.0,35.3 328.0,37.1 332.0,39.2 336.0,41.6 340.0,44.1 344.0,46.8 348.0,49.8 352.0,52.9 356.0,56.1 360.0,59.4 364.0,62.9 368.0,66.4 372.0,70.0 376.0,73.6 380.0,77.2 384.0,80.9 388.0,84.5 392.0,88.1 396.0,91.6 400.0,95.1 404.0,98.5 408.0,101.8 412.0,105.0 416.0,108.1 420.0,111.0 424.0,113.9 428.0,116.6 432.0,119.2 432.0,150"
-                 fill="var(--ac)" opacity=".28"/>
-        <!-- 欠品の領域（赤） -->
-        <polygon points="432.0,150 432.0,119.2 435.9,121.6 439.8,123.9 443.6,126.1 447.5,128.1 451.4,130.0 455.2,131.7 459.1,133.4 463.0,134.9 466.9,136.4 470.8,137.7 474.6,138.9 478.5,140.0 482.4,141.1 486.2,142.0 490.1,142.9 494.0,143.7 497.9,144.4 501.8,145.0 505.6,145.6 509.5,146.1 513.4,146.6 517.2,147.0 521.1,147.4 525.0,147.7 528.9,148.0 532.8,148.3 536.6,148.5 540.5,148.7 544.4,148.9 548.2,149.0 552.1,149.2 556.0,149.3 556.0,150"
-                 fill="var(--rd)" opacity=".4"/>
-        <!-- 正規分布の曲線 -->
-        <polyline points="44,149.3 52,149.0 60,148.7 68,148.2 76,147.6 84,146.9 92,145.9 100,144.7 108,143.3 116,141.5 124,139.3 132,136.8 140,133.8 148,130.3 156,126.3 164,121.7 172,116.6 180,111.0 188,105.0 196,98.5 204,91.6 212,84.5 220,77.2 228,70.0 236,62.9 244,56.1 252,49.8 260,44.1 268,39.2 276,35.3 284,32.4 292,30.6 300,30.0 308,30.6 316,32.4 324,35.3 332,39.2 340,44.1 348,49.8 356,56.1 364,62.9 372,70.0 380,77.2 388,84.5 396,91.6 404,98.5 412,105.0 420,111.0 428,116.6 436,121.7 444,126.3 452,130.3 460,133.8 468,136.8 476,139.3 484,141.5 492,143.3 500,144.7 508,145.9 516,146.9 524,147.6 532,148.2 540,148.7 548,149.0 556,149.3"
-                  fill="none" stroke="var(--tx)" stroke-width="2"/>
-        <!-- 軸・補助線 -->
-        <line x1="44" y1="150" x2="556" y2="150" stroke="var(--sub)"/>
-        <line x1="300" y1="22" x2="300" y2="150" stroke="var(--sub)" stroke-dasharray="4 3"/>
-        <line x1="432" y1="60" x2="432" y2="150" stroke="var(--rd)" stroke-dasharray="4 3"/>
-        <!-- ラベル -->
-        <text x="300" y="16" text-anchor="middle">平均の需要</text>
-        <text x="366" y="172" text-anchor="middle" fill="var(--ac)" style="fill:var(--ac);font-weight:700">安全在庫（α×σ×√L）</text>
-        <text x="494" y="108" text-anchor="middle" style="fill:var(--rd);font-weight:700">欠品の</text>
-        <text x="494" y="125" text-anchor="middle" style="fill:var(--rd);font-weight:700">可能性 5%</text>
-      </svg>
+  <h4 style="margin:14px 0 0;color:var(--ac)">需要変動（CV）</h4>
+  <p class="what">出庫の安定度を見る指標です。値が小さいほど安定しています。提案値と同じ、スパイク除外後の値で計算します。</p>
+  <div class="fx">CV ＝ 標準偏差σ ÷ 月平均使用量（スパイク除外後）</div>
+  <div class="sc"><div class="g">0.5以下<small>安定需要</small></div><div class="b">0.5〜0.8<small>軽度の変動</small></div><div class="o">0.8〜1.0<small>中度の変動</small></div><div class="r">1.0以上<small>変動大</small></div></div>
+  <div class="sw"><table>
+    <tr><th>判定</th><th>詳細画面に出るメッセージ</th></tr>
+    <tr><td><span class="tg g">安定需要</span></td><td>安定需要 ⇒ 適した方式：発注点<br>毎月の使用量のブレが小さいため、欠品や過剰在庫のリスクが少なく安心して運用できます。</td></tr>
+    <tr><td><span class="tg b">軽度の変動</span></td><td>適した方式：発注点<br>毎月の使用量に軽度の変動があります。安全係数を少し高めに設定するか、定期的な基準見直しを推奨します。</td></tr>
+    <tr><td><span class="tg o">中度の変動</span></td><td>適した方式：所要量検討<br>毎月の使用量に中度の変動があります。定期的に需要トレンドをチェックする必要があります。</td></tr>
+    <tr><td><span class="tg r">変動大</span></td><td>適した発注方式：所要量<br>毎月の使用量の変動が大きいため、過剰在庫や欠品のリスクに注意してください。</td></tr>
+  </table></div>
+  <p class="w">※ 一括判定には手配方式（発注点／所要量）の選択がないため、「適した方式」は参考表示です。月平均が0の品目は「判定不可（使用実績がありません）」になります。</p>
 
-      <div class="sw">
-        <table>
-          <tr>
-            <th>欠品を許す割合</th>
-            <th>安全係数</th>
-            <th>目安</th>
-          </tr>
-          <tr>
-            <td>1%</td>
-            <td>2.33</td>
-            <td>欠品すると生産ラインが止まる主要部品</td>
-          </tr>
-          <tr>
-            <td>2%</td>
-            <td>2.06</td>
-            <td>調達が難しく代替がきかない部品</td>
-          </tr>
-          <tr>
-            <td>5%</td>
-            <td>1.65</td>
-            <td>通常の標準部品・資材（初期値）</td>
-          </tr>
-          <tr>
-            <td>10%</td>
-            <td>1.29</td>
-            <td>汎用品・すぐ代替手配できる品目</td>
-          </tr>
-        </table>
-      </div>
+  <h4 style="margin:18px 0 0;color:var(--ac)">増減トレンド</h4>
+  <p class="what">直近の需要が、ふだんより増えているか減っているかを見つける指標です。</p>
+  <div class="fx">トレンド ＝ 直近3カ月の月平均 ÷ 12カ月の月平均</div>
+  <div class="sc"><div class="o">0.8未満<small>減少傾向 ↘</small></div><div class="g">0.8〜1.2<small>安定 →</small></div><div class="o">1.2以上<small>増加傾向 ↗</small></div></div>
+  <p class="cap">0.5未満・1.5以上は、一覧・詳細画面の表示が赤になります</p>
+  <div class="sw"><table>
+    <tr><th>判定</th><th>詳細画面に出るメッセージ</th></tr>
+    <tr><td><span class="tg o">増加傾向 ↗</span></td><td>直近３カ月の平均使用量は過去１年平均に比べて増加しています。安全係数の引き上げや基準在庫のプラス補正を検討ください。</td></tr>
+    <tr><td><span class="tg o">減少傾向 ↘</span></td><td>直近３カ月の平均使用量は過去１年平均に比べて減少しています。過剰在庫を防ぐため基準在庫のマイナス補正を検討ください。</td></tr>
+    <tr><td><span class="tg g">安定 →</span></td><td>直近３カ月の平均使用量は過去１年平均と同水準で安定しています。</td></tr>
+  </table></div>
 
-      <div class="ex">
-        <b>計算例</b>
-        　1.65 × 85 × √0.233 ＝ 1.65 × 85 × 0.483 ＝ <b>68個</b>（小数点以下は切り上げ）
-      </div>
-    </section>
+  <h4 style="margin:18px 0 0;color:var(--ac)">トレンドの基準（除外前／除外後）</h4>
+  <p class="what">トレンドの計算に使う出庫を、切り替えられます。上部の設定でも、詳細画面でも切り替えられ、両方連動します。</p>
+  <div class="sw"><table>
+    <tr><th>基準</th><th>内容</th><th>向いている見方</th></tr>
+    <tr><td><b>除外前の実績</b>（初期）</td><td>実際の出庫そのままで計算</td><td>直近の大口も「増加」の兆候として捉えたいとき</td></tr>
+    <tr><td><b>スパイク除外後</b></td><td>大口の月を中央値に置き換えて計算</td><td>一時的な特需に引きずられず、ふだんの流れを見たいとき</td></tr>
+  </table></div>
+  <div class="cols">
+    <div><h4>除外前の実績</h4><div class="ch" id="c8"></div><p class="cap">赤＝スパイク（直近の月に大口）</p><p class="nums">CV <b>0.94</b>（中度の変動）　トレンド <b>1.81</b>（増加傾向 ↗）</p></div>
+    <div><h4>除外後（60 → 11に置換）</h4><div class="ch" id="c9"></div><p class="cap">緑＝中央値に置き換えた月</p><p class="nums">CV <b>0.08</b>（安定需要）　トレンド <b>1.00</b>（安定 →）</p></div>
+  </div>
+  <div class="ex"><b>計算例</b>　12カ月の出庫：10, 12, 11, 10, 12, 11, 10, 12, 11, 10, 12, <b>60</b><br>
+    除外前：月平均 15.1、σ 14.2 → CV ＝ 14.2 ÷ 15.1 ＝ <b>0.94</b>／直近3カ月（10, 12, 60）の平均 27.3 ÷ 15.1 ＝ <b>1.81</b>（増加傾向）<br>
+    除外後：中央値 11、しきい値 33 → 60を11に置換。月平均 11、σ 0.85 → CV ＝ <b>0.08</b>／直近3カ月（10, 12, 11）の平均 11 ÷ 11 ＝ <b>1.00</b>（安定）</div>
+  <p class="what" style="margin-top:12px">このように、直近の大口が1回あっただけで、除外前では「増加傾向」、除外後では「安定」と判定が分かれます。どちらが妥当かは、責任者が詳細画面で両方を見比べて判断します。CVは提案値と同じ除外後の値で固定ですが、詳細画面の比較表では除外前のCVも確認できます。</p>
+  <p class="w">※ 直近3カ月にスパイクがある品目では、詳細画面に注意書きが出ます。</p>
+</section>
 
-    <!-- ===================== 2 基準在庫数 ===================== -->
-    <section class="card">
-      <h2><b>2</b>基準在庫数</h2>
-      <p class="what">納期の間に使う分と、予備の合計です。発注の目安になる在庫数です。</p>
+<section class="card">
+  <h2><b>7</b>担当者の記入と見直し</h2>
+  <p class="what">黄色い列に責任者の判断を書き、提案値とのずれから閾値を調整します。</p>
+  <div class="cols">
+    <div><h4>決定在庫数</h4><p>責任者が決めた在庫数。「提案値を入力」ボタンで空欄を提案値で埋められます。</p></div>
+    <div><h4>理由（選択式）</h4><p>大口、入荷遅延、ロット発注、ついで買い、念のため保有、不良在庫化、仕様変更、提案どおり。</p></div>
+    <div><h4>備考（自由記入）</h4><p>選択肢にない事情や、次回の見直しメモ。</p></div>
+  </div>
+  <div class="ex"><b>見直しの例</b>　区分Cで「念のため保有」が多ければ、Cの提案を0にしない運用を検討します。「ついで買い」が多ければ、その分を除く考え方を足します。書き出したCSVの区分別・理由別の件数を数えるのが出発点です。</div>
+</section>
+</main>
 
-      <div class="fx">基準在庫 ＝ 月平均使用量 × L ＋ 安全在庫</div>
-
-      <svg viewBox="0 0 520 90" role="img" aria-label="基準在庫の内訳">
-        <rect x="40" y="30" width="301" height="36" rx="4" fill="var(--bar)"/>
-        <rect x="341" y="30" width="139" height="36" rx="4" fill="var(--ac)"/>
-        <text x="40" y="22">納期中の消費　147個</text>
-        <text x="341" y="22" style="fill:var(--ac);font-weight:700">安全在庫　68個</text>
-        <text x="40" y="84" class="s">合計 ＝ 基準在庫　215個</text>
-      </svg>
-
-      <div class="cols">
-        <div>
-          <h4>発注点方式</h4>
-          <p>在庫がこの数を下回ったら、すぐに発注します。</p>
-        </div>
-        <div>
-          <h4>所要量方式</h4>
-          <p>この数を維持するように、毎日「基準在庫 − 現在在庫 ＋ 所要量」を手配します。</p>
-        </div>
-      </div>
-
-      <div class="ex">
-        <b>計算例</b>
-        　627 × 0.233 ＝ 147個　→　147 ＋ 68 ＝ <b>215個</b>
-      </div>
-    </section>
-
-    <!-- ===================== 3 最大在庫数 ===================== -->
-    <section class="card">
-      <h2><b>3</b>最大在庫数</h2>
-      <p class="what">入荷した直後に想定される、いちばん多い在庫水準です。発注点方式だけで使います。</p>
-
-      <div class="fx">最大在庫 ＝ 基準在庫 ＋ MOQ（最小注文数）</div>
-
-      <svg viewBox="0 0 640 200" role="img" aria-label="在庫の推移イメージ">
-        <!-- 水準線 -->
-        <line x1="20" y1="30" x2="520" y2="30" stroke="var(--ac)" stroke-dasharray="5 4"/>
-        <line x1="20" y1="80" x2="520" y2="80" stroke="var(--or)" stroke-dasharray="5 4"/>
-        <line x1="20" y1="150" x2="520" y2="150" stroke="var(--rd)" stroke-dasharray="5 4"/>
-        <!-- 在庫推移 -->
-        <polyline points="30,30 130,80 270,150 270,30 370,80 510,150"
-                  fill="none" stroke="var(--tx)" stroke-width="2.5"/>
-        <circle cx="130" cy="80" r="5" fill="var(--or)"/>
-        <circle cx="270" cy="30" r="5" fill="var(--ac)"/>
-        <!-- ラベル -->
-        <text x="528" y="34">最大在庫 245</text>
-        <text x="528" y="84">基準在庫 215</text>
-        <text x="528" y="154">安全在庫 68</text>
-        <text x="134" y="68" style="fill:var(--or);font-weight:700">発注</text>
-        <text x="276" y="48" style="fill:var(--ac);font-weight:700">入荷・補充</text>
-        <!-- 納期の矢印 -->
-        <line x1="130" y1="176" x2="270" y2="176" stroke="var(--sub)"/>
-        <text x="200" y="194" text-anchor="middle" class="s">納期（LT）</text>
-      </svg>
-
-      <div class="cols">
-        <div>
-          <h4>発注点方式</h4>
-          <p>基準在庫まで減ったら発注し、納期の間に消費しながら入荷を待ちます。入荷で最大在庫まで補充されます。</p>
-        </div>
-        <div>
-          <h4>所要量方式</h4>
-          <p>毎日必要な分だけ手配するため、最大在庫は設定しません（表示は「設定不要」）。</p>
-        </div>
-      </div>
-
-      <div class="ex">
-        <b>計算例</b>
-        　215 ＋ 30 ＝ <b>245個</b>
-      </div>
-    </section>
-
-    <!-- ===================== 4 需要変動係数（CV） ===================== -->
-    <section class="card">
-      <h2><b>4</b>需要変動係数（CV）</h2>
-      <p class="what">出庫の安定度を見る指標です。値が小さいほど安定し、機械的な手配に向きます。</p>
-
-      <div class="fx">CV ＝ 標準偏差σ ÷ 月平均使用量</div>
-
-      <div class="sc">
-        <span class="mk" style="left:6.8%">▼ 0.14</span>
-        <div class="g">0.5以下<small>安定需要</small></div>
-        <div class="b">0.5〜0.8<small>軽度の変動</small></div>
-        <div class="o">0.8〜1.0<small>中度の変動</small></div>
-        <div class="r">1.0以上<small>変動大</small></div>
-      </div>
-
-      <div class="cols">
-        <div><h4>安定需要（0.5以下）</h4>
-          <p>毎月の出庫がほぼ一定です。発注点方式・所要量方式のどちらでも運用できます。</p>
-        </div>
-        <div><h4>軽度の変動（0.5〜0.8）</h4>
-          <p>月によって多少ばらつきます。発注点方式が向いています。安全係数は少し高めにします。</p>
-        </div>
-        <div><h4>中度の変動（0.8〜1.0）</h4>
-          <p>ばらつきが大きめです。所要量方式への移行を検討します。</p>
-        </div>
-        <div><h4>変動大（1.0以上）</h4>
-          <p>出庫が不規則です。所要量方式、または都度手配が安全です。</p>
-        </div>
-      </div>
-
-      <div class="ex">
-        <b>計算例</b>
-        　85 ÷ 627 ＝ <b>0.14</b>　→　安定需要
-      </div>
-    </section>
-
-    <!-- ===================== 5 増減トレンド ===================== -->
-    <section class="card">
-      <h2><b>5</b>増減トレンド</h2>
-      <p class="what">直近の需要が、ふだんより増えているか減っているかを見つける指標です。</p>
-
-      <div class="fx">トレンド ＝ 直近3カ月の月平均 ÷ 過去12カ月の月平均</div>
-
-      <div class="sc">
-        <span class="mk" style="left:60.7%">▼ 1.21</span>
-        <div class="r">0.5未満<small>減少傾向 ↘</small></div>
-        <div class="o">0.5〜0.8<small>減少傾向 ↘</small></div>
-        <div class="g">0.8〜1.2<small>安定 →</small></div>
-        <div class="o">1.2〜1.5<small>増加傾向 ↗</small></div>
-        <div class="r">1.5以上<small>増加傾向 ↗</small></div>
-      </div>
-
-      <div class="cols">
-        <div><h4>安定（0.8〜1.2）</h4>
-          <p>直近の消費はふだんどおりです。現状の設定で運用できます。</p>
-        </div>
-        <div><h4>増加傾向（1.2以上）</h4>
-          <p>欠品の恐れがあります。安全係数を上げるか、基準在庫を多めにします。1.5以上は赤で、特に注意が必要です。</p>
-        </div>
-        <div><h4>減少傾向（0.8未満）</h4>
-          <p>在庫が余る恐れがあります。基準在庫の引き下げを検討します。0.5未満は赤で、特に注意が必要です。</p>
-        </div>
-      </div>
-
-      <div class="ex">
-        <b>計算例</b>
-        　直近3カ月（7〜9月）の平均 760 ÷ 627 ＝ <b>1.21</b>　→　増加傾向 ↗
-      </div>
-    </section>
-
-  </main>
+<script>
+function ch(id,v,o){
+  o=o||{};
+  const mx=Math.max(...v,o.line||0,1)*1.05;
+  let h=v.map((x,i)=>`<div class="c">${x>0?x:''}<i class="${(o.cls&&o.cls[i])||''}" style="height:${Math.max(x/mx*88,x>0?2:0)}%"></i></div>`).join('');
+  if(o.line)h+=`<div class="ln" style="bottom:${o.line/mx*88}%"><span>${o.lab}</span></div>`;
+  if(o.avg)h+=`<div class="ln a" style="bottom:${o.avg/mx*88}%"><span>${o.alab}</span></div>`;
+  document.getElementById(id).innerHTML=h;
+}
+const sp={7:'sp'};
+ch('c1',[58,62,60,61,59,60,63,57,60,62,58,60],{avg:60,alab:'平均60'});
+ch('c2',[10,110,20,100,60,90,30,120,40,80,50,10],{avg:60,alab:'平均60'});
+ch('c3',[3,4,3,5,4,3,4,60,4,3,5,4],{cls:sp,line:12,lab:'しきい値12'});
+ch('c4',[3,4,3,5,4,3,4,4,4,3,5,4],{cls:{7:'fx2'}});
+ch('c5',[58,62,60,61,59,60,63,57,60,62,58,60]);
+ch('c6',[0,0,0,30,0,0,0,0,25,0,0,0]);
+ch('c7',[0,0,0,30,0,0,0,0,25,0,0,0]);
+ch('c8',[10,12,11,10,12,11,10,12,11,10,12,60],{cls:{11:'sp'},avg:15.1,alab:'平均15.1'});
+ch('c9',[10,12,11,10,12,11,10,12,11,10,12,11],{cls:{11:'fx2'},avg:11,alab:'平均11'});
+</script>
 </body>
-
 </html>
