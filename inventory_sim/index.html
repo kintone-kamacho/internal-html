@@ -47,7 +47,7 @@ td.tv{background:var(--vbg)}
 .tg.cg{background:var(--chgbg);color:var(--tx);box-shadow:inset 0 0 0 1px var(--chgln)}
 .msg.b{background:var(--lbbg);color:var(--lb)}
 .fb{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
-.btn:disabled{opacity:.45;cursor:not-allowed}.rg{display:flex;gap:4px;align-items:center}.rg input{width:70px}.rg select{width:auto}
+.cm{font-weight:700;color:var(--wn)}[data-w]{border-radius:8px;padding:6px}[data-w].pd{outline:2px solid var(--ac);outline-offset:1px}.btn:disabled{opacity:.45;cursor:not-allowed}.rg{display:flex;gap:4px;align-items:center}.rg input{width:70px}.rg select{width:auto}
 .fxv{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.fxv span{padding:3px 10px;border-radius:99px;background:var(--acbg);color:var(--ac);font-weight:700;font-size:12px}
 td select.md{width:90px}
 .pg{display:flex;gap:10px;align-items:center;margin-top:8px}
@@ -394,7 +394,17 @@ function setD(k,v){
   applyP(DR.p,k,v,D.find(x=>x.c===cur));
   updBar();
 }
+function paintCtl(){
+  const dp=(DR&&DR.c===cur)?DR.p:ovr(cur),ap=ovr(cur);
+  Object.keys(PN).forEach(k=>{
+    const w=document.querySelector('#dv [data-w="'+k+'"]');if(!w)return;
+    const ch=dp[k]!==undefined,pd=JSON.stringify(dp[k])!==JSON.stringify(ap[k]);
+    w.classList.toggle('chg',ch);w.classList.toggle('pd',pd);
+    const m=w.querySelector('.cm');if(m)m.textContent=(ch?'（変更済）':'')+(pd?'（未反映）':'');
+  });
+}
 function updBar(){
+  paintCtl();
   const t=pdText(cur),on=!!t;
   ['pdn1','pdn2'].forEach(i=>{const e=$(i);if(e){e.hidden=!on;e.textContent=t}});
 }
@@ -485,12 +495,13 @@ function renderD(){
     <div class="pr"><div><span>品名</span><p>${esc(r.n)}</p></div><div><span>仕様</span><p>${esc(r.s)||'－'}</p></div><div><span>メーカー</span><p>${esc(r.k)||'－'}</p></div><div><span>手配先</span><p>${esc(r.t)||'－'}</p></div><div><span>在庫評価単価</span><p>${fmt(r.pr)}円</p></div></div>
     <div class="sum" style="margin-top:8px">${chn.length?`<span class="tg cg" style="font-size:12px;padding:3px 10px">変更あり：${chn.join('・')}</span>`:''}<span>方式 ${op?'発注点方式':'所要量方式'}</span><span>区分 ${r.cls}</span><span>在庫状態 ${r.stt}</span><span>納期 ${r.lt}日</span><span>最小ロット ${r.moq}</span><span>安全係数 ${al}</span><span>現行 基準 ${fmt(r.pb)}／最大 ${fmt(r.px)}</span></div>
     <div class="card" style="margin:12px 0 0;border-color:var(--ac)"><h2 class="d"><b>設</b>判定方式・個別設定<span class="note" style="font-weight:400">変更したら、画面下の「更新する」で再計算します</span></h2>
+      <div class="note">黄色の枠＝初期値から変更／青い枠＝まだ計算に反映していない変更（元の値に戻すと枠も消えます）</div>
       <div class="msg o" id="pdn1" ${pdn?'':'hidden'}>${pdn}</div>
       <div class="dn">
-        <div class="${cM?'chg':''}"><label class="l">手配方式${cM?'（変更済）':''}</label><span class="um"><label><input type="radio" name="pmd" data-p="md" value="req" ${cMd==='op'?'':'checked'}>所要量方式</label><label><input type="radio" name="pmd" data-p="md" value="op" ${cMd==='op'?'checked':''}>発注点方式</label></span></div>
-        <div class="${cL?'chg':''}"><label class="l">納期（LT）日${cL?'（変更済）':''}　<span class="note">データ値 ${r.lt0}日 ＝ ${(r.lt0/30).toFixed(2)}カ月</span></label><input type="number" id="pLt" min="0" data-p="lt" value="${cLt}"></div>
-        <div class="${cQ?'chg':''}"><label class="l">最小注文数（MOQ）${esc(u)}${cQ?'（変更済）':''}　<span class="note">データ値 ${r.moq0}</span></label><input type="number" id="pMq" min="0" data-p="moq" value="${cMq}"></div>
-        <div class="${cA?'chg':''}"><label class="l">安全係数（α）${cA?'（変更済）':''}</label><select data-p="al">${[[2.33,'許容率 1%　欠品すると生産ラインが即停止する主要部品'],[2.06,'許容率 2%　調達が難しく代替がきかない部品'],[1.65,'許容率 5%　通常の標準部品・資材（初期値）'],[1.29,'許容率10%　汎用品・即時代替手配が可能な品目']].map(x=>`<option value="${x[0]}"${x[0]===cAl?' selected':''}>${x[1]}</option>`).join('')}</select></div>
+        <div data-w="md"><label class="l">手配方式<span class="cm"></span></label><span class="um"><label><input type="radio" name="pmd" data-p="md" value="req" ${cMd==='op'?'':'checked'}>所要量方式</label><label><input type="radio" name="pmd" data-p="md" value="op" ${cMd==='op'?'checked':''}>発注点方式</label></span></div>
+        <div data-w="lt"><label class="l">納期（LT）日<span class="cm"></span>　<span class="note">データ値 ${r.lt0}日 ＝ ${(r.lt0/30).toFixed(2)}カ月</span></label><input type="number" id="pLt" min="0" data-p="lt" value="${cLt}"></div>
+        <div data-w="moq"><label class="l">最小注文数（MOQ）${esc(u)}<span class="cm"></span>　<span class="note">データ値 ${r.moq0}</span></label><input type="number" id="pMq" min="0" data-p="moq" value="${cMq}"></div>
+        <div data-w="al"><label class="l">安全係数（α）<span class="cm"></span></label><select data-p="al">${[[2.33,'許容率 1%　欠品すると生産ラインが即停止する主要部品'],[2.06,'許容率 2%　調達が難しく代替がきかない部品'],[1.65,'許容率 5%　通常の標準部品・資材（初期値）'],[1.29,'許容率10%　汎用品・即時代替手配が可能な品目']].map(x=>`<option value="${x[0]}"${x[0]===cAl?' selected':''}>${x[1]}</option>`).join('')}</select></div>
       </div>
       
     </div>
@@ -524,7 +535,7 @@ function renderD(){
   </section>
   <section class="card"><h2 class="d"><b>6</b>参考指標・トレンド分析</h2>
     <p class="wh">需要変動（CV）はスパイク除外後の値です。増減トレンドの基準は、品目ごとに切り替えられます。</p>
-    <div class="${cT?'chg':''}" style="width:fit-content;margin-bottom:6px"><span class="um"><label><input type="radio" name="ptm" data-p="tm" value="raw" ${cTm==='raw'?'checked':''}>除外前の実績（初期）</label><label><input type="radio" name="ptm" data-p="tm" value="adj" ${cTm==='adj'?'checked':''}>スパイク除外後</label></span>${cT?' <span class="note">（変更済）</span>':''} <span class="note">切り替えたら画面下の「更新する」で反映します</span></div>
+    <div data-w="tm" style="width:fit-content;margin-bottom:6px"><span class="um"><label><input type="radio" name="ptm" data-p="tm" value="raw" ${cTm==='raw'?'checked':''}>除外前の実績（初期）</label><label><input type="radio" name="ptm" data-p="tm" value="adj" ${cTm==='adj'?'checked':''}>スパイク除外後</label></span><span class="cm"></span> <span class="note">切り替えたら画面下の「更新する」で反映します</span></div>
     <div class="ind">
       <div><span>年間使用量 ／ 月平均</span><strong>${fmt(tot)}${u}</strong>／ 月平均 ${fmt(tot/12)}${u}</div>
       <div><span>需要変動（CV・除外後）</span><strong>${ci.l}</strong><i class="tg ${ci.c}" style="font-style:normal">${cvA===null?'－':cvA.toFixed(2)}</i><div class="note">${ci.m}</div></div>
@@ -547,6 +558,7 @@ function renderD(){
     <div class="row" style="gap:8px"><button type="button" class="btn" id="bUp">更新する</button><button type="button" class="btn" id="bUpBk">更新して一覧に戻る</button><button type="button" class="btn s" id="bNo">更新せずに戻る</button><button type="button" class="btn s" id="pr" style="margin-left:auto;color:var(--rd);border-color:var(--rd)">この品目の設定を初期値に戻す</button></div>
     <p class="note" style="margin:6px 0 0">「判定方式・個別設定」と「トレンドの基準」は、「更新する」を押すと選んだ設定で計算しなおして表示します（設定をすべて初期値に戻した場合も、ここで更新します）。担当者・理由・備考は入力すると自動で保存されます。</p>
   </section>`;
+  paintCtl();
 }
 
 /* ============ CSV読込（手動／自動）・取込データの保存 ============ */
