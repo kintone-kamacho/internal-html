@@ -118,12 +118,13 @@ h2.d b{background:var(--ac);color:#fff;border-radius:50%;width:24px;height:24px;
         <span>スパイク判定 <button type="button" class="hp" tabindex="-1" data-h="sp" title="クリックで説明を表示">?</button></span>
         <span>CVの基準 <button type="button" class="hp" tabindex="-1" data-h="cv" title="クリックで説明を表示">?</button></span>
         <span>トレンドの基準 <button type="button" class="hp" tabindex="-1" data-h="tm" title="クリックで説明を表示">?</button></span>
+        <span>区分 <button type="button" class="hp" tabindex="-1" data-h="ku" title="クリックで説明を表示">?</button></span>
       </div>
-      <div class="note" style="margin-top:3px">方式・納期・最小ロット・安全係数・トレンドの基準は、品目を開いた個別画面で品目ごとに変更できます。</div></div>
+      <div class="note" style="margin-top:3px">方式・納期・最小ロット・安全係数・スパイク除去・区分の扱い・トレンドの基準は、品目を開いた個別画面で品目ごとに変更できます。</div></div>
     <div><label class="l">あなたの名前（担当者名）</label><input type="text" id="me" style="width:150px" placeholder="例：田中"></div><datalist id="own"></datalist>
   </div>
   <div id="hpn" class="hpn" hidden></div>
-  <div style="margin-top:8px"><div class="note" id="st" style="display:inline">CSVを読み込むと、全品目を一度に判定します。区分C・D・一品・在庫管理外は在庫0を提案します。</div><span class="note" id="js" style="margin-left:1em"></span></div>
+  <div style="margin-top:8px"><div class="note" id="st" style="display:inline">CSVを読み込むと、全品目を一度に判定します。初期設定では、区分C・D・一品・在庫管理外は在庫0を提案します。</div><span class="note" id="js" style="margin-left:1em"></span></div>
   <div class="note" id="jc" style="margin-top:4px" hidden></div>
 </section>
 
@@ -138,9 +139,9 @@ h2.d b{background:var(--ac);color:#fff;border-radius:50%;width:24px;height:24px;
       <div><label class="l">在庫状態</label><select id="fs"><option value="">すべて</option><option value="不良在庫候補">不良在庫候補</option><option value="過剰">過剰</option><option value="不足">不足</option><option value="適正">適正</option></select></div>
       <div><label class="l">CV</label><select id="fcv"><option value="">すべて</option><option value="安定需要">安定需要</option><option value="軽度の変動">軽度の変動</option><option value="中度の変動">中度の変動</option><option value="変動大">変動大</option><option value="判定不可">判定不可</option></select></div>
       <div><label class="l">トレンド</label><select id="ft"><option value="">すべて</option><option value="u">増加傾向 ↗</option><option value="d">減少傾向 ↘</option><option value="s">安定 →</option><option value="n">判定不可</option></select></div>
+      <div><label class="l">区分</label><select id="fc"><option value="">すべて</option><option value="A 定常">A 定常</option><option value="B 変動">B 変動</option><option value="C 間欠">C 間欠</option><option value="D 稀少">D 稀少</option><option value="D 一品">D 一品</option><option value="対象外">対象外</option><option value="下限">下限（個別設定）</option><option value="未使用">未使用（個別設定）</option></select></div>
       <div><label class="l">担当者</label><select id="fo"></select></div>
       <div><label class="l">記入状況</label><select id="fj"><option value="">すべて</option><option value="y">記入済み</option><option value="n">未記入</option></select></div>
-      <div hidden><label class="l">区分</label><select id="fc"><option value="">すべて</option><option value="A 定常">A 定常</option><option value="B 変動">B 変動</option><option value="C 間欠">C 間欠</option><option value="D 稀少">D 稀少</option><option value="D 一品">D 一品</option><option value="対象外">対象外</option></select></div>
       <button class="btn s" id="bClr">条件クリア</button>
       <button class="btn" id="bX">表示中をCSV書き出し</button>
   </div>
@@ -151,7 +152,7 @@ h2.d b{background:var(--ac);color:#fff;border-radius:50%;width:24px;height:24px;
   <div class="tw"><table><thead><tr>
     <th class="t">品目コード</th><th class="t">品名</th><th>方式</th><th class="sep">LT</th><th>最小ロット</th>
     <th class="sep">提案 基準</th><th>提案 MAX</th><th>現行 基準</th><th>現行 最大</th><th>在庫</th><th>発注残</th><th>在庫状態</th>
-    <th class="sep">CV</th><th>トレンド</th>
+    <th class="sep">CV</th><th>トレンド</th><th>区分</th>
     <th class="in t">担当者</th>
   </tr></thead><tbody id="tb2"></tbody></table></div>
   <div class="pg"><button class="btn s" id="pP">◀</button><span id="pi"></span><button class="btn s" id="pN">▶</button><span class="note">記入内容はこのブラウザに自動保存されます。共有への反映は「送信」</span><span class="note">　黄色の枠＝個別で変更した値／緑のタグ＝理由・備考の記載あり（マウスを乗せると内容を表示）／紫＝トレンドを除外後で判定／⇄＝除外前後でトレンド判定が異なる</span></div>
@@ -168,7 +169,7 @@ const $=i=>document.getElementById(i),fmt=n=>Math.round(n).toLocaleString('ja-JP
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const RS=['','一時的な大口（案件・特需）','入荷遅延が常態化','ロット発注の都合','ついで買いの余剰','長納期のため念のため保有','不良在庫化（動かない）','代替・仕様変更で不使用','提案どおりで問題なし'];
 const PS=100;
-const AL0=1.65,SPK=3,TAK=9,TBK=5,TMK='raw';
+const AL0=1.65,SPK=3,TAK=9,TBK=5,TMK='raw',MNK=5;   // MNK：出庫月数の下限の初期値（Bの下限と同じ）
 let D=[],R=[],V=[],pg=0,J={},P={};
 const svP=()=>{};
 const ovr=c=>(J[c]&&J[c].p)||{};   // 個別設定（方式・LT・最小ロット・安全係数・トレンド基準）は判定記録(J)の中に持ち、送信で共有する
@@ -241,28 +242,32 @@ const mc=c=>c==='g'?'g':c==='o'?'o':c==='r'?'r':'';   // メッセージ枠の�
 const tkOf=tr=>tr===null?'':tr>=1.2?'u':tr<.8?'d':'s';
 
 const mkR=d0=>{
-    const o=ovr(d0.c),md=o.md||'req',al=o.al||AL0,tm=o.tm||'raw';
+    const o=ovr(d0.c),md=o.md||'req',al=o.al||AL0,tm=o.tm||'raw',sx=o.sx==='off'?'off':'on',ck=o.ck||'cls',mn=o.mn!==undefined?o.mn:MNK;
     const d=Object.assign({},d0,{lt:o.lt!==undefined?o.lt:d0.lt,moq:o.moq!==undefined?o.moq:d0.moq});
-    const k=core(d,al,SPK),nz=d.m.filter(v=>v>0).length,ex=k.ex;
+    const k=core(d,al,sx==='off'?Infinity:SPK),nz=d.m.filter(v=>v>0).length,ex=k.ex;
     const cls=d.one?'D 一品':!d.mg?'対象外':nz>=TAK?'A 定常':nz>=TBK?'B 変動':nz>=2?'C 間欠':'D 稀少';
-    const live=cls[0]==='A'||cls[0]==='B',p=live?k.a.base:0,mx=live&&md==='op'?p+d.moq:0;
+    const sp0=d.one||!d.mg;   // 一品・在庫管理外は、どの設定でも在庫0
+    const live=ck==='min'?(!sp0&&nz>=mn):ck==='off'?!sp0:(cls[0]==='A'||cls[0]==='B');
+    const cl=(ck==='cls'||sp0)?cls:ck==='min'?'下限':'未使用';
+    const p=live?k.a.base:0,mx=live&&md==='op'?p+d.moq:0;
     let stt='適正';
     if(d.st>0&&nz===0)stt='不良在庫候補';
     else if(d.st>p&&d.st>0)stt='過剰';
     else if(live&&d.st+d.po<p)stt='不足';
     const cv=cvOf(k.a),tRaw=trOf(d.m),tAdj=trOf(k.cm),tr=tm==='adj'?tAdj:tRaw,tAlt=tm==='adj'?tRaw:tAdj;
-    return Object.assign({},d,{md,al,tm,lt0:d0.lt,moq0:d0.moq,chg:Object.keys(o).length>0,nz,ex,cls,p,mx,stt,cv,tr,tAlt,tk:tkOf(tr),tkAlt:tkOf(tAlt)});
+    return Object.assign({},d,{md,al,tm,lt0:d0.lt,moq0:d0.moq,chg:Object.keys(o).length>0,nz,ex,cls,cl,live,sx,ck,mn,p,mx,stt,cv,tr,tAlt,tk:tkOf(tr),tkAlt:tkOf(tAlt)});
 };
 function calc(){R=D.map(mkR);if(cur){route()}else render()}
 function calcOne(c){const i=D.findIndex(x=>x.c===c);if(i>=0)R[i]=mkR(D[i])}
 
 /* 表示 */
-const cc=c=>c[0]==='A'?'g':c[0]==='B'?'':c==='C 間欠'?'o':'';
+const cc=c=>c[0]==='A'?'g':c[0]==='B'?'':c==='C 間欠'?'o':c==='下限'?'b':'';
+const clT=r=>'出庫のあった月 '+r.nz+'カ月'+(r.ck==='min'?'／下限 '+r.mn+'カ月':r.ck==='off'?'／区分を使わない':'');
 const sc=s=>s==='不良在庫候補'?'o':s==='過剰'?'r':s==='不足'?'b':'g';
 const mdn=m=>m==='op'?'発注点':'所要量';
 /* 絞り込み：プルダウン＋LT・最小ロットは「以下／範囲／以上」＋数値入力 */
 const cvk=r=>cvInfo(r.cv).l;
-const SF=[['fm',r=>r.md],['fcv',cvk],['ft',r=>r.tk||'n'],['fc',r=>r.cls],['fs',r=>r.stt]];
+const SF=[['fm',r=>r.md],['fcv',cvk],['ft',r=>r.tk||'n'],['fc',r=>r.cl],['fs',r=>r.stt]];
 const RGS=[['lt','lt'],['moq','moq']];
 function rgMk(i){
   const m=$(i+'M').value,x=$(i+'A').value,y=$(i+'B').value;
@@ -287,7 +292,8 @@ function render(){
     +`<td><span class="tg ${sc(r.stt)}">${r.stt}</span></td>`
     +`<td class="sep"><span class="tg ${ci.c}" title="CV ${r.cv===null?'－':r.cv.toFixed(2)}">${ci.l}</span></td>`
     +`<td class="${r.tm==='adj'?'tv':''}">${r.tr===null?'<span class="tg">'+ti.l+'</span>':`<span class="tg ${r.tm==='adj'?'v':ti.c}" title="トレンド値 ${r.tr.toFixed(2)}">${ti.l}</span>`}${r.tm==='adj'?'<div class="note" style="color:var(--vtx)">除外後</div>':''}${r.tr!==null&&r.tkAlt!==r.tk?`<span class="note" title="${r.tm==='adj'?'除外前':'除外後'}の基準では「${esc(trInfo(r.tAlt).l)}」">⇄</span>`:''}</td>`
-    +`<td class="in t"><input type="text" data-f="o" list="own" value="${esc(j.o||'')}" style="width:120px"></td></tr>`;
+    +`<td class="${r.cl!==r.cls?'chg':''}"><span class="tg ${cc(r.cl)}" title="${clT(r)}">${r.cl}</span></td>`
++`<td class="in t"><input type="text" data-f="o" list="own" value="${esc(j.o||'')}" style="width:120px"></td></tr>`;
   }).join('');
   $('pi').textContent=(V.length?pg*PS+1:0)+'–'+Math.min((pg+1)*PS,V.length)+' / '+fmt(V.length)+'件';
   const cnt=k=>R.filter(r=>r.stt===k).length,done=R.filter(r=>has(r.c)).length;
@@ -380,7 +386,7 @@ $('dv').addEventListener('input',e=>{
 let DR=null;
 const nk=o=>JSON.stringify(Object.keys(o||{}).sort().map(k=>[k,o[k]]));
 const pend=()=>!!(DR&&DR.c===cur&&nk(DR.p)!==nk(ovr(cur)));
-const PN={md:'方式',lt:'LT',moq:'最小ロット',al:'安全係数',tm:'トレンド基準'};
+const PN={md:'方式',lt:'LT',moq:'最小ロット',al:'安全係数',tm:'トレンド基準',sx:'スパイク除去',ck:'区分の扱い',mn:'下限月数'};
 function pdText(c){
   if(!DR||DR.c!==c||nk(DR.p)===nk(ovr(c)))return '';
   const a=ovr(c),b=DR.p,ks=Object.keys(PN).filter(k=>JSON.stringify(a[k])!==JSON.stringify(b[k]));
@@ -390,6 +396,9 @@ function applyP(o,k,v,d){
   if(k==='md'){if(v==='req')delete o.md;else o.md=v}
   else if(k==='tm'){if(v==='raw')delete o.tm;else o.tm=v}
   else if(k==='al'){if(+v===AL0)delete o.al;else o.al=+v}
+  else if(k==='sx'){if(v==='on')delete o.sx;else o.sx='off'}
+  else if(k==='ck'){if(v==='cls'){delete o.ck;delete o.mn}else{o.ck=v;if(v!=='min')delete o.mn}}
+  else if(k==='mn'){const n=v===''?NaN:Math.min(12,Math.max(0,Math.round(+v)));if(isNaN(n)||n===MNK)delete o.mn;else o.mn=n}
   else{const n=v===''?NaN:Math.max(0,Math.round(+v));if(isNaN(n)||(d&&n===d[k]))delete o[k];else o[k]=n}
 }
 function setD(k,v){
@@ -400,6 +409,7 @@ function setD(k,v){
 }
 function paintCtl(){
   const dp=(DR&&DR.c===cur)?DR.p:ovr(cur),ap=ovr(cur);
+  const mw=document.querySelector('#dv [data-w="mn"]');if(mw)mw.hidden=dp.ck!=='min';   // 下限の入力欄は「下限だけ使う」のときだけ表示
   Object.keys(PN).forEach(k=>{
     const w=document.querySelector('#dv [data-w="'+k+'"]');if(!w)return;
     const ch=dp[k]!==undefined,pd=JSON.stringify(dp[k])!==JSON.stringify(ap[k]);
@@ -438,7 +448,7 @@ $('dv').addEventListener('change',e=>{const k=e.target.dataset.p;if(!k||!cur)ret
 $('dv').addEventListener('input',e=>{const k=e.target.dataset.p;if(!k||!cur||e.target.type!=='number')return;setD(k,e.target.value)});
 $('dv').addEventListener('click',e=>{
   if(e.target.closest('#pr')&&cur){
-    ask('⚠ この品目の個別設定をすべて初期値に戻します。<br><span style="font-weight:400;font-size:13px">対象：方式・LT・最小ロット・安全係数・トレンドの基準。<br>戻すとすぐに再計算し、提案値が変わります（未反映の変更も破棄されます）。<br>担当者・理由・備考は消えません。</span>',[['初期値に戻す',1],['キャンセル',0]]).then(i=>{if(i===0){DR={c:cur,p:{}};commit(true)}});
+    ask('⚠ この品目の個別設定をすべて初期値に戻します。<br><span style="font-weight:400;font-size:13px">対象：方式・LT・最小ロット・安全係数・スパイク除去・区分の扱い・トレンドの基準。<br>戻すとすぐに再計算し、提案値が変わります（未反映の変更も破棄されます）。<br>担当者・理由・備考は消えません。</span>',[['初期値に戻す',1],['キャンセル',0]]).then(i=>{if(i===0){DR={c:cur,p:{}};commit(true)}});
   }
   else if(e.target.closest('#bUp')){commit(true)}
   else if(e.target.closest('#bUpBk')){commit(false);goBack()}
@@ -446,21 +456,24 @@ $('dv').addEventListener('click',e=>{
 });
 function renderD(){
   const r=R.find(x=>x.c===cur);if(!r)return;
-  const al=r.al,SP=SPK,TA=TAK,TB=TBK,TM=r.tm,op=r.md==='op',ov=ovr(r.c),chM=!!ov.md,chL=r.lt!==r.lt0,chQ=r.moq!==r.moq0,chA=r.al!==AL0,chT=r.tm==='adj',chn=[chM&&'方式',chL&&'LT',chQ&&'最小ロット',chA&&'安全係数',chT&&'トレンド基準'].filter(Boolean),k=core(r,al,SP),a=k.a,b=k.b,u=r.u,Lm=k.Lm,
+  const al=r.al,SP=r.sx==='off'?Infinity:SPK,TA=TAK,TB=TBK,TM=r.tm,op=r.md==='op',ov=ovr(r.c),chM=!!ov.md,chL=r.lt!==r.lt0,chQ=r.moq!==r.moq0,chA=r.al!==AL0,chT=r.tm==='adj',chn=[chM&&'方式',chL&&'LT',chQ&&'最小ロット',chA&&'安全係数',chT&&'トレンド基準',!!ov.sx&&'スパイク除去',!!ov.ck&&'区分の扱い'].filter(Boolean),k=core(r,al,SP),a=k.a,b=k.b,u=r.u,Lm=k.Lm,
         L=ML(),lab=L.map(x=>x[0]+'<br><span class="yy">('+x[1]+')</span>'),
         y0=new Date().getFullYear()-5,ylab=[0,1,2,3,4].map(i=>String(y0+i)),
         spi=r.m.map((v,i)=>v>k.thr?i:-1).filter(i=>i>=0),
-        live=r.cls[0]==='A'||r.cls[0]==='B',j=J[r.c]||{},
+        live=r.live,j=J[r.c]||{},
         i=V.findIndex(x=>x.c===cur),pv=V[i-1],nx=V[i+1];
   const dp=(DR&&DR.c===r.c)?DR.p:ovr(r.c),cMd=dp.md||'req',cLt=dp.lt!==undefined?dp.lt:r.lt0,cMq=dp.moq!==undefined?dp.moq:r.moq0,cAl=dp.al||AL0,cTm=dp.tm||'raw',cM=!!dp.md,cL=cLt!==r.lt0,cQ=cMq!==r.moq0,cA=cAl!==AL0,cT=cTm==='adj',pdn=pdText(r.c);
+  const cSx=dp.sx==='off'?'off':'on',cCk=dp.ck||'cls',cMn=dp.mn!==undefined?dp.mn:MNK;
   const mk={'A':12.5,'B':37.5,'C':62.5,'D':87.5}[r.cls[0]],special=r.cls==='D 一品'||r.cls==='対象外';
-  /* 区分の説明 */
+  /* 区分の説明（設定により3通り） */
   const cexp=r.cls==='D 一品'?'CSVで「一品」（受注ごとの手配品）となっているため、在庫を持たない扱いです。'
     :r.cls==='対象外'?'CSVの「在庫管理」が空欄のため、計算の対象外です。'
+    :r.ck==='min'?`この品目は<b>「出庫月数の下限だけ使う」</b>設定です（A〜Dの分類は使いません）。12カ月のうち出庫があったのは<b>${r.nz}カ月</b>、下限は<b>${r.mn}カ月</b>なので、${r.nz>=r.mn?'計算式で提案します。':'在庫0・都度手配を提案します。'}<br><span class="note">参考：区分で見ると ${r.cls} です。</span>`
+    :r.ck==='off'?`この品目は<b>「区分を使わない」</b>設定です。出庫月数に関係なく、計算式で提案します。<br><span class="note">参考：出庫があったのは${r.nz}カ月で、区分で見ると ${r.cls} です。出庫の少ない品目は、基準在庫が過大になりやすい点に注意してください。</span>`
     :`12カ月のうち出庫があったのは<b>${r.nz}カ月</b>。${TA}カ月以上がA、${TB}〜${TA-1}カ月がB、2〜${TB-1}カ月がC、0〜1カ月がDなので、<b>${r.cls}</b>です。`
      +({A:'毎月のように動く品目です。計算式で提案します。',B:'半年前後は動く品目です。計算式で提案します（スパイク除外が効きます）。',C:'年に数回だけ動く品目です。大口に引きずられやすいため、在庫0・都度手配を提案します。',D:'ほとんど動かない品目です。在庫0を提案します。'}[r.cls[0]]);
   /* スパイクの説明 */
-  const sexp=k.thr===Infinity?'中央値が0のため、スパイク除外は行いません（出庫の少ない品目は区分で扱います）。'
+  const sexp=r.sx==='off'?'この品目は<b>「スパイク除去しない」</b>設定です。実際の出庫のまま、平均とσを計算しています。':k.thr===Infinity?'中央値が0のため、スパイク除外は行いません。'
     :spi.length?`<b>${spi.map(i=>L[i][0]+'（'+r.m[i]+'）').join('、')}</b> が、しきい値 ${f1(k.thr)}（中央値 ${f1(k.med)} × ${SP}）を超えたため、スパイクとして中央値 ${f1(k.med)} に置き換えて計算しました。`
     :`しきい値 ${f1(k.thr)}（中央値 ${f1(k.med)} × ${SP}）を超える月がないため、スパイク除外はありません。`;
   /* 在庫状態の説明 */
@@ -497,7 +510,7 @@ function renderD(){
   <section class="card">
     <div class="dt">${esc(r.n)}</div><div class="note">${esc(r.c)}</div>
     <div class="pr"><div><span>品名</span><p>${esc(r.n)}</p></div><div><span>仕様</span><p>${esc(r.s)||'－'}</p></div><div><span>メーカー</span><p>${esc(r.k)||'－'}</p></div><div><span>手配先</span><p>${esc(r.t)||'－'}</p></div><div><span>在庫評価単価</span><p>${fmt(r.pr)}円</p></div></div>
-    <div class="sum" style="margin-top:8px">${chn.length?`<span class="tg cg" style="font-size:12px;padding:3px 10px">変更あり：${chn.join('・')}</span>`:''}<span>方式 ${op?'発注点方式':'所要量方式'}</span><span>区分 ${r.cls}</span><span>在庫状態 ${r.stt}</span><span>納期 ${r.lt}日</span><span>最小ロット ${r.moq}</span><span>安全係数 ${al}</span><span>現行 基準 ${fmt(r.pb)}／最大 ${fmt(r.px)}</span></div>
+    <div class="sum" style="margin-top:8px">${chn.length?`<span class="tg cg" style="font-size:12px;padding:3px 10px">変更あり：${chn.join('・')}</span>`:''}<span>方式 ${op?'発注点方式':'所要量方式'}</span><span>区分 ${r.cl}</span><span>スパイク ${r.sx==='off'?'除去しない':'除去する'}</span><span>在庫状態 ${r.stt}</span><span>納期 ${r.lt}日</span><span>最小ロット ${r.moq}</span><span>安全係数 ${al}</span><span>現行 基準 ${fmt(r.pb)}／最大 ${fmt(r.px)}</span></div>
     <div class="card" style="margin:12px 0 0;border-color:var(--ac)"><h2 class="d"><b>設</b>判定方式・個別設定<span class="note" style="font-weight:400">変更したら、画面下の「更新する」で再計算します</span></h2>
       <div class="note">黄色の枠＝初期値から変更／青い枠＝まだ計算に反映していない変更（元の値に戻すと枠も消えます）</div>
       <div class="msg o" id="pdn1" ${pdn?'':'hidden'}>${pdn}</div>
@@ -506,6 +519,9 @@ function renderD(){
         <div data-w="lt"><label class="l">納期（LT）日<span class="cm"></span>　<span class="note">データ値 ${r.lt0}日 ＝ ${(r.lt0/30).toFixed(2)}カ月</span></label><input type="number" id="pLt" min="0" data-p="lt" value="${cLt}"></div>
         <div data-w="moq"><label class="l">最小注文数（MOQ）${esc(u)}<span class="cm"></span>　<span class="note">データ値 ${r.moq0}</span></label><input type="number" id="pMq" min="0" data-p="moq" value="${cMq}"></div>
         <div data-w="al"><label class="l">安全係数（α）<span class="cm"></span></label><select data-p="al">${[[2.33,'許容率 1%　欠品すると生産ラインが即停止する主要部品'],[2.06,'許容率 2%　調達が難しく代替がきかない部品'],[1.65,'許容率 5%　通常の標準部品・資材（初期値）'],[1.29,'許容率10%　汎用品・即時代替手配が可能な品目']].map(x=>`<option value="${x[0]}"${x[0]===cAl?' selected':''}>${x[1]}</option>`).join('')}</select></div>
+        <div data-w="sx"><label class="l">スパイク除去<span class="cm"></span>　<span class="note">倍率は${SPK}で固定</span></label><span class="um"><label><input type="radio" name="psx" data-p="sx" value="on" ${cSx==='off'?'':'checked'}>除去する（初期）</label><label><input type="radio" name="psx" data-p="sx" value="off" ${cSx==='off'?'checked':''}>除去しない</label></span></div>
+        <div data-w="ck"><label class="l">区分の扱い<span class="cm"></span></label><select data-p="ck"><option value="cls"${cCk==='cls'?' selected':''}>区分による提案（初期）</option><option value="min"${cCk==='min'?' selected':''}>出庫月数の下限だけ使う</option><option value="off"${cCk==='off'?' selected':''}>区分を使わない</option></select></div>
+        <div data-w="mn" ${cCk==='min'?'':'hidden'}><label class="l">出庫月数の下限（カ月）<span class="cm"></span>　<span class="note">以上なら計算式、未満は在庫0（初期 ${MNK}）</span></label><input type="number" min="0" max="12" data-p="mn" value="${cMn}"></div>
       </div>
       
     </div>
@@ -519,7 +535,7 @@ function renderD(){
     <p class="note">σ（標準偏差）は、毎月の出庫が平均からどれだけ離れているかの数字です。除外後は σ ＝ ${f1(a.sd)}、月平均 ＝ ${f1(a.avg)} です。</p>
   </section>
   <section class="card"><h2 class="d"><b>2</b>区分の判定</h2>
-    ${special?'':`<div class="sc"><span class="mk" style="left:${mk}%">▼ ${r.nz}カ月</span><div class="sg">A 定常<small>${TA}カ月〜</small></div><div class="sb">B 変動<small>${TB}〜${TA-1}カ月</small></div><div class="so">C 間欠<small>2〜${TB-1}カ月</small></div><div class="sr">D 稀少<small>0〜1カ月</small></div></div>`}
+    ${r.ck==='cls'&&!special?`<div class="sc"><span class="mk" style="left:${mk}%">▼ ${r.nz}カ月</span><div class="sg">A 定常<small>${TA}カ月〜</small></div><div class="sb">B 変動<small>${TB}〜${TA-1}カ月</small></div><div class="so">C 間欠<small>2〜${TB-1}カ月</small></div><div class="sr">D 稀少<small>0〜1カ月</small></div></div>`:''}
     <div class="msg">${cexp}</div>
   </section>
   <section class="card"><h2 class="d"><b>3</b>提案値の計算</h2>
@@ -527,7 +543,7 @@ function renderD(){
       納期中の消費 ＝ 月平均 × L ＝ ${f1(a.avg)} × ${Lm.toFixed(2)} → <b>${a.lc}</b><br>
       安全在庫 ＝ α × σ × √L ＝ ${al} × ${f1(a.sd)} × √${Lm.toFixed(2)} → <b>${a.ss}</b><br>
       基準在庫 ＝ ${a.lc} ＋ ${a.ss} ＝ <b>${a.base}${u}</b>${op?`　／　最大在庫 ＝ ${a.base} ＋ 最小ロット ${r.moq} ＝ <b>${a.base+r.moq}${u}</b>`:'　（所要量方式のためMAXは設定不要）'}</div>`
-    :`<div class="msg">この区分は在庫0・都度手配を提案します。${special?'':'（参考：計算式どおりなら基準在庫は '+a.base+u+' ですが、出庫が少ない品目では過大になりやすいため採用しません）'}</div>`}
+    :`<div class="msg">${r.one?'CSVで「一品」（受注ごとの手配品）のため、':!r.mg?'CSVの「在庫管理」が空欄のため、':r.ck==='min'?'出庫のあった月が'+r.nz+'カ月で、下限'+r.mn+'カ月に満たないため、':'12カ月のうち出庫があったのは'+r.nz+'カ月と少ないため、'}在庫0・都度手配を提案します。${special?'':'（参考：計算式どおりなら基準在庫は '+a.base+u+' ですが、出庫が少ない品目では過大になりやすいため採用しません）'}</div>`}
   </section>
   <section class="card"><h2 class="d"><b>4</b>在庫状態の判定</h2>
     <p class="wh">在庫・発注残・現行設定・提案値を並べて比べます。</p>
@@ -538,7 +554,7 @@ function renderD(){
     <p class="wh">長く動いていないかを確認します（${u}／年度）。</p>${chart(r.y,ylab,{})}
   </section>
   <section class="card"><h2 class="d"><b>6</b>参考指標・トレンド分析</h2>
-    <p class="wh">需要変動（CV）はスパイク除外後の値です。増減トレンドの基準は、品目ごとに切り替えられます。</p>
+    <p class="wh">需要変動（CV）は提案値と同じ基準（${r.sx==='off'?'スパイク除去しない設定のため除外なし':'スパイク除外後'}）の値です。増減トレンドの基準は、品目ごとに切り替えられます。</p>
     <div data-w="tm" style="width:fit-content;margin-bottom:6px"><span class="um"><label><input type="radio" name="ptm" data-p="tm" value="raw" ${cTm==='raw'?'checked':''}>除外前の実績（初期）</label><label><input type="radio" name="ptm" data-p="tm" value="adj" ${cTm==='adj'?'checked':''}>スパイク除外後</label></span><span class="cm"></span> <span class="note">切り替えたら画面下の「更新する」で反映します</span></div>
     <div class="ind">
       <div><span>年間使用量 ／ 月平均</span><strong>${fmt(tot)}${u}</strong>／ 月平均 ${fmt(tot/12)}${u}</div>
@@ -631,9 +647,9 @@ $('fi').onchange=async e=>{
 /* 書き出し */
 $('bX').onclick=()=>{
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',
-    h=['品目コード','品名','仕様','メーカー','手配先','在庫評価単価','区分','方式','CV','トレンド','LT','最小ロット','安全係数','提案基準','提案MAX','現行基準','現行最大','在庫数','発注残数','在庫状態','理由','備考','担当者','記入日時'],
+    h=['品目コード','品名','仕様','メーカー','手配先','在庫評価単価','区分','スパイク除去','方式','CV','トレンド','LT','最小ロット','安全係数','提案基準','提案MAX','現行基準','現行最大','在庫数','発注残数','在庫状態','理由','備考','担当者','記入日時'],
     ls=[h.map(q).join(',')];
-  for(const r of V){const j=J[r.c]||{};ls.push([r.c,r.n,r.s,r.k,r.t,r.pr,r.cls,mdn(r.md),r.cv===null?'':r.cv.toFixed(2),r.tr===null?'':r.tr.toFixed(2),r.lt,r.moq,r.al,r.p,r.mx,r.pb,r.px,r.st,r.po,r.stt,j.r||'',j.n||'',j.o||'',j.t||''].map(q).join(','))}
+  for(const r of V){const j=J[r.c]||{};ls.push([r.c,r.n,r.s,r.k,r.t,r.pr,r.cl,r.sx==='off'?'しない':'する',mdn(r.md),r.cv===null?'':r.cv.toFixed(2),r.tr===null?'':r.tr.toFixed(2),r.lt,r.moq,r.al,r.p,r.mx,r.pb,r.px,r.st,r.po,r.stt,j.r||'',j.n||'',j.o||'',j.t||''].map(q).join(','))}
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['\ufeff'+ls.join('\r\n')],{type:'text/csv'}));
   a.download='在庫判定_'+new Date().toISOString().slice(0,10)+'.csv';
@@ -643,11 +659,11 @@ $('bX').onclick=()=>{
 /* ============ 設定欄のヘルプ（クリックのみ） ============ */
 const HP={
 al:['安全係数（α）とは','<p>欠品をどこまで許すかを表す数字です。大きいほど安全在庫が増え、欠品しにくくなります。</p><p>安全在庫 ＝ α × σ（出庫のばらつき）× √L（納期の月換算）</p><table><tr><th>許容率</th><th>α</th><th>目安</th></tr><tr><td>1%</td><td>2.33</td><td>欠品すると生産ラインが即停止する主要部品</td></tr><tr><td>2%</td><td>2.06</td><td>調達が難しく代替がきかない部品</td></tr><tr><td>5%</td><td>1.65</td><td>通常の標準部品・資材（初期値）</td></tr><tr><td>10%</td><td>1.29</td><td>汎用品・即時代替手配が可能な品目</td></tr></table><p>初期値は1.65で固定です。品目ごとに変えたい場合は、品目の個別画面で変更できます。</p>'],
-sp:['スパイク判定とは','<p>スパイクとは、その品目のふだんの出庫から見て、飛び抜けて多い月のことです。本ツールは<b>中央値の3倍を超えた月</b>をスパイクとし、倍率3は全品目共通の固定値です。</p><p><b>スパイク除外の流れ</b></p><table><tr><th>手順</th><th>内容</th></tr><tr><td>① 中央値</td><td>12カ月を小さい順に並べ、6番目と7番目の平均。大口の月が1〜2回あっても、ほとんど動きません</td></tr><tr><td>② しきい値</td><td>中央値 × 3</td></tr><tr><td>③ 置き換え</td><td>しきい値を超えた月の出庫を、中央値に置き換える</td></tr><tr><td>④ 再計算</td><td>置き換え後の月平均とσを求める</td></tr><tr><td>⑤ 提案値</td><td>納期中の消費（月平均×L）＋安全在庫（α×σ×√L）＝基準在庫</td></tr></table><p><b>除外の影響を受けるもの</b>：提案基準・提案MAX・CV。<br><b>受けないもの</b>：区分の出庫月数（実績どおりに数えます）。トレンドは初期設定では除外前の実績で、品目ごとに切り替えられます。</p><p><b>3で固定している理由</b></p><p>・小さすぎる倍率（2倍など）は、通常の繁忙月まで除外して需要を過小評価し、欠品につながります。<br>・大きすぎる倍率（4倍以上）は、大口が除外されず、σが膨らんで安全在庫が過大になります。<br>・品目ごとに倍率を変えると、担当者によって提案値の基準がばらつくため、全品目共通で固定しています。</p><p><b>例</b>　中央値8.5 → しきい値25.5。10月の29個は超えるので8.5に置き換わり、基準在庫は54個から43個になります。倍率を4にするとしきい値は34になり、29個は除外されません。</p><p>中央値が0の品目は、スパイク除外をしません。除外された月は、品目の個別画面で赤い棒として確認できます。</p>'],
-ku:['区分（A定常・B変動・C間欠・D稀少）とは','<p>過去12カ月のうち、出庫があった月の数で品目を分けます。ばらつきの大きさではなく、<b>どれだけ毎月動くか</b>の頻度です。</p><table><tr><th>区分</th><th>出庫月数</th><th>提案</th></tr><tr><td>A 定常</td><td>9カ月以上</td><td>計算式で提案</td></tr><tr><td>B 変動</td><td>5〜8カ月</td><td>計算式で提案</td></tr><tr><td>C 間欠</td><td>2〜4カ月</td><td>在庫0・都度手配</td></tr><tr><td>D 稀少</td><td>0〜1カ月</td><td>在庫0・都度手配</td></tr></table><p>区分D 一品（CSVで「一品」）と、在庫管理が空欄の品目（対象外）も在庫0を提案します。出庫月数と除外月は、品目を開くと確認できます。</p>'],
+sp:['スパイク判定とは','<p>スパイクとは、その品目のふだんの出庫から見て、飛び抜けて多い月のことです。本ツールは<b>中央値の3倍を超えた月</b>をスパイクとし、倍率3は全品目共通の固定値です。</p><p><b>スパイク除外の流れ</b></p><table><tr><th>手順</th><th>内容</th></tr><tr><td>① 中央値</td><td>12カ月を小さい順に並べ、6番目と7番目の平均。大口の月が1〜2回あっても、ほとんど動きません</td></tr><tr><td>② しきい値</td><td>中央値 × 3</td></tr><tr><td>③ 置き換え</td><td>しきい値を超えた月の出庫を、中央値に置き換える</td></tr><tr><td>④ 再計算</td><td>置き換え後の月平均とσを求める</td></tr><tr><td>⑤ 提案値</td><td>納期中の消費（月平均×L）＋安全在庫（α×σ×√L）＝基準在庫</td></tr></table><p><b>除外の影響を受けるもの</b>：提案基準・提案MAX・CV。<br><b>受けないもの</b>：区分の出庫月数（実績どおりに数えます）。トレンドは初期設定では除外前の実績で、品目ごとに切り替えられます。</p><p><b>3で固定している理由</b></p><p>・小さすぎる倍率（2倍など）は、通常の繁忙月まで除外して需要を過小評価し、欠品につながります。<br>・大きすぎる倍率（4倍以上）は、大口が除外されず、σが膨らんで安全在庫が過大になります。<br>・品目ごとに倍率を変えると、担当者によって提案値の基準がばらつくため、全品目共通で固定しています。</p><p><b>例</b>　中央値8.5 → しきい値25.5。10月の29個は超えるので8.5に置き換わり、基準在庫は54個から43個になります。倍率を4にするとしきい値は34になり、29個は除外されません。</p><p>中央値が0の品目は、スパイク除外をしません。除外された月は、品目の個別画面で赤い棒として確認できます。</p><p><b>品目ごとの切り替え</b>：個別画面で「スパイク除去する（初期）／しない」を選べます。「しない」にすると、実際の出庫のまま平均・σを計算します（提案基準・提案MAX・CVに反映）。倍率3は変更できません。</p>'],
+ku:['区分とは','<p>過去12カ月のうち、出庫があった月の数（出庫月数）で品目を分けます。ばらつきの大きさではなく、<b>どれだけ毎月動くか</b>の頻度です。</p><table><tr><th>区分</th><th>出庫月数</th><th>提案</th></tr><tr><td>A 定常</td><td>9カ月以上</td><td>計算式で提案</td></tr><tr><td>B 変動</td><td>5〜8カ月</td><td>計算式で提案</td></tr><tr><td>C 間欠</td><td>2〜4カ月</td><td>在庫0・都度手配</td></tr><tr><td>D 稀少</td><td>0〜1カ月</td><td>在庫0・都度手配</td></tr></table><p>区分D 一品（CSVで「一品」）と、在庫管理が空欄の品目（対象外）は、どの設定でも在庫0を提案します。</p><p><b>区分の扱い（品目ごとに個別画面で変更）</b></p><table><tr><th>扱い</th><th>内容</th><th>区分欄の表示</th></tr><tr><td>区分による提案（初期）</td><td>A・Bは計算式、C・Dは在庫0・都度手配</td><td>A〜D</td></tr><tr><td>出庫月数の下限だけ使う</td><td>出庫月数が下限（初期5カ月）以上なら計算式、未満は在庫0。A〜Dの分類は使いません。下限は品目ごとに変更できます</td><td>下限</td></tr><tr><td>区分を使わない</td><td>出庫月数に関係なく、計算式で提案します。出庫の少ない品目は基準在庫が過大になりやすい点に注意してください</td><td>未使用</td></tr></table><p>初期から変更した品目は、一覧の区分欄が黄色の枠になります。区分欄にマウスを乗せると出庫月数を確認できます。</p>'],
 md:['手配方式とは','<table><tr><th>方式</th><th>内容</th></tr><tr><td>所要量方式（初期）</td><td>基準在庫（目標維持在庫）を目安に、必要な分を手配します。MAXは設定不要です。</td></tr><tr><td>発注点方式</td><td>基準在庫を発注点とし、MAX ＝ 基準在庫 ＋ 最小ロットを設定します。</td></tr></table><p>方式は個別画面で品目ごとに切り替えられ、切り替えると提案値を再計算します。個別に変更した値は、一覧では黄色の枠、個別画面では黄色の欄で示します。需要変動（CV）が小さい品目は発注点、大きい品目は所要量が向きます。</p>'],
 tm:['トレンドの基準とは','<p>増減トレンド ＝ 直近3カ月の月平均 ÷ 12カ月の月平均 です（1.2以上＝増加傾向、0.8未満＝減少傾向）。この計算に使う出庫を切り替えます。</p><table><tr><th>基準</th><th>内容</th></tr><tr><td>除外前の実績（初期）</td><td>実際の出庫そのままで計算します。直近の大口も「増加」の兆候として反映されます。</td></tr><tr><td>スパイク除外後</td><td>大口の月を中央値に置き換えて計算します。一時的な特需に引きずられにくくなります。</td></tr></table><p>基準は品目を開いた個別画面で切り替えられます。切り替えた品目は、一覧のトレンド欄が紫色になります。除外前と除外後で判定が変わる品目には、一覧に「⇄」が付きます。</p><p>需要変動（CV）は、提案値と同じスパイク除外後の値で固定です。</p>'],
-cv:['CVの基準（需要変動）とは','<p>CV（変動係数）は、毎月の出庫が平均に対してどれだけばらつくかを表す数字です。</p><p>CV ＝ σ（標準偏差）÷ 月平均</p><p>σと月平均は、提案値の計算と同じ<b>スパイク除外後</b>の出庫から求めます。一時的な大口に引きずられず、品目本来のばらつきを見るためです（この基準は固定です）。</p><table><tr><th>CV</th><th>判定</th><th>向く方式</th></tr><tr><td>0.5以下</td><td>安定需要</td><td>発注点</td></tr><tr><td>0.5超〜0.8未満</td><td>軽度の変動</td><td>発注点（安全係数を少し高めに・定期見直し）</td></tr><tr><td>0.8以上〜1.0未満</td><td>中度の変動</td><td>所要量を検討</td></tr><tr><td>1.0以上</td><td>変動大</td><td>所要量</td></tr></table><p>12カ月の月平均が0の品目は「判定不可」です。一覧のCV欄にマウスを乗せると、CVの値を確認できます。</p>']
+cv:['CVの基準（需要変動）とは','<p>CV（変動係数）は、毎月の出庫が平均に対してどれだけばらつくかを表す数字です。</p><p>CV ＝ σ（標準偏差）÷ 月平均</p><p>σと月平均は、提案値の計算と同じ<b>スパイク除外後</b>の出庫から求めます。一時的な大口に引きずられず、品目本来のばらつきを見るためです（この基準は固定です）。</p><table><tr><th>CV</th><th>判定</th><th>向く方式</th></tr><tr><td>0.5以下</td><td>安定需要</td><td>発注点</td></tr><tr><td>0.5超〜0.8未満</td><td>軽度の変動</td><td>発注点（安全係数を少し高めに・定期見直し）</td></tr><tr><td>0.8以上〜1.0未満</td><td>中度の変動</td><td>所要量を検討</td></tr><tr><td>1.0以上</td><td>変動大</td><td>所要量</td></tr></table><p>スパイク除去を「しない」に設定した品目は、除外なしの出庫で計算します。12カ月の月平均が0の品目は「判定不可」です。一覧のCV欄にマウスを乗せると、CVの値を確認できます。</p>']
 };
 let hOn='';
 document.querySelectorAll('.hp').forEach(b=>{

@@ -58,10 +58,10 @@ th{color:var(--sub);font-weight:600;font-size:12px}
   <div class="flow">
     <div><b>① スパイク除外</b>たまたま多い月を除く</div><i>→</i>
     <div><b>② 区分を決める</b>出庫月数でA〜D</div><i>→</i>
-    <div class="e"><b>③ 提案値</b>A・Bは計算／他は0</div><i>→</i>
+    <div class="e"><b>③ 提案値</b>A・Bは計算／他は0（個別に変更可）</div><i>→</i>
     <div><b>④ 在庫状態</b>過剰・不足など</div><i>→</i>
     <div><b>⑤ 参考指標</b>CV・増減トレンド</div><i>→</i>
-    <div class="e"><b>⑥ 担当者が記入</b>決定在庫・理由</div>
+    <div class="e"><b>⑥ 担当者が記入</b>担当者・理由・備考</div>
   </div>
   <p class="what">提案はあくまで目安です。最後に責任者が決めた値と理由を記録し、その記録を見て閾値を調整していきます。</p>
 </section>
@@ -80,7 +80,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
 <section class="card">
   <h2><b>2</b>スパイク除外</h2>
   <p class="what">年に1〜2回だけの大口出庫で、σと平均が引きずられないようにします。</p>
-  <div class="fx">スパイク ＝ 出庫が「中央値 × 倍率（初期値3）」を超えた月　→　中央値に置き換えて計算</div>
+  <div class="fx">スパイク ＝ 出庫が「中央値 × 倍率（3で固定）」を超えた月　→　中央値に置き換えて計算</div>
   <p class="what">中央値は、12カ月を小さい順に並べた真ん中の値です。大口が1〜2回あっても、ほとんど動きません。</p>
   <div class="cols">
     <div><h4>除外前</h4><div class="ch" id="c3"></div><p class="cap">赤＝スパイク候補　破線＝しきい値（中央値4 × 3 ＝ 12）</p><p class="nums">月平均 <b>8.5</b>　σ <b>16.2</b>　安全在庫 <b>19</b>　基準在庫 <b>23個</b></p></div>
@@ -88,13 +88,14 @@ th{color:var(--sub);font-weight:600;font-size:12px}
   </div>
   <div class="ex"><b>計算例</b>　納期14日、α＝1.65　<br>除外前：1.65 × 16.2 × √0.467 ＝ 19、月平均 8.5 × 0.467 ＝ 4 → 4 ＋ 19 ＝ <b>23個</b><br>除外後：1.65 × 0.7 × √0.467 ＝ 1、月平均 3.8 × 0.467 ＝ 2 → 2 ＋ 1 ＝ <b>3個</b>（画面の「除外月」列に除外した月数が出ます）</div>
   <p class="w">※ 中央値が0の品目はスパイク除外をしません。出庫が少ない品目は、次の「区分」で扱います。</p>
+  <p class="what" style="margin-top:8px"><b>品目ごとの切り替え</b>　個別画面で「スパイク除去する（初期）／しない」を選べます。「しない」にすると、実際の出庫のまま平均・σを計算します（提案基準・提案MAX・CVに反映）。倍率3は変更できません。</p>
 </section>
 
 <section class="card">
   <h2><b>3</b>区分（A〜D）</h2>
   <p class="what">12カ月のうち、出庫があった月の数（出庫月数）で、品目の動き方を4つに分けます。</p>
   <div class="sc"><div class="g">9カ月以上<small>A 定常</small></div><div class="b">5〜8カ月<small>B 変動</small></div><div class="o">2〜4カ月<small>C 間欠</small></div><div class="r">0〜1カ月<small>D 稀少</small></div></div>
-  <p class="cap">区分の閾値（AとBの境目は画面上部で変更できます）</p>
+  <p class="cap">区分の閾値（9カ月・5カ月・2カ月で固定）</p>
   <div class="cols">
     <div><h4>A 定常の例（出庫月数12）</h4><div class="ch" id="c5"></div></div>
     <div><h4>C 間欠の例（出庫月数2）</h4><div class="ch" id="c6"></div></div>
@@ -111,18 +112,22 @@ th{color:var(--sub);font-weight:600;font-size:12px}
 </section>
 
 <section class="card">
-  <h2><b>4</b>区分ごとの提案値</h2>
-  <p class="what">区分によって、提案の出し方を変えます。</p>
+  <h2><b>4</b>提案値と「区分の扱い」</h2>
+  <p class="what">計算式で提案する品目は、スパイク除外後の月平均とσから基準在庫を計算します。</p>
+  <div class="fx">基準在庫 ＝ 月平均 × L ＋ α × σ × √L　（L ＝ 納期日数 ÷ 30）　／　発注点方式のMAX ＝ 基準在庫 ＋ 最小ロット</div>
+  <p class="what">どの品目を計算式で提案するかは、品目ごとの「区分の扱い」で決まります（個別画面で変更）。初期は「区分による提案」です。</p>
   <div class="sw"><table>
-    <tr><th>区分</th><th>提案 基準在庫</th><th>提案 MAX</th></tr>
-    <tr><td>A・B</td><td>スパイク除外後の「月平均 × L ＋ 安全在庫」</td><td>基準在庫 ＋ MOQ</td></tr>
-    <tr><td>C・D・一品・対象外</td><td><b>0（在庫を持たず、都度手配）</b></td><td>－</td></tr>
+    <tr><th>区分の扱い</th><th>計算式で提案する品目</th><th>在庫0を提案する品目</th><th>一覧の区分欄</th></tr>
+    <tr><td><b>区分による提案</b>（初期）</td><td>A・B（出庫月数5カ月以上）</td><td>C・D</td><td>A〜D</td></tr>
+    <tr><td><b>出庫月数の下限だけ使う</b></td><td>出庫月数が下限以上（下限は初期5カ月、品目ごとに変更可）</td><td>下限に満たない品目</td><td>下限</td></tr>
+    <tr><td><b>区分を使わない</b></td><td>すべて</td><td>なし</td><td>未使用</td></tr>
   </table></div>
-  <p class="what" style="margin-top:12px">たとえば「年に2回だけ30個・25個出る」品目は、従来の式では基準在庫16個と出ます。新しい判定では区分Cになり、提案は0個になります。</p>
+  <p class="w">※ どの扱いでも、一品・在庫管理外の品目は在庫0を提案します（区分欄はD 一品・対象外のまま）。「区分を使わない」では、出庫の少ない品目の基準在庫が過大になりやすい点に注意してください。</p>
+  <p class="what" style="margin-top:12px">たとえば「年に2回だけ30個・25個出る」品目は、「区分を使わない」では基準在庫16個と出ます。「区分による提案」では区分Cになり、提案は0個になります。</p>
   <div class="cols">
-    <div><h4>年2回だけ大口の例</h4><div class="ch" id="c7"></div><p class="cap">出庫月数2 → 区分C</p><p class="nums">従来の式 <b>16個</b>　→　新しい提案 <b>0個</b></p></div>
+    <div><h4>年2回だけ大口の例</h4><div class="ch" id="c7"></div><p class="cap">出庫月数2 → 区分C</p><p class="nums">区分を使わない <b>16個</b>　→　区分による提案 <b>0個</b></p></div>
   </div>
-  <p class="w">※ 「念のため少し持ちたい」品目は、担当者が決定在庫数に書き込みます（理由：長納期のため念のため保有 など）。</p>
+  <p class="w">※ 「念のため少し持ちたい」品目は、担当者が理由欄・備考欄に書き込みます（理由：長納期のため念のため保有 など）。</p>
 </section>
 
 <section class="card">
@@ -132,7 +137,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
     <tr><th>順</th><th>状態</th><th>条件</th><th>見方</th></tr>
     <tr><td>1</td><td><span class="tg r">不良在庫候補</span></td><td>在庫あり、かつ12カ月の出庫がすべて0</td><td>動いていない在庫。先に使う・再発注しない候補</td></tr>
     <tr><td>2</td><td><span class="tg o">過剰</span></td><td>在庫 ＞ 提案基準在庫</td><td>提案より多く持っている</td></tr>
-    <tr><td>3</td><td><span class="tg o">不足</span></td><td>A・Bで、在庫 ＋ 発注残 ＜ 提案基準在庫</td><td>発注済み分を足しても足りない</td></tr>
+    <tr><td>3</td><td><span class="tg o">不足</span></td><td>計算式で提案する品目で、在庫 ＋ 発注残 ＜ 提案基準在庫</td><td>発注済み分を足しても足りない</td></tr>
     <tr><td>4</td><td><span class="tg g">適正</span></td><td>上のどれにも当てはまらない</td><td>提案の範囲内</td></tr>
   </table></div>
   <div class="ex"><b>例</b>　区分Cで提案0、在庫が5個 → 在庫 ＞ 提案 なので<b>過剰</b>。区分Aで提案30、在庫20、発注残5 → 25 ＜ 30 なので<b>不足</b>。</div>
@@ -143,7 +148,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
   <p class="what">詳細画面で1品目ずつ判断するときの参考指標です。区分・提案値・在庫状態には影響しません。一覧には、CVとトレンドの列、およびトレンドの絞り込みがあります。</p>
 
   <h4 style="margin:14px 0 0;color:var(--ac)">需要変動（CV）</h4>
-  <p class="what">出庫の安定度を見る指標です。値が小さいほど安定しています。提案値と同じ、スパイク除外後の値で計算します。</p>
+  <p class="what">出庫の安定度を見る指標です。値が小さいほど安定しています。提案値と同じ、スパイク除外後の値で計算します（スパイク除去を「しない」にした品目は除外なしの値）。</p>
   <div class="fx">CV ＝ 標準偏差σ ÷ 月平均使用量（スパイク除外後）</div>
   <div class="sc"><div class="g">0.5以下<small>安定需要</small></div><div class="b">0.5〜0.8<small>軽度の変動</small></div><div class="o">0.8〜1.0<small>中度の変動</small></div><div class="r">1.0以上<small>変動大</small></div></div>
   <div class="sw"><table>
@@ -187,13 +192,13 @@ th{color:var(--sub);font-weight:600;font-size:12px}
 
 <section class="card">
   <h2><b>7</b>担当者の記入と見直し</h2>
-  <p class="what">黄色い列に責任者の判断を書き、提案値とのずれから閾値を調整します。</p>
+  <p class="what">担当者・理由・備考を記入し、提案値とのずれから閾値を調整します。</p>
   <div class="cols">
-    <div><h4>決定在庫数</h4><p>責任者が決めた在庫数。「提案値を入力」ボタンで空欄を提案値で埋められます。</p></div>
+    <div><h4>担当者</h4><p>その品目を判断した人。入力があると自動で入ります。</p></div>
     <div><h4>理由（選択式）</h4><p>大口、入荷遅延、ロット発注、ついで買い、念のため保有、不良在庫化、仕様変更、提案どおり。</p></div>
     <div><h4>備考（自由記入）</h4><p>選択肢にない事情や、次回の見直しメモ。</p></div>
   </div>
-  <div class="ex"><b>見直しの例</b>　区分Cで「念のため保有」が多ければ、Cの提案を0にしない運用を検討します。「ついで買い」が多ければ、その分を除く考え方を足します。書き出したCSVの区分別・理由別の件数を数えるのが出発点です。</div>
+  <div class="ex"><b>見直しの例</b>　「念のため保有」が多ければ、提案に余裕を持たせる運用を検討します。「ついで買い」が多ければ、その分を除く考え方を足します。書き出したCSVの理由別の件数を数えるのが出発点です。</div>
 </section>
 </main>
 
