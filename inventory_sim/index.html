@@ -111,7 +111,7 @@ td input[type=checkbox],#myc{width:16px;height:16px;padding:0;margin:0 4px 0 0;v
 <body>
 <main>
 <div id="eb" class="msg r" hidden style="white-space:pre-wrap"></div>
-<div class="hd"><h1>適正在庫 一括判定</h1><div style="display:flex;gap:8px;align-items:center;position:relative"><button type="button" class="btn s" id="bMenu">CSV・フォルダの変更 ▾</button><div class="mn" id="mn" hidden><button type="button" class="btn s" id="mCSV">品目状況一覧CSVを変更</button><button type="button" class="btn s" id="mSD">判定記録フォルダを変更</button><button type="button" class="btn s" id="mLD">ローカル保存先を変更</button></div><a class="btn s" href="logic.html" target="_blank" rel="noopener">判定ロジックを見る</a></div></div>
+<div class="hd"><h1>適正在庫 一括判定</h1><div style="display:flex;gap:8px;align-items:center;position:relative"><button type="button" class="btn s" id="bMenu">CSV・フォルダの変更 ▾</button><div class="mn" id="mn" hidden><button type="button" class="btn s" id="mCSV">品目状況一覧CSVを変更</button><button type="button" class="btn s" id="mSD">判定記録フォルダを変更</button><button type="button" class="btn s" id="mLD">ローカル保存先を変更</button><button type="button" class="btn s" id="mLot">ロット構成（Excel）を更新</button><input type="file" id="lotf" accept=".xlsx,.xlsm" hidden></div><a class="btn s" href="logic.html" target="_blank" rel="noopener">判定ロジックを見る</a></div></div>
 
 <section class="card">
   <div class="row">
@@ -769,7 +769,7 @@ async function pull0(){ // 共有の判定記録を読む。変更のあった�
 }
 async function pullUI(){
   try{
-    const n=await pull();
+    const n=await pull();await lotPull();
     if(PCH){PCH=false;calc()}else if(D.length&&n>0){if(cur)renderD();else render()}
     jm('判定記録を更新しました'+(n?'（他の人の更新 '+n+'件を反映）':'（更新なし）')+' '+new Date().toLocaleTimeString('ja-JP'));
   }catch(e){jm('判定記録の読込失敗：'+e.message)}
@@ -838,9 +838,55 @@ async function jInit(){
 window.addEventListener('beforeunload',e=>{if(dirty().length){e.preventDefault();e.returnValue=''}});
 
 /* ============ ロット絞り込み・Myリスト（追加機能 MYLIST） ============ */
-const LOTS=[{"a":"LD15-02-55","b":"操作ﾎﾟｽﾄUD154B ﾌﾟﾘﾝﾀ無しｼｬｰｼLOT構成","i":["PDC01-04-271","PMA01-51-08","PMA01-51-03","PDA75-06-01","PDA75-06-20","PDA23-01-08","PDC27-02-14","PDC27-02-17","PDA92-08-01","PDA92-02-06","PDA78-08-04","PDA71-09-01","PDA71-09-04","PDA51-01-03","PDA51-01-05","PDA82-01-08","PDA82-01-09","PDA82-01-10","PDA75-03-213","PDA75-03-210","PDA75-03-325","PDA75-03-318","MD01-05-50","PDA75-03-201","PDA75-03-202","PDA75-03-203","PDA75-03-301","PDA78-26-06","PDA78-18-16","PDA78-21-10","PDA04-08-10","PDA04-08-12","PDC15-15-199","PDA23-02-4722101"]},{"a":"UD109C-0","b":"信号灯 (LED、韓国製)　ﾌﾗｯﾄﾚﾝｽﾞ","i":["PDA24-09-11-1","PMA51-05-18","PMA51-06-13-1","PDA12-03-22"]},{"a":"UD162-0","b":"遠隔表示器 (ｱｲﾚｽ電子製）","i":["PDA78-04-21","PDC15-15-217","PMA51-05-06","PMA51-06-13-1","PDA92-28-01"]},{"a":"UD164-P0","b":"M-320","i":["MD01-05-67","MD01-09-70","MD01-08-31","PDA52-19-001","PDA75-01-322","PDA62-09-304","PDA82-04-07","PDA92-30-04","PDC15-15-223","PDC15-15-224","PDC15-15-225","PDC15-15-226","PDC15-15-227","PDC15-15-228"]},{"a":"UD160B","b":"K-400D　制御盤 標準","i":["PDC15-15-213","PDC15-15-214","PDC15-15-215","PDC15-15-200","PDC15-15-201","PDC15-15-202","PDC15-15-203","PDC15-15-204","PDC27-02-44","PDC15-15-205","PDC15-15-206","PDC15-15-207","PDC15-15-209","PDC15-15-210","PDC15-15-211","PDA92-15-15","PDA92-15-16","PDA62-09-138","PDA92-30-04","PDC27-02-45","PDC27-02-38","PDC27-02-46","PDA78-37-008","PDC27-02-40","PDC27-02-47","PDC27-02-49","MD01-05-64","MD01-04-64","MD01-03-23","MD01-11-06","PDA92-08-06","MD01-08-24","PDA74-01-231","PDA71-09-04","PDA71-09-09","PDA78-05-26","PDA78-11-62","PDA23-03-17","MD01-09-64","PDA82-01-12","PDA75-06-25","PDA75-06-17","PDA75-06-24","PDA75-06-16","MD01-07-19","MD01-08-29","PDA52-01-74","PDA92-02-16","PDA78-08-13","PDA52-01-61","PDA52-01-62","PDA52-01-63","PDA52-01-64","PDA52-01-65","PDA52-01-66","PDA52-01-67","PDA52-01-68","PDA52-01-69","PDA52-01-70"]},{"a":"UD156A","b":"DI-300Ⅱ","i":["PDA62-09-303","PDC01-07-156","PDA92-30-04","PDA75-06-21","PDA75-06-22","PDA75-06-23"]}];
-const LS=LOTS.map(l=>new Set(l.i));
-$('fl').innerHTML='<option value="">すべて</option>'+LOTS.map((l,i)=>'<option value="'+i+'">'+esc(l.a)+'('+esc(l.b)+')</option>').join('');
+let LOTS=[{"a":"LD15-02-55","b":"操作ﾎﾟｽﾄUD154B ﾌﾟﾘﾝﾀ無しｼｬｰｼLOT構成","i":["PDC01-04-271","PMA01-51-08","PMA01-51-03","PDA75-06-01","PDA75-06-20","PDA23-01-08","PDC27-02-14","PDC27-02-17","PDA92-08-01","PDA92-02-06","PDA78-08-04","PDA71-09-01","PDA71-09-04","PDA51-01-03","PDA51-01-05","PDA82-01-08","PDA82-01-09","PDA82-01-10","PDA75-03-213","PDA75-03-210","PDA75-03-325","PDA75-03-318","MD01-05-50","PDA75-03-201","PDA75-03-202","PDA75-03-203","PDA75-03-301","PDA78-26-06","PDA78-18-16","PDA78-21-10","PDA04-08-10","PDA04-08-12","PDC15-15-199","PDA23-02-4722101"]},{"a":"UD109C-0","b":"信号灯 (LED、韓国製)　ﾌﾗｯﾄﾚﾝｽﾞ","i":["PDA24-09-11-1","PMA51-05-18","PMA51-06-13-1","PDA12-03-22"]},{"a":"UD162-0","b":"遠隔表示器 (ｱｲﾚｽ電子製）","i":["PDA78-04-21","PDC15-15-217","PMA51-05-06","PMA51-06-13-1","PDA92-28-01"]},{"a":"UD164-P0","b":"M-320","i":["MD01-05-67","MD01-09-70","MD01-08-31","PDA52-19-001","PDA75-01-322","PDA62-09-304","PDA82-04-07","PDA92-30-04","PDC15-15-223","PDC15-15-224","PDC15-15-225","PDC15-15-226","PDC15-15-227","PDC15-15-228"]},{"a":"UD160B","b":"K-400D　制御盤 標準","i":["PDC15-15-213","PDC15-15-214","PDC15-15-215","PDC15-15-200","PDC15-15-201","PDC15-15-202","PDC15-15-203","PDC15-15-204","PDC27-02-44","PDC15-15-205","PDC15-15-206","PDC15-15-207","PDC15-15-209","PDC15-15-210","PDC15-15-211","PDA92-15-15","PDA92-15-16","PDA62-09-138","PDA92-30-04","PDC27-02-45","PDC27-02-38","PDC27-02-46","PDA78-37-008","PDC27-02-40","PDC27-02-47","PDC27-02-49","MD01-05-64","MD01-04-64","MD01-03-23","MD01-11-06","PDA92-08-06","MD01-08-24","PDA74-01-231","PDA71-09-04","PDA71-09-09","PDA78-05-26","PDA78-11-62","PDA23-03-17","MD01-09-64","PDA82-01-12","PDA75-06-25","PDA75-06-17","PDA75-06-24","PDA75-06-16","MD01-07-19","MD01-08-29","PDA52-01-74","PDA92-02-16","PDA78-08-13","PDA52-01-61","PDA52-01-62","PDA52-01-63","PDA52-01-64","PDA52-01-65","PDA52-01-66","PDA52-01-67","PDA52-01-68","PDA52-01-69","PDA52-01-70"]},{"a":"UD156A","b":"DI-300Ⅱ","i":["PDA62-09-303","PDC01-07-156","PDA92-30-04","PDA75-06-21","PDA75-06-22","PDA75-06-23"]}];
+let LS=LOTS.map(l=>new Set(l.i)),LSAVED=0;
+try{const o=JSON.parse(localStorage.getItem('invLots')||'null');if(o&&o.lots&&o.lots.length){LOTS=o.lots;LSAVED=o.saved||0;LS=LOTS.map(l=>new Set(l.i))}}catch(e){}   // 前回取り込んだロット構成があればそちらを使う
+function lotUi(sel){
+  const s=$('fl');
+  s.innerHTML='<option value="">すべて</option>'+LOTS.map((l,i)=>'<option value="'+i+'">'+esc(l.a)+'('+esc(l.b)+')</option>').join('');
+  const k=LOTS.findIndex(l=>l.a===sel);s.value=k>=0?String(k):'';
+}
+function setLots(a,t){
+  const v=$('fl').value,old=v!==''&&LOTS[+v]?LOTS[+v].a:'';
+  LOTS=a;LSAVED=t||0;LS=LOTS.map(l=>new Set(l.i));
+  try{localStorage.setItem('invLots',JSON.stringify({lots:a,saved:LSAVED}))}catch(e){}
+  lotUi(old);
+  if(D.length&&!cur)render();
+}
+lotUi('');
+async function lotPull(){   // 共有フォルダのロット構成が新しければ取り込む
+  if(!SD)return;
+  try{const o=await rd(SD,'ロット構成.json');if(o&&o.lots&&o.lots.length&&(o.saved||0)>LSAVED)setLots(o.lots,o.saved)}catch(e){}
+}
+function loadXlsx(){return window.XLSX?Promise.resolve():new Promise((ok,ng)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=ok;s.onerror=()=>ng(new Error('Excel読込の部品を取得できませんでした（インターネット接続を確認してください）'));document.head.appendChild(s)})}
+function lotsFrom(rows){   // 最初のシート：A品目(ロット生産)・B品名(ロット生産)・C品目。A・Bは各ロットの先頭行だけ入力
+  const h=(rows[0]||[]).map(x=>String(x==null?'':x).trim());
+  if(!h[0].includes('ロット生産')||h[2]!=='品目')throw new Error('「ロット製作品の構成」の形式ではありません（1行目：A列「品目（ロット生産）」、C列「品目」）');
+  const out=[];
+  for(const r of rows.slice(1)){
+    const a=String(r[0]==null?'':r[0]).trim(),c=String(r[2]==null?'':r[2]).trim();
+    if(a)out.push({a,b:String(r[1]==null?'':r[1]).trim(),i:[]});
+    if(c&&out.length&&!out[out.length-1].i.includes(c))out[out.length-1].i.push(c);
+  }
+  if(!out.length)throw new Error('ロットが見つかりませんでした');
+  return out;
+}
+async function lotImport(f){
+  try{
+    await loadXlsx();
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    const lots=lotsFrom(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:true}));
+    const n=lots.reduce((s,l)=>s+l.i.length,0);
+    const i=await ask('ロット構成を更新します（'+lots.length+'ロット・延べ'+n+'品目）。<br><span style="font-weight:400;font-size:13px">'+(SD?'判定記録フォルダに保存し、全員に反映します。':'判定記録フォルダが未設定のため、このPCだけに反映します。')+'</span>',[['更新する',1],['キャンセル',0]]);
+    if(i!==0)return;
+    const t=Date.now();let shared=false;
+    if(SD){try{if(await perm(SD,'readwrite')){await wr(SD,'ロット構成.json',{v:1,saved:t,by:ME,lots});shared=true}}catch(e){jm('共有への保存に失敗：'+e.message)}}
+    setLots(lots,t);
+    alert('ロット構成を更新しました（'+lots.length+'ロット）。\n'+(shared?'全員に反映されます（各自の画面は次回の更新確認で切り替わります）。':'※共有には保存されていません。判定記録フォルダを設定してから、もう一度更新してください。'));
+  }catch(x){alert('ロット構成の更新に失敗：'+x.message)}
+}
+$('mLot').onclick=()=>{$('mn').hidden=true;$('lotf').click()};
+$('lotf').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)lotImport(f)};
 const lotOk=r=>{const v=$('fl').value;return v===''||LS[+v].has(r.c)};
 const myOk=r=>!$('myc').checked||MY.has(r.c);
 function lotNote(){
