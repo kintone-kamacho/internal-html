@@ -111,12 +111,14 @@ h2.d b{background:var(--ac);color:#fff;border-radius:50%;width:24px;height:24px;
 <section class="card">
   <div class="row">
     <div><label class="l">① 品目状況一覧CSVと判定記録</label><div class="row" style="gap:8px;align-items:center"><span class="um"><label><input type="radio" name="um" value="m" checked>手動</label><label><input type="radio" name="um" value="a">自動</label></span><button class="btn" id="bF">CSVを読み込む</button><button class="btn" id="bSend">送信（未送信 0件）</button><input type="file" id="fi" accept=".csv,.CSV,text/csv" hidden></div></div>
-    <div><label class="l">判定の初期設定（固定・説明のみ）</label><div class="fxv">
-      <span>初期方式：所要量方式 <button type="button" class="hp" tabindex="-1" data-h="md" title="クリックで説明を表示">?</button></span>
-      <span>安全係数 <button type="button" class="hp" tabindex="-1" data-h="al" title="クリックで説明を表示">?</button></span>
-      <span>スパイク判定 <button type="button" class="hp" tabindex="-1" data-h="sp" title="クリックで説明を表示">?</button></span>
-      <span>区分 <button type="button" class="hp" tabindex="-1" data-h="ku" title="クリックで説明を表示">?</button></span>
-      <span>トレンドの基準 <button type="button" class="hp" tabindex="-1" data-h="tm" title="クリックで説明を表示">?</button></span></div>
+    <div><label class="l">判定の初期設定（固定・説明のみ）</label>
+      <div class="fxv">
+        <span>手配方式 <button type="button" class="hp" tabindex="-1" data-h="md" title="クリックで説明を表示">?</button></span>
+        <span>安全係数 <button type="button" class="hp" tabindex="-1" data-h="al" title="クリックで説明を表示">?</button></span>
+        <span>スパイク判定 <button type="button" class="hp" tabindex="-1" data-h="sp" title="クリックで説明を表示">?</button></span>
+        <span>CVの基準 <button type="button" class="hp" tabindex="-1" data-h="cv" title="クリックで説明を表示">?</button></span>
+        <span>トレンドの基準 <button type="button" class="hp" tabindex="-1" data-h="tm" title="クリックで説明を表示">?</button></span>
+      </div>
       <div class="note" style="margin-top:3px">方式・納期・最小ロット・安全係数・トレンドの基準は、品目を開いた個別画面で品目ごとに変更できます。</div></div>
     <div><label class="l">あなたの名前（担当者名）</label><input type="text" id="me" style="width:150px" placeholder="例：田中"></div><datalist id="own"></datalist>
   </div>
@@ -129,26 +131,27 @@ h2.d b{background:var(--ac);color:#fff;border-radius:50%;width:24px;height:24px;
 <section class="card" id="sec" hidden>
   <div class="sum" id="sum"></div>
   <div class="fb" id="fb">
-    <div><label class="l">検索（コード・品名）</label><input type="text" id="q" style="width:180px"></div>
-    <div><label class="l">方式</label><select id="fm"><option value="">すべて</option><option value="req">所要量方式</option><option value="op">発注点方式</option></select></div>
-    <div><label class="l">LT（日）</label><div class="rg"><select id="ltM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option></select><input type="number" min="0" id="ltA" hidden><span id="ltS" hidden>〜</span><input type="number" min="0" id="ltB" hidden></div></div>
-    <div><label class="l">最小ロット</label><div class="rg"><select id="moqM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option></select><input type="number" min="0" id="moqA" hidden><span id="moqS" hidden>〜</span><input type="number" min="0" id="moqB" hidden></div></div>
-    <div><label class="l">CV</label><select id="fcv"><option value="">すべて</option><option value="安定需要">安定需要</option><option value="軽度の変動">軽度の変動</option><option value="中度の変動">中度の変動</option><option value="変動大">変動大</option><option value="判定不可">判定不可</option></select></div>
-    <div><label class="l">トレンド</label><select id="ft"><option value="">すべて</option><option value="u">増加傾向 ↗</option><option value="d">減少傾向 ↘</option><option value="s">安定 →</option><option value="n">判定不可</option></select></div>
-    <div><label class="l">区分</label><select id="fc"><option value="">すべて</option><option value="A 定常">A 定常</option><option value="B 変動">B 変動</option><option value="C 間欠">C 間欠</option><option value="D 稀少">D 稀少</option><option value="D 一品">D 一品</option><option value="対象外">対象外</option></select></div>
-    <div><label class="l">在庫状態</label><select id="fs"><option value="">すべて</option><option value="不良在庫候補">不良在庫候補</option><option value="過剰">過剰</option><option value="不足">不足</option><option value="適正">適正</option></select></div>
-    <div><label class="l">記入</label><select id="fj"><option value="">すべて</option><option value="y">記入済み</option><option value="n">未記入</option></select></div>
-    <div><label class="l">担当者</label><select id="fo"></select></div>
-    <button class="btn s" id="bClr">条件クリア</button>
-    <button class="btn" id="bX">表示中をCSV書き出し</button>
+      <div><label class="l">検索（コード・品名）</label><input type="text" id="q" style="width:180px"></div>
+      <div><label class="l">方式</label><select id="fm"><option value="">すべて</option><option value="req">所要量方式</option><option value="op">発注点方式</option></select></div>
+      <div><label class="l">LT（日）</label><div class="rg"><select id="ltM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option></select><input type="number" min="0" id="ltA" hidden><span id="ltS" hidden>〜</span><input type="number" min="0" id="ltB" hidden></div></div>
+      <div><label class="l">最小ロット</label><div class="rg"><select id="moqM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option></select><input type="number" min="0" id="moqA" hidden><span id="moqS" hidden>〜</span><input type="number" min="0" id="moqB" hidden></div></div>
+      <div><label class="l">在庫状態</label><select id="fs"><option value="">すべて</option><option value="不良在庫候補">不良在庫候補</option><option value="過剰">過剰</option><option value="不足">不足</option><option value="適正">適正</option></select></div>
+      <div><label class="l">CV</label><select id="fcv"><option value="">すべて</option><option value="安定需要">安定需要</option><option value="軽度の変動">軽度の変動</option><option value="中度の変動">中度の変動</option><option value="変動大">変動大</option><option value="判定不可">判定不可</option></select></div>
+      <div><label class="l">トレンド</label><select id="ft"><option value="">すべて</option><option value="u">増加傾向 ↗</option><option value="d">減少傾向 ↘</option><option value="s">安定 →</option><option value="n">判定不可</option></select></div>
+      <div><label class="l">担当者</label><select id="fo"></select></div>
+      <div><label class="l">記入状況</label><select id="fj"><option value="">すべて</option><option value="y">記入済み</option><option value="n">未記入</option></select></div>
+      <div hidden><label class="l">区分</label><select id="fc"><option value="">すべて</option><option value="A 定常">A 定常</option><option value="B 変動">B 変動</option><option value="C 間欠">C 間欠</option><option value="D 稀少">D 稀少</option><option value="D 一品">D 一品</option><option value="対象外">対象外</option></select></div>
+      <button class="btn s" id="bClr">条件クリア</button>
+      <button class="btn" id="bX">表示中をCSV書き出し</button>
   </div>
   <div class="note" style="margin-top:6px">選んだ条件すべてに当てはまる品目を表示します。LT・最小ロットは「以下／範囲／以上」を選び、数値を入力してください。</div>
 </section>
 
 <section class="card" id="tc" hidden>
   <div class="tw"><table><thead><tr>
-    <th class="t">品目コード</th><th class="t">品名</th><th>方式</th><th class="sep">LT</th><th>最小ロット</th><th class="sep">CV</th><th>トレンド</th><th>区分</th>
+    <th class="t">品目コード</th><th class="t">品名</th><th>方式</th><th class="sep">LT</th><th>最小ロット</th>
     <th class="sep">提案 基準</th><th>提案 MAX</th><th>現行 基準</th><th>現行 最大</th><th>在庫</th><th>発注残</th><th>在庫状態</th>
+    <th class="sep">CV</th><th>トレンド</th>
     <th class="in t">担当者</th>
   </tr></thead><tbody id="tb2"></tbody></table></div>
   <div class="pg"><button class="btn s" id="pP">◀</button><span id="pi"></span><button class="btn s" id="pN">▶</button><span class="note">記入内容はこのブラウザに自動保存されます。共有への反映は「送信」</span><span class="note">　黄色の枠＝個別で変更した値／緑のタグ＝理由・備考の記載あり（マウスを乗せると内容を表示）／紫＝トレンドを除外後で判定／⇄＝除外前後でトレンド判定が異なる</span></div>
@@ -280,9 +283,10 @@ function render(){
     return `<tr data-c="${esc(r.c)}"><td class="t lk">${esc(r.c)}${r.chg?' <span class="tg cg">変更有</span>':''}${j.r?' <span class="tg g" title="'+esc(j.r)+'">理由有</span>':''}${j.n?' <span class="tg g" title="'+esc(j.n)+'">備考有</span>':''}</td><td class="t w">${esc(r.n)}<div class="note">${esc(r.s)}</div><div class="note">${[r.k?'メーカー '+esc(r.k):'',r.t?'手配先 '+esc(r.t):'',r.pr?'単価 '+fmt(r.pr)+'円':''].filter(Boolean).join('　／　')}</div></td>`
     +`<td><span class="tg ${r.md==='op'?'o':''}">${mdn(r.md)}</span></td>`
     +`<td class="sep${r.lt!==r.lt0?' chg':''}" title="${r.lt!==r.lt0?'データ値 '+r.lt0:''}">${r.lt}</td><td class="${r.moq!==r.moq0?'chg':''}" title="${r.moq!==r.moq0?'データ値 '+r.moq0:''}">${r.moq}</td>`
-    +`<td class="sep"><span class="tg ${ci.c}" title="CV ${r.cv===null?'－':r.cv.toFixed(2)}">${ci.l}</span></td><td class="${r.tm==='adj'?'tv':''}">${r.tr===null?'<span class="tg">'+ti.l+'</span>':`<span class="tg ${r.tm==='adj'?'v':ti.c}" title="トレンド値 ${r.tr.toFixed(2)}">${ti.l}</span>`}${r.tm==='adj'?'<div class="note" style="color:var(--vtx)">除外後</div>':''}${r.tr!==null&&r.tkAlt!==r.tk?`<span class="note" title="${r.tm==='adj'?'除外前':'除外後'}の基準では「${esc(trInfo(r.tAlt).l)}」">⇄</span>`:''}</td><td><span class="tg ${cc(r.cls)}">${r.cls}</span></td>`
     +`<td class="sep"><b>${fmt(r.p)}</b></td><td><b>${r.mx?fmt(r.mx):'－'}</b></td><td>${fmt(r.pb)}</td><td>${fmt(r.px)}</td><td>${fmt(r.st)}</td><td>${fmt(r.po)}</td>`
     +`<td><span class="tg ${sc(r.stt)}">${r.stt}</span></td>`
+    +`<td class="sep"><span class="tg ${ci.c}" title="CV ${r.cv===null?'－':r.cv.toFixed(2)}">${ci.l}</span></td>`
+    +`<td class="${r.tm==='adj'?'tv':''}">${r.tr===null?'<span class="tg">'+ti.l+'</span>':`<span class="tg ${r.tm==='adj'?'v':ti.c}" title="トレンド値 ${r.tr.toFixed(2)}">${ti.l}</span>`}${r.tm==='adj'?'<div class="note" style="color:var(--vtx)">除外後</div>':''}${r.tr!==null&&r.tkAlt!==r.tk?`<span class="note" title="${r.tm==='adj'?'除外前':'除外後'}の基準では「${esc(trInfo(r.tAlt).l)}」">⇄</span>`:''}</td>`
     +`<td class="in t"><input type="text" data-f="o" list="own" value="${esc(j.o||'')}" style="width:120px"></td></tr>`;
   }).join('');
   $('pi').textContent=(V.length?pg*PS+1:0)+'–'+Math.min((pg+1)*PS,V.length)+' / '+fmt(V.length)+'件';
@@ -639,10 +643,11 @@ $('bX').onclick=()=>{
 /* ============ 設定欄のヘルプ（クリックのみ） ============ */
 const HP={
 al:['安全係数（α）とは','<p>欠品をどこまで許すかを表す数字です。大きいほど安全在庫が増え、欠品しにくくなります。</p><p>安全在庫 ＝ α × σ（出庫のばらつき）× √L（納期の月換算）</p><table><tr><th>許容率</th><th>α</th><th>目安</th></tr><tr><td>1%</td><td>2.33</td><td>欠品すると生産ラインが即停止する主要部品</td></tr><tr><td>2%</td><td>2.06</td><td>調達が難しく代替がきかない部品</td></tr><tr><td>5%</td><td>1.65</td><td>通常の標準部品・資材（初期値）</td></tr><tr><td>10%</td><td>1.29</td><td>汎用品・即時代替手配が可能な品目</td></tr></table><p>初期値は1.65で固定です。品目ごとに変えたい場合は、品目の個別画面で変更できます。</p>'],
-sp:['スパイク判定（中央値の○倍超）とは','<p>スパイクとは、その品目のふだんの出庫から見て、飛び抜けて多い月のことです。</p><p>① 12カ月の出庫を小さい順に並べ、真ん中の値（6番目と7番目の平均）を<b>中央値</b>とします。大口の月が1〜2回あっても、中央値はほとんど動きません。<br>② 中央値 × 倍率 ＝ <b>しきい値</b>。<br>③ しきい値を超えた月を、中央値に置き換えて、平均とσを計算します。</p><p><b>例</b>　中央値8.5、倍率3 → しきい値25.5。10月の29個は超えるので8.5に置き換わり、基準在庫が54個から43個になります。倍率を4にするとしきい値は34になり、29個は除外されません。</p><p>倍率を大きくするほど除外されにくく、小さくするほど除外されやすくなります。中央値が0の品目は、スパイク除外をしません。</p>'],
+sp:['スパイク判定とは','<p>スパイクとは、その品目のふだんの出庫から見て、飛び抜けて多い月のことです。本ツールは<b>中央値の3倍を超えた月</b>をスパイクとし、倍率3は全品目共通の固定値です。</p><p><b>スパイク除外の流れ</b></p><table><tr><th>手順</th><th>内容</th></tr><tr><td>① 中央値</td><td>12カ月を小さい順に並べ、6番目と7番目の平均。大口の月が1〜2回あっても、ほとんど動きません</td></tr><tr><td>② しきい値</td><td>中央値 × 3</td></tr><tr><td>③ 置き換え</td><td>しきい値を超えた月の出庫を、中央値に置き換える</td></tr><tr><td>④ 再計算</td><td>置き換え後の月平均とσを求める</td></tr><tr><td>⑤ 提案値</td><td>納期中の消費（月平均×L）＋安全在庫（α×σ×√L）＝基準在庫</td></tr></table><p><b>除外の影響を受けるもの</b>：提案基準・提案MAX・CV。<br><b>受けないもの</b>：区分の出庫月数（実績どおりに数えます）。トレンドは初期設定では除外前の実績で、品目ごとに切り替えられます。</p><p><b>3で固定している理由</b></p><p>・小さすぎる倍率（2倍など）は、通常の繁忙月まで除外して需要を過小評価し、欠品につながります。<br>・大きすぎる倍率（4倍以上）は、大口が除外されず、σが膨らんで安全在庫が過大になります。<br>・品目ごとに倍率を変えると、担当者によって提案値の基準がばらつくため、全品目共通で固定しています。</p><p><b>例</b>　中央値8.5 → しきい値25.5。10月の29個は超えるので8.5に置き換わり、基準在庫は54個から43個になります。倍率を4にするとしきい値は34になり、29個は除外されません。</p><p>中央値が0の品目は、スパイク除外をしません。除外された月は、品目の個別画面で赤い棒として確認できます。</p>'],
 ku:['区分（A定常・B変動・C間欠・D稀少）とは','<p>過去12カ月のうち、出庫があった月の数で品目を分けます。ばらつきの大きさではなく、<b>どれだけ毎月動くか</b>の頻度です。</p><table><tr><th>区分</th><th>出庫月数</th><th>提案</th></tr><tr><td>A 定常</td><td>9カ月以上</td><td>計算式で提案</td></tr><tr><td>B 変動</td><td>5〜8カ月</td><td>計算式で提案</td></tr><tr><td>C 間欠</td><td>2〜4カ月</td><td>在庫0・都度手配</td></tr><tr><td>D 稀少</td><td>0〜1カ月</td><td>在庫0・都度手配</td></tr></table><p>区分D 一品（CSVで「一品」）と、在庫管理が空欄の品目（対象外）も在庫0を提案します。出庫月数と除外月は、品目を開くと確認できます。</p>'],
 md:['手配方式とは','<table><tr><th>方式</th><th>内容</th></tr><tr><td>所要量方式（初期）</td><td>基準在庫（目標維持在庫）を目安に、必要な分を手配します。MAXは設定不要です。</td></tr><tr><td>発注点方式</td><td>基準在庫を発注点とし、MAX ＝ 基準在庫 ＋ 最小ロットを設定します。</td></tr></table><p>方式は個別画面で品目ごとに切り替えられ、切り替えると提案値を再計算します。個別に変更した値は、一覧では黄色の枠、個別画面では黄色の欄で示します。需要変動（CV）が小さい品目は発注点、大きい品目は所要量が向きます。</p>'],
-tm:['トレンドの基準とは','<p>増減トレンド ＝ 直近3カ月の月平均 ÷ 12カ月の月平均 です（1.2以上＝増加傾向、0.8未満＝減少傾向）。この計算に使う出庫を切り替えます。</p><table><tr><th>基準</th><th>内容</th></tr><tr><td>除外前の実績（初期）</td><td>実際の出庫そのままで計算します。直近の大口も「増加」の兆候として反映されます。</td></tr><tr><td>スパイク除外後</td><td>大口の月を中央値に置き換えて計算します。一時的な特需に引きずられにくくなります。</td></tr></table><p>基準は品目を開いた個別画面で切り替えられます。切り替えた品目は、一覧のトレンド欄が紫色になります。除外前と除外後で判定が変わる品目には、一覧に「⇄」が付きます。</p><p>需要変動（CV）は、提案値と同じスパイク除外後の値で固定です。</p>']
+tm:['トレンドの基準とは','<p>増減トレンド ＝ 直近3カ月の月平均 ÷ 12カ月の月平均 です（1.2以上＝増加傾向、0.8未満＝減少傾向）。この計算に使う出庫を切り替えます。</p><table><tr><th>基準</th><th>内容</th></tr><tr><td>除外前の実績（初期）</td><td>実際の出庫そのままで計算します。直近の大口も「増加」の兆候として反映されます。</td></tr><tr><td>スパイク除外後</td><td>大口の月を中央値に置き換えて計算します。一時的な特需に引きずられにくくなります。</td></tr></table><p>基準は品目を開いた個別画面で切り替えられます。切り替えた品目は、一覧のトレンド欄が紫色になります。除外前と除外後で判定が変わる品目には、一覧に「⇄」が付きます。</p><p>需要変動（CV）は、提案値と同じスパイク除外後の値で固定です。</p>'],
+cv:['CVの基準（需要変動）とは','<p>CV（変動係数）は、毎月の出庫が平均に対してどれだけばらつくかを表す数字です。</p><p>CV ＝ σ（標準偏差）÷ 月平均</p><p>σと月平均は、提案値の計算と同じ<b>スパイク除外後</b>の出庫から求めます。一時的な大口に引きずられず、品目本来のばらつきを見るためです（この基準は固定です）。</p><table><tr><th>CV</th><th>判定</th><th>向く方式</th></tr><tr><td>0.5以下</td><td>安定需要</td><td>発注点</td></tr><tr><td>0.5超〜0.8未満</td><td>軽度の変動</td><td>発注点（安全係数を少し高めに・定期見直し）</td></tr><tr><td>0.8以上〜1.0未満</td><td>中度の変動</td><td>所要量を検討</td></tr><tr><td>1.0以上</td><td>変動大</td><td>所要量</td></tr></table><p>12カ月の月平均が0の品目は「判定不可」です。一覧のCV欄にマウスを乗せると、CVの値を確認できます。</p>']
 };
 let hOn='';
 document.querySelectorAll('.hp').forEach(b=>{
