@@ -112,6 +112,10 @@ td input[type=checkbox],#myc{width:16px;height:16px;padding:0;margin:0 4px 0 0;v
 .bk td.mc input[data-bk]{accent-color:#d9480f;width:20px;height:20px;outline:2px solid #d9480f;outline-offset:1px;border-radius:3px}
 tr.bks td{background:rgba(224,110,20,.22)!important}
 td.ed{cursor:pointer}td.ed:hover{outline:2px dashed var(--ac);outline-offset:-2px}td.w{cursor:pointer}td.ed select,td.ed input{max-width:150px;font:inherit}
+/* 一時的なLT延長（水色） */
+:root{--xbg:#d6ecfb;--xln:#2a8bd8}@media (prefers-color-scheme:dark){:root{--xbg:#16384f;--xln:#4aa3e8}}
+td.xe{background:var(--xbg)!important;box-shadow:inset 0 0 0 2px var(--xln)}.tg.x{background:var(--xbg);color:var(--tx);box-shadow:inset 0 0 0 1px var(--xln)}
+.xb{margin-left:4px;padding:0 5px;border:1px solid var(--xln);border-radius:4px;background:var(--card);cursor:pointer;font-size:12px;line-height:18px;vertical-align:middle}.xb.on{background:var(--xln);color:#fff}
 </style>
 </head>
 <body>
@@ -148,9 +152,10 @@ td.ed{cursor:pointer}td.ed:hover{outline:2px dashed var(--ac);outline-offset:-2p
       <div><label class="l">Myリスト</label><label style="display:flex;align-items:center;height:32px;white-space:nowrap;cursor:pointer"><input type="checkbox" id="myc">Myリストのみ</label></div>
       <div><label class="l">ロット（品目・品名）</label><select id="fl"><option value="">すべて</option></select><div class="note" id="ln"></div></div>
       <div><label class="l">方式</label><select id="fm"><option value="">すべて</option><option value="req">所要量方式</option><option value="op">発注点方式</option></select></div>
-      <div><label class="l">LT（日）</label><div class="rg"><select id="ltM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option></select><input type="number" min="0" id="ltA" hidden><span id="ltS" hidden>〜</span><input type="number" min="0" id="ltB" hidden></div></div>
+      <div><label class="l">LT（日）</label><div class="rg"><select id="ltM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option><option value="ex">延長中</option></select><input type="number" min="0" id="ltA" hidden><span id="ltS" hidden>〜</span><input type="number" min="0" id="ltB" hidden></div></div>
       <div><label class="l">最小ロット</label><div class="rg"><select id="moqM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option></select><input type="number" min="0" id="moqA" hidden><span id="moqS" hidden>〜</span><input type="number" min="0" id="moqB" hidden></div></div>
       <div><label class="l">在庫状態</label><select id="fs"><option value="">すべて</option><option value="不良在庫候補">不良在庫候補</option><option value="過剰">過剰</option><option value="不足">不足</option><option value="適正">適正</option></select></div>
+      <div><label class="l">LT延長の履歴</label><select id="fx"><option value="">すべて</option><option value="past">過去に延長あり（現在は通常）</option></select></div>
       <div><label class="l">需要変動(CV)</label><select id="fcv"><option value="">すべて</option><option value="安定需要">安定需要</option><option value="軽度の変動">軽度の変動</option><option value="中度の変動">中度の変動</option><option value="変動大">変動大</option><option value="判定不可">判定不可</option></select></div>
       <div><label class="l">トレンド</label><select id="ft"><option value="">すべて</option><option value="u">増加傾向 ↗</option><option value="d">減少傾向 ↘</option><option value="s">安定 →</option><option value="n">判定不可</option></select></div>
       <div><label class="l">区分</label><select id="fc"><option value="">すべて</option><option value="A 定常">A 定常</option><option value="B 変動">B 変動</option><option value="C 間欠">C 間欠</option><option value="D 稀少">D 稀少</option><option value="D 一品">D 一品</option><option value="対象外">対象外</option><option value="下限">下限（個別設定）</option><option value="未使用">未使用（個別設定）</option></select></div>
@@ -167,7 +172,7 @@ td.ed{cursor:pointer}td.ed:hover{outline:2px dashed var(--ac);outline-offset:-2p
     <div class="row" style="gap:6px;margin-top:6px"><button type="button" class="btn s" id="bkAllV">絞り込み結果をすべて選択</button><button type="button" class="btn s" id="bkMy">Myリストの品目を選択</button><button type="button" class="btn s" id="bkNone">全解除</button><button type="button" class="btn" id="bkGo">この内容で一斉変更…</button><button type="button" class="btn s" id="bkEnd">モード終了</button></div>
   </div>
   <div class="tw"><table><thead><tr>
-    <th class="t">品目コード</th><th class="t">品名</th><th>方式</th><th class="sep">LT</th><th>最小ロット</th>
+    <th class="t">品目コード</th><th class="t">品名</th><th>方式</th><th class="sep">LT <button type="button" class="xb" id="xMode" title="押すと「延長入力中」になり、LT欄のクリックが延長入力だけになります（通常LTは変更できません）。もう一度押すと通常入力に戻ります">⏱</button></th><th>最小ロット</th>
     <th class="sep">提案基準</th><th>提案最大</th><th>現行基準</th><th>現行最大</th><th>在庫</th><th>発注残</th><th>在庫状態</th>
     <th class="sep">需要変動(CV)</th><th>トレンド</th><th>区分</th>
     
@@ -187,7 +192,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const RS=['','一時的な大口（案件・特需）','入荷遅延が常態化','ロット発注の都合','ついで買いの余剰','長納期のため念のため保有','不良在庫化（動かない）','代替・仕様変更で不使用','提案どおりで問題なし'];
 const PS=100;
 const AL0=1.65,SPK=3,TAK=9,TBK=5,TMK='raw',MNK=5;   // MNK：出庫月数の下限の初期値（Bの下限と同じ）
-let D=[],R=[],V=[],pg=0,J={},P={},BK=null;   // BK：一括変更モードの状態（{spec:変更内容, sel:対象品目のSet}）
+let D=[],R=[],V=[],pg=0,J={},P={},BK=null,XM=false;   // XM：LT延長の入力モード（ヘッダーの⏱で切り替え）   // BK：一括変更モードの状態（{spec:変更内容, sel:対象品目のSet}）
 const svP=()=>{};
 const ovr=c=>(J[c]&&J[c].p)||{};   // 個別設定（方式・LT・最小ロット・安全係数・トレンド基準）は判定記録(J)の中に持ち、送信で共有する
 try{J=JSON.parse(localStorage.getItem('invJ')||'{}')}catch(e){}
@@ -261,18 +266,20 @@ const tkOf=tr=>tr===null?'':tr>=1.2?'u':tr<.8?'d':'s';
 const mkR=d0=>{
     const o=ovr(d0.c),md=o.md||'req',al=o.al||AL0,tm=o.tm||'raw',sx=o.sx==='off'?'off':'on',ck=o.ck||'cls',mn=o.mn!==undefined?o.mn:MNK;
     const d=Object.assign({},d0,{lt:o.lt!==undefined?o.lt:d0.lt,moq:o.moq!==undefined?o.moq:d0.moq});
+    const xr=(J[d0.c]&&J[d0.c].x)||null,xx=xr&&xr.l>0?xr:null,ltN=d.lt;if(xx)d.lt=xx.l;   // 一時的なLT延長：延長中は延長後のLTで計算（ltN＝通常LT）
     const k=core(d,al,sx==='off'?Infinity:SPK),nz=d.m.filter(v=>v>0).length,ex=k.ex;
     const cls=d.one?'D 一品':!d.mg?'対象外':nz>=TAK?'A 定常':nz>=TBK?'B 変動':nz>=2?'C 間欠':'D 稀少';
     const sp0=d.one||!d.mg;   // 一品・在庫管理外は、どの設定でも在庫0
     const live=ck==='min'?(!sp0&&nz>=mn):ck==='off'?!sp0:(cls[0]==='A'||cls[0]==='B');
     const cl=(ck==='cls'||sp0)?cls:ck==='min'?'下限':'未使用';
     const p=live?k.a.base:0,mx=live&&md==='op'?p+d.moq:0;
+    const pN=xx&&live?core(Object.assign({},d,{lt:ltN}),al,sx==='off'?Infinity:SPK).a.base:p;
     let stt='適正';
     if(d.st>0&&nz===0)stt='不良在庫候補';
     else if(d.st>p+d.moq&&d.st>0)stt='過剰';   // 最小ロット1回分は発注の都合で必ず余るため、基準在庫＋最小ロットまでは過剰としない
     else if(live&&d.st+d.po<p)stt='不足';
     const cv=cvOf(k.a),tRaw=trOf(d.m),tAdj=trOf(k.cm),tr=tm==='adj'?tAdj:tRaw,tAlt=tm==='adj'?tRaw:tAdj;
-    return Object.assign({},d,{md,al,tm,lt0:d0.lt,moq0:d0.moq,chg:Object.keys(o).length>0,nz,ex,cls,cl,live,sx,ck,mn,p,mx,stt,cv,tr,tAlt,tk:tkOf(tr),tkAlt:tkOf(tAlt)});
+    return Object.assign({},d,{md,al,tm,lt0:d0.lt,moq0:d0.moq,ext:xx,ltN,pN,chg:Object.keys(o).length>0,nz,ex,cls,cl,live,sx,ck,mn,p,mx,stt,cv,tr,tAlt,tk:tkOf(tr),tkAlt:tkOf(tAlt)});
 };
 function calc(){R=D.map(mkR);if(cur){route()}else render()}
 function calcOne(c){const i=D.findIndex(x=>x.c===c);if(i>=0)R[i]=mkR(D[i])}
@@ -284,28 +291,28 @@ const sc=s=>s==='不良在庫候補'?'o':s==='過剰'?'r':s==='不足'?'b':'g';
 const mdn=m=>m==='op'?'発注点':'所要量';
 /* 絞り込み：プルダウン＋LT・最小ロットは「以下／範囲／以上」＋数値入力 */
 const cvk=r=>cvInfo(r.cv).l;
-const SF=[['fm',r=>r.md],['fcv',cvk],['ft',r=>r.tk||'n'],['fc',r=>r.cl],['fs',r=>r.stt]];
+const SF=[['fx',r=>r.ext?'now':((J[r.c]&&J[r.c].xh&&J[r.c].xh.length)?'past':'')],['fm',r=>r.md],['fcv',cvk],['ft',r=>r.tk||'n'],['fc',r=>r.cl],['fs',r=>r.stt]];
 const RGS=[['lt','lt'],['moq','moq']];
 function rgMk(i){
   const m=$(i+'M').value,x=$(i+'A').value,y=$(i+'B').value;
-  if(!m)return null;
+  if(!m||m==='ex')return null;   // 「延長」は範囲ではなく、延長中の品目だけを出す（render側で処理）
   if(m==='bt'){if(x===''&&y==='')return null;const lo=x===''?-Infinity:+x,hi=y===''?Infinity:+y,l=Math.min(lo,hi),h=Math.max(lo,hi);return v=>v>=l&&v<=h}
   if(x==='')return null;
   const n=+x;return m==='le'?v=>v<=n:v=>v>=n;
 }
-function rgUi(i){const m=$(i+'M').value;$(i+'A').hidden=!m;$(i+'S').hidden=m!=='bt';$(i+'B').hidden=m!=='bt'}
+function rgUi(i){const m=$(i+'M').value;$(i+'A').hidden=!m||m==='ex';$(i+'S').hidden=m!=='bt';$(i+'B').hidden=m!=='bt'}
 function render(){
-  fillOwn();bkUi();
+  fillOwn();bkUi();xModeUi();
   const q=$('q').value.trim().toUpperCase(),sf=SF.map(a=>[a[1],$(a[0]).value]).filter(a=>a[1]),rg=RGS.map(a=>[a[1],rgMk(a[0])]).filter(a=>a[1]);
-  V=R.filter(r=>(!q||r.c.toUpperCase().includes(q)||r.n.toUpperCase().includes(q))&&lotOk(r)&&myOk(r)&&sf.every(a=>String(a[0](r))===a[1])&&rg.every(a=>a[1](r[a[0]])));
+  V=R.filter(r=>(!q||r.c.toUpperCase().includes(q)||r.n.toUpperCase().includes(q))&&lotOk(r)&&myOk(r)&&sf.every(a=>String(a[0](r))===a[1])&&rg.every(a=>a[1](r[a[0]]))&&($('ltM').value!=='ex'||!!r.ext));
   const np=Math.max(Math.ceil(V.length/PS),1);
   pg=Math.min(pg,np-1);
   $('tb2').innerHTML=V.slice(pg*PS,pg*PS+PS).map(r=>{
     const j=J[r.c]||{},ti=trInfo(r.tr),ci=cvInfo(r.cv);
     return `<tr data-c="${esc(r.c)}"${BK&&BK.sel.has(r.c)?' class="bks"':''}><td class="t mc" style="cursor:pointer">${BK?`<input type="checkbox" data-bk="${esc(r.c)}"${BK.sel.has(r.c)?' checked':''} title="一括変更の対象にする">`:`<input type="checkbox" data-my="${esc(r.c)}"${MY.has(r.c)?' checked':''} title="Myリストに追加">`} ${esc(r.c)}${r.chg?' <span class="tg cg">変更有</span>':''}${j.r?' <span class="tg g" title="'+esc(j.r)+'">理由有</span>':''}${j.n?' <span class="tg g" title="'+esc(j.n)+'">備考有</span>':''}</td><td class="t w">${esc(r.n)}<div class="note">${esc(r.s)}</div><div class="note">${[r.k?'メーカー '+esc(r.k):'',r.t?'手配先 '+esc(r.t):'',r.pr?'単価 '+fmt(r.pr)+'円':''].filter(Boolean).join('　／　')}</div></td>`
     +`<td data-e="md" class="ed" title="クリックして変更"><span class="tg ${r.md==='op'?'o':''}">${mdn(r.md)}</span></td>`
-    +`<td data-e="lt" class="ed sep${r.lt!==r.lt0?' chg':''}" title="${r.lt!==r.lt0?'データ値 '+r.lt0+'　／　':''}クリックして変更">${r.lt}</td><td data-e="moq" class="ed${r.moq!==r.moq0?' chg':''}" title="${r.moq!==r.moq0?'データ値 '+r.moq0+'　／　':''}クリックして変更">${r.moq}</td>`
-    +`<td class="sep"><b>${fmt(r.p)}</b></td><td><b>${r.mx?fmt(r.mx):'－'}</b></td><td>${fmt(r.pb)}</td><td>${fmt(r.px)}</td><td>${fmt(r.st)}</td><td>${fmt(r.po)}</td>`
+    +`<td ${XM?'data-x="1"':'data-e="lt"'} class="ed sep${r.ltN!==r.lt0?' chg':''}${r.ext?' xe':''}" title="${r.ltN!==r.lt0?'データ値 '+r.lt0+'　／　':''}${XM?'延長入力中：クリックで一時的なLT延長を入力（通常LTは変更されません）':'クリックして通常LTを変更'}">${ltCell(r)}</td><td data-e="moq" class="ed${r.moq!==r.moq0?' chg':''}" title="${r.moq!==r.moq0?'データ値 '+r.moq0+'　／　':''}クリックして変更">${r.moq}</td>`
+    +`<td class="sep"><b>${fmt(r.p)}</b>${r.ext&&r.pN!==r.p?`<div class="note">通常LT ${fmt(r.pN)}</div>`:''}</td><td><b>${r.mx?fmt(r.mx):'－'}</b></td><td>${fmt(r.pb)}</td><td>${fmt(r.px)}</td><td>${fmt(r.st)}</td><td>${fmt(r.po)}</td>`
     +`<td><span class="tg ${sc(r.stt)}">${r.stt}</span></td>`
     +`<td class="sep"><span class="tg ${ci.c}" title="CV ${r.cv===null?'－':r.cv.toFixed(2)}">${ci.l}</span></td>`
     +`<td data-e="tm" class="ed${r.tm==='adj'?' tv':''}" title="クリックして基準を変更">${r.tr===null?'<span class="tg">'+ti.l+'</span>':`<span class="tg ${r.tm==='adj'?'v':ti.c}" title="トレンド値 ${r.tr.toFixed(2)}">${ti.l}</span>`}${r.tm==='adj'?'<div class="note" style="color:var(--vtx)">除外後</div>':''}${r.tr!==null&&r.tkAlt!==r.tk?`<span class="note" title="${r.tm==='adj'?'除外前':'除外後'}の基準では「${esc(trInfo(r.tAlt).l)}」">⇄</span>`:''}</td>`
@@ -314,7 +321,7 @@ function render(){
   }).join('');
   lotNote();$('pi').textContent=(V.length?pg*PS+1:0)+'–'+Math.min((pg+1)*PS,V.length)+' / '+fmt(V.length)+'件';
   const cnt=k=>R.filter(r=>r.stt===k).length,done=R.filter(r=>has(r.c)).length;
-  $('sum').innerHTML=`<span>全${fmt(R.length)}件</span><span>在庫0提案 ${fmt(R.filter(r=>r.p===0).length)}件</span><span>不良在庫候補 ${fmt(cnt('不良在庫候補'))}件</span><span>過剰 ${fmt(cnt('過剰'))}件</span><span>不足 ${fmt(cnt('不足'))}件</span><span>記入済み ${fmt(done)}件</span><span id="myn">Myリスト ${fmt(MY.size)}件</span>`;
+  $('sum').innerHTML=`<span>全${fmt(R.length)}件</span><span>在庫0提案 ${fmt(R.filter(r=>r.p===0).length)}件</span><span>不良在庫候補 ${fmt(cnt('不良在庫候補'))}件</span><span>過剰 ${fmt(cnt('過剰'))}件</span><span>不足 ${fmt(cnt('不足'))}件</span><span>LT延長中 ${fmt(R.filter(r=>r.ext).length)}件</span><span>記入済み ${fmt(done)}件</span><span id="myn">Myリスト ${fmt(MY.size)}件</span>`;
 }
 $('tb2').addEventListener('input',e=>{
   const tr=e.target.closest('tr'),f=e.target.dataset.f;
@@ -380,6 +387,7 @@ $('tb2').addEventListener('click',e=>{
   if(e.target.closest('input,select,textarea'))return;
   const tr=e.target.closest('tr');
   if(!tr)return;
+  if(e.target.closest('[data-x]')){xAct(tr.dataset.c);return}   // ⏱＝一時的なLT延長
   if(e.target.closest('td.mc')){const cb=tr.querySelector('[data-my],[data-bk]');if(cb)cb.click();return}   // 品目コード欄＝Myリストの切り替え
   const te=e.target.closest('td[data-e]');
   if(te){startEdit(te);return}
@@ -389,6 +397,7 @@ $('dv').addEventListener('click',e=>{
   const b=e.target.closest('[data-go]');
   if(b&&b.dataset.go)leave('移動',()=>goTo(b.dataset.go));
   if(e.target.closest('#bk'))leave('戻る',goBack);
+  if(e.target.closest('[data-x]')&&cur)xAct(cur);
 });
 $('dv').addEventListener('input',e=>{
   const f=e.target.dataset.f,c=cur;
@@ -474,7 +483,7 @@ $('dv').addEventListener('click',e=>{
 });
 function renderD(){
   const r=R.find(x=>x.c===cur);if(!r)return;
-  const al=r.al,SP=r.sx==='off'?Infinity:SPK,TA=TAK,TB=TBK,TM=r.tm,op=r.md==='op',ov=ovr(r.c),chM=!!ov.md,chL=r.lt!==r.lt0,chQ=r.moq!==r.moq0,chA=r.al!==AL0,chT=r.tm==='adj',chn=[chM&&'方式',chL&&'LT',chQ&&'最小ロット',chA&&'安全係数',chT&&'トレンド基準',!!ov.sx&&'スパイク除去',!!ov.ck&&'区分の扱い'].filter(Boolean),k=core(r,al,SP),a=k.a,b=k.b,u=r.u,Lm=k.Lm,
+  const al=r.al,SP=r.sx==='off'?Infinity:SPK,TA=TAK,TB=TBK,TM=r.tm,op=r.md==='op',ov=ovr(r.c),chM=!!ov.md,chL=r.ltN!==r.lt0,chQ=r.moq!==r.moq0,chA=r.al!==AL0,chT=r.tm==='adj',chn=[chM&&'方式',chL&&'LT',chQ&&'最小ロット',chA&&'安全係数',chT&&'トレンド基準',!!ov.sx&&'スパイク除去',!!ov.ck&&'区分の扱い'].filter(Boolean),k=core(r,al,SP),a=k.a,b=k.b,u=r.u,Lm=k.Lm,
         L=ML(),lab=L.map(x=>x[0]+'<br><span class="yy">('+x[1]+')</span>'),
         y0=new Date().getFullYear()-5,ylab=[0,1,2,3,4].map(i=>String(y0+i)),
         spi=r.m.map((v,i)=>v>k.thr?i:-1).filter(i=>i>=0),
@@ -499,6 +508,12 @@ function renderD(){
     '過剰':[`在庫${fmt(r.st)}${u}が、提案基準在庫${fmt(r.p)}${u} ＋ 最小ロット${fmt(r.moq)}${u} ＝ ${fmt(r.p+r.moq)}${u}を超えています。`,'r'],
     '不足':[`在庫${fmt(r.st)}${u} ＋ 発注残${fmt(r.po)}${u} ＝ ${fmt(r.st+r.po)}${u}が、提案基準在庫${fmt(r.p)}${u}に足りません。`,'b'],
     '適正':['在庫と発注残が、提案の範囲内です。','']}[r.stt];
+  const xhs=(J[r.c]&&J[r.c].xh)||[],dt=t=>new Date(t).toLocaleDateString('ja-JP'),dys=(a,b)=>Math.max(1,Math.round((b-a)/864e5)),xTot=xhs.reduce((a,h)=>a+dys(h.s,h.e),0);
+  const xHtml=`<section class="card"><h2 class="d"><b>⏱</b>一時的なLT延長</h2>
+    ${r.ext?`<div class="msg b"><b>延長中</b>：通常LT ${r.ltN}日 → <b>${r.ext.l}日</b>（${dt(r.ext.s)}から ${Math.max(1,dys(r.ext.s,Date.now()))}日目）${r.ext.m?'<br>メモ：'+esc(r.ext.m):''}${r.pN!==r.p?'<br>提案基準在庫は、通常LTなら '+fmt(r.pN)+u+'、延長中は '+fmt(r.p)+u+' です。':''}${r.ltN>=r.ext.l?'<br><b>データ側のLTが延長後の日数以上になっています。延長を終了しますか？</b>':''}</div>`:`<p class="wh">LTが一時的に延びたときに入力します。通常LT（${r.ltN}日）の設定は変わらず、戻すときは「通常LTに戻す」を選びます。</p>`}
+    <div class="row" style="margin-top:8px"><button type="button" class="btn s" data-x="1">⏱ ${r.ext?'延長の内容変更・通常LTに戻す':'LT延長を入力'}</button></div>
+    ${xhs.length?`<div class="note" style="margin-top:8px">過去の延長 ${xhs.length}回（合計 ${xTot}日）</div>${xhs.slice().reverse().map(h=>`<div class="note">${dt(h.s)}〜${dt(h.e)}（${dys(h.s,h.e)}日）　延長後LT ${h.l}日${h.m?'　メモ：'+esc(h.m):''}</div>`).join('')}`:''}
+  </section>`;
   const neg=r.st<0?'<div class="msg r">在庫数がマイナスです。CSVの入力や登録順を確認してください。</div>':'';
   const old=r.y[3]+r.y[4]===0&&r.st>0?'<div class="msg o">直近2年度の出庫が0で在庫があります。長期滞留の可能性があります。</div>':'';
   const cmp=k.ex?`<table class="cmp"><tr><th></th><th>除外なし</th><th>除外あり（採用）</th></tr>
@@ -528,7 +543,7 @@ function renderD(){
   <section class="card">
     <div class="dt">${esc(r.n)}</div><div class="note">${esc(r.c)}</div>
     <div class="pr"><div><span>品名</span><p>${esc(r.n)}</p></div><div><span>仕様</span><p>${esc(r.s)||'－'}</p></div><div><span>メーカー</span><p>${esc(r.k)||'－'}</p></div><div><span>手配先</span><p>${esc(r.t)||'－'}</p></div><div><span>在庫評価単価</span><p>${fmt(r.pr)}円</p></div></div>
-    <div class="sum" style="margin-top:8px">${chn.length?`<span class="tg cg" style="font-size:12px;padding:3px 10px">変更あり：${chn.join('・')}</span>`:''}<span>方式 ${op?'発注点方式':'所要量方式'}</span><span>区分 ${r.cl}</span><span>スパイク ${r.sx==='off'?'除去しない':'除去する'}</span><span>在庫状態 ${r.stt}</span><span>納期 ${r.lt}日</span><span>最小ロット ${r.moq}</span><span>安全係数 ${al}</span><span>現行 基準 ${fmt(r.pb)}／最大 ${fmt(r.px)}</span></div>
+    <div class="sum" style="margin-top:8px">${chn.length?`<span class="tg cg" style="font-size:12px;padding:3px 10px">変更あり：${chn.join('・')}</span>`:''}<span>方式 ${op?'発注点方式':'所要量方式'}</span><span>区分 ${r.cl}</span><span>スパイク ${r.sx==='off'?'除去しない':'除去する'}</span><span>在庫状態 ${r.stt}</span><span>納期 ${r.lt}日${r.ext?'（延長中・通常'+r.ltN+'日）':''}</span><span>最小ロット ${r.moq}</span><span>安全係数 ${al}</span><span>現行 基準 ${fmt(r.pb)}／最大 ${fmt(r.px)}</span></div>
     <div class="card" style="margin:12px 0 0;border-color:var(--ac)"><h2 class="d"><b>設</b>判定方式・個別設定<span class="note" style="font-weight:400">変更したら、下の「更新する」で再計算します</span></h2>
       <div class="note">黄色の枠＝初期値から変更／青い枠＝まだ計算に反映していない変更（元の値に戻すと枠も消えます）</div>
       <div class="note">スパイク除去：提案基準・提案最大・需要変動(CV)を計算するとき、大口の月を中央値に置き換えるかどうかを選びます（倍率は${SPK}で固定）。増減トレンドには効きません。トレンドは下の「参考指標・トレンド分析」で別に選びます。</div>
@@ -574,6 +589,7 @@ function renderD(){
       基準在庫 ＝ ${a.lc} ＋ ${a.ss} ＝ <b>${a.base}${u}</b>${op?`　／　最大在庫 ＝ ${a.base} ＋ 最小ロット ${r.moq} ＝ <b>${a.base+r.moq}${u}</b>`:'　（所要量方式のためMAXは設定不要）'}</div>`
     :`<div class="msg">${r.one?'CSVで「一品」（受注ごとの手配品）のため、':!r.mg?'CSVの「在庫管理」が空欄のため、':r.ck==='min'?'出庫のあった月が'+r.nz+'カ月で、下限'+r.mn+'カ月に満たないため、':'12カ月のうち出庫があったのは'+r.nz+'カ月と少ないため、'}在庫0・都度手配を提案します。${special?'':'（参考：計算式どおりなら基準在庫は '+a.base+u+' ですが、出庫が少ない品目では過大になりやすいため採用しません）'}</div>`}
   </section>
+  ${xHtml}
   <section class="card"><h2 class="d"><b>4</b>在庫状態の判定</h2>
     <div class="kb">
       <div><span>在庫</span><strong>${fmt(r.st)}<em>${u}</em></strong></div>
@@ -680,9 +696,9 @@ $('fi').onchange=async e=>{
 /* 書き出し */
 $('bX').onclick=()=>{
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',
-    h=['品目コード','品名','仕様','メーカー','手配先','在庫評価単価','区分','スパイク除去','方式','需要変動','トレンド','LT','最小ロット','安全係数','提案基準','提案最大','現行基準','現行最大','在庫数','発注残数','在庫状態','理由','備考','担当者','記入日時'],
+    h=['品目コード','品名','仕様','メーカー','手配先','在庫評価単価','区分','スパイク除去','方式','需要変動','トレンド','LT','最小ロット','安全係数','提案基準','提案最大','現行基準','現行最大','在庫数','発注残数','在庫状態','理由','備考','担当者','記入日時','通常LT','LT延長（延長後日数）','LT延長メモ'],
     ls=[h.map(q).join(',')];
-  for(const r of V){const j=J[r.c]||{};ls.push([r.c,r.n,r.s,r.k,r.t,r.pr,r.cl,r.sx==='off'?'しない':'する',mdn(r.md),r.cv===null?'':r.cv.toFixed(2),r.tr===null?'':r.tr.toFixed(2),r.lt,r.moq,r.al,r.p,r.mx,r.pb,r.px,r.st,r.po,r.stt,j.r||'',j.n||'',j.o||'',j.t||''].map(q).join(','))}
+  for(const r of V){const j=J[r.c]||{};ls.push([r.c,r.n,r.s,r.k,r.t,r.pr,r.cl,r.sx==='off'?'しない':'する',mdn(r.md),r.cv===null?'':r.cv.toFixed(2),r.tr===null?'':r.tr.toFixed(2),r.lt,r.moq,r.al,r.p,r.mx,r.pb,r.px,r.st,r.po,r.stt,j.r||'',j.n||'',j.o||'',j.t||'',r.ltN,r.ext?r.ext.l:'',r.ext?r.ext.m||'':''].map(q).join(','))}
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['\ufeff'+ls.join('\r\n')],{type:'text/csv'}));
   a.download='在庫判定_'+new Date().toISOString().slice(0,10)+'.csv';
@@ -718,7 +734,7 @@ document.querySelectorAll('.hp').forEach(b=>{
 const SH_NAME='品目状況一覧_判定記録',E=JSON.stringify(['','','','','']);
 let SD=null,LD=null,CD=null,REM={},CONF=[],SNAP={};const LSG={};
 try{SNAP=JSON.parse(localStorage.getItem('invSnap')||'{}')}catch(e){}
-const sig=j=>{const a=[j.q===undefined?'':j.q,j.r||'',j.n||'',j.o||'',j.t||''];if(j.p&&Object.keys(j.p).length)a.push(j.p);return JSON.stringify(a)};
+const sig=j=>{const a=[j.q===undefined?'':j.q,j.r||'',j.n||'',j.o||'',j.t||''];if(j.p&&Object.keys(j.p).length)a.push(j.p);if(j.x)a.push({x:j.x});if(j.xh&&j.xh.length)a.push({xh:j.xh});return JSON.stringify(a)};
 for(const c in J)LSG[c]=sig(J[c]);
 const dirty=()=>Object.keys(J).filter(c=>sig(J[c])!==(SNAP[c]===undefined?E:SNAP[c]));
 const persist=()=>{try{localStorage.setItem('invSnap',JSON.stringify(SNAP))}catch(e){}};
@@ -751,7 +767,7 @@ function mergeRemote(){ // 品目ごとに更新日時が新しい方を採用
     const dl=sj!==sn;
     if((r.u||0)>(j.u||0)||!dl){
       if(dl&&sj!==E)CONF.push(c);
-      if(JSON.stringify(j.p||null)!==JSON.stringify(r.p||null))PCH=true;
+      if(JSON.stringify(j.p||null)!==JSON.stringify(r.p||null)||JSON.stringify(j.x||null)!==JSON.stringify(r.x||null))PCH=true;
       J[c]=Object.assign({},r);SNAP[c]=sr;LSG[c]=sr;n++;
     }
   }
@@ -1018,7 +1034,7 @@ function startEdit(td){
   const tr=td.closest('tr'),c=tr.dataset.c,k=td.dataset.e,r=R.find(x=>x.c===c);
   if(!r)return;
   EDT={c,k,busy:false};
-  const cur0=r[k];
+  const cur0=k==='lt'?r.ltN:r[k];
   let h,el;
   if(k==='lt'||k==='moq'){
     td.innerHTML=`<input type="number" min="0" value="${cur0}" style="width:84px">`;
@@ -1040,7 +1056,7 @@ async function edDecide(raw){
   if(!EDT||EDT.busy)return;
   const {c,k}=EDT,r=R.find(x=>x.c===c),d=D.find(x=>x.c===c);
   if(!r||!d){edCancel();return}
-  let nv=raw,ov=r[k];
+  let nv=raw,ov=k==='lt'?r.ltN:r[k];
   if(k==='lt'||k==='moq'){
     if(raw===''||isNaN(+raw)){edCancel();return}
     nv=Math.max(0,Math.round(+raw));
@@ -1058,6 +1074,56 @@ async function edDecide(raw){
   save();EDT=null;calcOne(c);
   const y=window.scrollY;render();window.scrollTo(0,y);
 }
+
+/* ============ 一時的なLT延長（⏱）：延長後のLT日数とメモだけを入力。戻すときは担当者が手動で外す ============ */
+function xModeUi(){const b=$('xMode');if(b){b.classList.toggle('on',XM);b.textContent=XM?'⏱ 延長入力中':'⏱'}}
+function ltCell(r){
+  const x=r.ext,bt=!XM?'':`<button type="button" class="xb${x?' on':''}" data-x="1" title="${x?esc('延長中：'+(x.m||'メモなし')+'（クリックで変更・通常LTに戻す）'):'LTが一時的に延びたとき'}">⏱</button>`;
+  if(!x)return `${r.ltN}${bt}`;
+  const dy=Math.max(1,Math.floor((Date.now()-x.s)/864e5)+1);
+  return `<b>${x.l}</b>${bt}<div><span class="tg x">延長中</span>${r.ltN>=x.l?' <span class="tg r" title="データ側のLTが延長後以上になっています。延長を終了しますか？">要確認</span>':''}</div><div class="note">通常 ${r.ltN}／${dy}日目</div>`;
+}
+function xDialog(c){return new Promise(ok=>{
+  const r=R.find(x=>x.c===c);if(!r){ok(null);return}
+  const x=r.ext,o=document.createElement('div'),dy=x?Math.max(1,Math.floor((Date.now()-x.s)/864e5)+1):0;
+  o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px';
+  o.innerHTML=`<div class="card" style="max-width:480px;margin:0"><p style="margin:0 0 4px;font-weight:700">⏱ 一時的なLT延長</p><p class="note" style="margin:0 0 10px">${esc(c)}　${esc(r.n)}<br>通常LT ${r.ltN}日${x?'　／　延長中 '+x.l+'日（'+dy+'日目）':''}</p>
+    <label class="l">延長後のLT（日数そのもの）</label><input type="number" min="1" id="xl" value="${x?x.l:''}" placeholder="例 150" style="width:140px">
+    <label class="l" style="margin-top:8px">メモ（任意）</label><input type="text" id="xm" value="${esc(x?x.m||'':'')}" style="width:100%">
+    ${r.ltN>=(x?x.l:Infinity)?'<div class="msg r" style="margin-top:8px">データ側のLTが延長後の日数以上です。延長を終了しますか？</div>':''}
+    <div class="row" style="gap:8px;margin-top:12px"><button type="button" class="btn" data-a="ok">${x?'内容を更新':'延長する'}</button>${x?'<button type="button" class="btn s" data-a="rel">通常LTに戻す</button>':''}<button type="button" class="btn s" data-a="no">キャンセル</button></div></div>`;
+  o.onclick=e=>{
+    const b=e.target.closest('[data-a]');
+    if(e.target===o||(b&&b.dataset.a==='no')){o.remove();ok(null);return}
+    if(!b)return;
+    if(b.dataset.a==='rel'){o.remove();ok({a:'rel'});return}
+    const l=Math.round(+o.querySelector('#xl').value);
+    if(!(l>r.ltN)){alert('延長後のLTは、通常LT（'+r.ltN+'日）より長い日数を入れてください');return}
+    const m=o.querySelector('#xm').value.trim();
+    o.remove();ok({a:'ok',l,m});
+  };
+  document.body.appendChild(o);
+  const f=o.querySelector('#xl');f.focus();f.select();
+})}
+async function xAct(c){
+  const res=await xDialog(c);
+  if(!res)return;
+  const r=R.find(x=>x.c===c);if(!r)return;
+  J[c]=J[c]||{};
+  if(res.a==='rel'){
+    const x=J[c].x;if(!x)return;
+    const i=await ask('品目 '+esc(c)+'（'+esc(r.n)+'）<br><span style="font-weight:400;font-size:13px;line-height:1.7;display:block;margin-top:6px">LT延長（'+x.l+'日）を外して、通常LT '+r.ltN+'日に戻しますか？<br>延長した期間は履歴に残ります。</span>',[['通常LTに戻す',1],['キャンセル',0]]);
+    if(i!==0)return;
+    J[c].xh=(J[c].xh||[]).concat([{l:x.l,m:x.m||'',s:x.s,e:Date.now()}]);
+    delete J[c].x;
+  }else{
+    const old=J[c].x;
+    J[c].x={l:res.l,m:res.m,s:old&&old.s?old.s:Date.now()};
+  }
+  save();calcOne(c);
+  if(cur===c)renderD();else{const y=window.scrollY;render();window.scrollTo(0,y)}
+}
+$('xMode').onclick=e=>{e.stopPropagation();XM=!XM;render()};
 $('myOut').onclick=()=>{
   if(!MY.size){alert('Myリストが空です。品目コードの左のチェックボックスで追加してください');return}
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',m=new Map(D.map(d=>[d.c,d]));
