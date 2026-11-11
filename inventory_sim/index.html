@@ -152,7 +152,7 @@ td.xe{background:var(--xbg)!important;box-shadow:inset 0 0 0 2px var(--xln)}.tg.
       <div><label class="l">Myリスト</label><label style="display:flex;align-items:center;height:32px;white-space:nowrap;cursor:pointer"><input type="checkbox" id="myc">Myリストのみ</label></div>
       <div><label class="l">ロット（品目・品名）</label><select id="fl"><option value="">すべて</option></select><div class="note" id="ln"></div></div>
       <div><label class="l">方式</label><select id="fm"><option value="">すべて</option><option value="req">所要量方式</option><option value="op">発注点方式</option></select></div>
-      <div><label class="l">LT（日）</label><div class="rg"><select id="ltM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option><option value="ex">延長中</option></select><input type="number" min="0" id="ltA" hidden><span id="ltS" hidden>〜</span><input type="number" min="0" id="ltB" hidden></div></div>
+      <div><label class="l">LT（日）</label><div class="rg"><select id="ltM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option><option value="ex">延長</option></select><input type="number" min="0" id="ltA" hidden><span id="ltS" hidden>〜</span><input type="number" min="0" id="ltB" hidden></div></div>
       <div><label class="l">最小ロット</label><div class="rg"><select id="moqM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option></select><input type="number" min="0" id="moqA" hidden><span id="moqS" hidden>〜</span><input type="number" min="0" id="moqB" hidden></div></div>
       <div><label class="l">在庫状態</label><select id="fs"><option value="">すべて</option><option value="不良在庫候補">不良在庫候補</option><option value="過剰">過剰</option><option value="不足">不足</option><option value="適正">適正</option></select></div>
       <div><label class="l">LT延長の履歴</label><select id="fx"><option value="">すべて</option><option value="past">過去に延長あり（現在は通常）</option></select></div>
@@ -398,6 +398,7 @@ $('dv').addEventListener('click',e=>{
   if(b&&b.dataset.go)leave('移動',()=>goTo(b.dataset.go));
   if(e.target.closest('#bk'))leave('戻る',goBack);
   if(e.target.closest('[data-x]')&&cur)xAct(cur);
+  const xd=e.target.closest('[data-xd]');if(xd&&cur)xDel(cur,xd.dataset.xd);
 });
 $('dv').addEventListener('input',e=>{
   const f=e.target.dataset.f,c=cur;
@@ -512,7 +513,7 @@ function renderD(){
   const xHtml=`<section class="card"><h2 class="d"><b>⏱</b>一時的なLT延長</h2>
     ${r.ext?`<div class="msg b"><b>延長中</b>：通常LT ${r.ltN}日 → <b>${r.ext.l}日</b>（${dt(r.ext.s)}から ${Math.max(1,dys(r.ext.s,Date.now()))}日目）${r.ext.m?'<br>メモ：'+esc(r.ext.m):''}${r.pN!==r.p?'<br>提案基準在庫は、通常LTなら '+fmt(r.pN)+u+'、延長中は '+fmt(r.p)+u+' です。':''}${r.ltN>=r.ext.l?'<br><b>データ側のLTが延長後の日数以上になっています。延長を終了しますか？</b>':''}</div>`:`<p class="wh">LTが一時的に延びたときに入力します。通常LT（${r.ltN}日）の設定は変わらず、戻すときは「通常LTに戻す」を選びます。</p>`}
     <div class="row" style="margin-top:8px"><button type="button" class="btn s" data-x="1">⏱ ${r.ext?'延長の内容変更・通常LTに戻す':'LT延長を入力'}</button></div>
-    ${xhs.length?`<div class="note" style="margin-top:8px">過去の延長 ${xhs.length}回（合計 ${xTot}日）</div>${xhs.slice().reverse().map(h=>`<div class="note">${dt(h.s)}〜${dt(h.e)}（${dys(h.s,h.e)}日）　延長後LT ${h.l}日${h.m?'　メモ：'+esc(h.m):''}</div>`).join('')}`:''}
+    ${xhs.length?`<details style="margin-top:8px"><summary class="note" style="cursor:pointer">過去の延長 ${xhs.length}回（合計 ${xTot}日）　▼ 履歴を見る</summary>${xhs.map((h,i)=>`<div class="note" style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap"><span>${dt(h.s)}〜${dt(h.e)}（${dys(h.s,h.e)}日）　延長後LT ${h.l}日${h.m?'　メモ：'+esc(h.m):''}</span><button type="button" class="btn s" data-xd="${i}" style="padding:1px 8px;font-size:11px">削除</button></div>`).reverse().join('')}<div style="margin-top:8px"><button type="button" class="btn s" data-xd="all" style="padding:2px 10px;font-size:12px">履歴をすべて削除</button></div></details>`:''}
   </section>`;
   const neg=r.st<0?'<div class="msg r">在庫数がマイナスです。CSVの入力や登録順を確認してください。</div>':'';
   const old=r.y[3]+r.y[4]===0&&r.st>0?'<div class="msg o">直近2年度の出庫が0で在庫があります。長期滞留の可能性があります。</div>':'';
@@ -589,7 +590,6 @@ function renderD(){
       基準在庫 ＝ ${a.lc} ＋ ${a.ss} ＝ <b>${a.base}${u}</b>${op?`　／　最大在庫 ＝ ${a.base} ＋ 最小ロット ${r.moq} ＝ <b>${a.base+r.moq}${u}</b>`:'　（所要量方式のためMAXは設定不要）'}</div>`
     :`<div class="msg">${r.one?'CSVで「一品」（受注ごとの手配品）のため、':!r.mg?'CSVの「在庫管理」が空欄のため、':r.ck==='min'?'出庫のあった月が'+r.nz+'カ月で、下限'+r.mn+'カ月に満たないため、':'12カ月のうち出庫があったのは'+r.nz+'カ月と少ないため、'}在庫0・都度手配を提案します。${special?'':'（参考：計算式どおりなら基準在庫は '+a.base+u+' ですが、出庫が少ない品目では過大になりやすいため採用しません）'}</div>`}
   </section>
-  ${xHtml}
   <section class="card"><h2 class="d"><b>4</b>在庫状態の判定</h2>
     <div class="kb">
       <div><span>在庫</span><strong>${fmt(r.st)}<em>${u}</em></strong></div>
@@ -617,6 +617,7 @@ function renderD(){
     ${chart(arr,lab,{cls:rcls,ln:[{y:av,t:'12カ月平均 '+f1(av)},{y:rec,t:'直近3カ月 '+f1(rec),c:'a'}]})}
     ${cmp2}
   </section>
+  ${xHtml}
   <section class="card" style="border-color:var(--wn)"><h2 class="d"><b>7</b>担当者のメモ</h2>
     <div class="dn"><div><label class="l">担当者</label><input type="text" data-f="o" list="own" value="${esc(j.o||'')}"></div>
     <div><label class="l">理由</label><select data-f="r">${RS.map(x=>`<option${x===(j.r||'')?' selected':''}>${x}</option>`).join('')}</select></div>
@@ -1105,6 +1106,17 @@ function xDialog(c){return new Promise(ok=>{
   document.body.appendChild(o);
   const f=o.querySelector('#xl');f.focus();f.select();
 })}
+async function xDel(c,k){   // LT延長の履歴の削除（1件／すべて）
+  const j=J[c];if(!j||!j.xh||!j.xh.length)return;
+  const all=k==='all',h=all?null:j.xh[+k];
+  if(!all&&!h)return;
+  const dt=t=>new Date(t).toLocaleDateString('ja-JP');
+  const i=await ask('品目 '+esc(c)+'<br><span style="font-weight:400;font-size:13px;line-height:1.7;display:block;margin-top:6px">'+(all?'LT延長の履歴 '+j.xh.length+'件をすべて削除しますか？':'次の履歴を削除しますか？<br>'+dt(h.s)+'〜'+dt(h.e)+'　延長後LT '+h.l+'日'+(h.m?'　メモ：'+esc(h.m):''))+'<br>削除すると元に戻せません。</span>',[['削除する',1],['キャンセル',0]]);
+  if(i!==0)return;
+  if(all)delete j.xh;else{j.xh.splice(+k,1);if(!j.xh.length)delete j.xh}
+  save();
+  if(cur===c)renderD();else render();
+}
 async function xAct(c){
   const res=await xDialog(c);
   if(!res)return;
