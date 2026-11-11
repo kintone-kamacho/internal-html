@@ -111,6 +111,7 @@ td input[type=checkbox],#myc{width:16px;height:16px;padding:0;margin:0 4px 0 0;v
 .bkh{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.bks2{margin-top:4px;font-size:13px;font-weight:700}
 .bk td.mc input[data-bk]{accent-color:#d9480f;width:20px;height:20px;outline:2px solid #d9480f;outline-offset:1px;border-radius:3px}
 tr.bks td{background:rgba(224,110,20,.22)!important}
+td.ed{cursor:pointer}td.ed:hover{outline:2px dashed var(--ac);outline-offset:-2px}td.w{cursor:pointer}td.ed select,td.ed input{max-width:150px;font:inherit}
 </style>
 </head>
 <body>
@@ -302,13 +303,13 @@ function render(){
   $('tb2').innerHTML=V.slice(pg*PS,pg*PS+PS).map(r=>{
     const j=J[r.c]||{},ti=trInfo(r.tr),ci=cvInfo(r.cv);
     return `<tr data-c="${esc(r.c)}"${BK&&BK.sel.has(r.c)?' class="bks"':''}><td class="t mc" style="cursor:pointer">${BK?`<input type="checkbox" data-bk="${esc(r.c)}"${BK.sel.has(r.c)?' checked':''} title="一括変更の対象にする">`:`<input type="checkbox" data-my="${esc(r.c)}"${MY.has(r.c)?' checked':''} title="Myリストに追加">`} ${esc(r.c)}${r.chg?' <span class="tg cg">変更有</span>':''}${j.r?' <span class="tg g" title="'+esc(j.r)+'">理由有</span>':''}${j.n?' <span class="tg g" title="'+esc(j.n)+'">備考有</span>':''}</td><td class="t w">${esc(r.n)}<div class="note">${esc(r.s)}</div><div class="note">${[r.k?'メーカー '+esc(r.k):'',r.t?'手配先 '+esc(r.t):'',r.pr?'単価 '+fmt(r.pr)+'円':''].filter(Boolean).join('　／　')}</div></td>`
-    +`<td><span class="tg ${r.md==='op'?'o':''}">${mdn(r.md)}</span></td>`
-    +`<td class="sep${r.lt!==r.lt0?' chg':''}" title="${r.lt!==r.lt0?'データ値 '+r.lt0:''}">${r.lt}</td><td class="${r.moq!==r.moq0?'chg':''}" title="${r.moq!==r.moq0?'データ値 '+r.moq0:''}">${r.moq}</td>`
+    +`<td data-e="md" class="ed" title="クリックして変更"><span class="tg ${r.md==='op'?'o':''}">${mdn(r.md)}</span></td>`
+    +`<td data-e="lt" class="ed sep${r.lt!==r.lt0?' chg':''}" title="${r.lt!==r.lt0?'データ値 '+r.lt0+'　／　':''}クリックして変更">${r.lt}</td><td data-e="moq" class="ed${r.moq!==r.moq0?' chg':''}" title="${r.moq!==r.moq0?'データ値 '+r.moq0+'　／　':''}クリックして変更">${r.moq}</td>`
     +`<td class="sep"><b>${fmt(r.p)}</b></td><td><b>${r.mx?fmt(r.mx):'－'}</b></td><td>${fmt(r.pb)}</td><td>${fmt(r.px)}</td><td>${fmt(r.st)}</td><td>${fmt(r.po)}</td>`
     +`<td><span class="tg ${sc(r.stt)}">${r.stt}</span></td>`
     +`<td class="sep"><span class="tg ${ci.c}" title="CV ${r.cv===null?'－':r.cv.toFixed(2)}">${ci.l}</span></td>`
-    +`<td class="${r.tm==='adj'?'tv':''}">${r.tr===null?'<span class="tg">'+ti.l+'</span>':`<span class="tg ${r.tm==='adj'?'v':ti.c}" title="トレンド値 ${r.tr.toFixed(2)}">${ti.l}</span>`}${r.tm==='adj'?'<div class="note" style="color:var(--vtx)">除外後</div>':''}${r.tr!==null&&r.tkAlt!==r.tk?`<span class="note" title="${r.tm==='adj'?'除外前':'除外後'}の基準では「${esc(trInfo(r.tAlt).l)}」">⇄</span>`:''}</td>`
-    +`<td class="${r.cl!==r.cls?'chg':''}"><span class="tg ${cc(r.cl)}" title="${clT(r)}">${r.cl}</span></td>`
+    +`<td data-e="tm" class="ed${r.tm==='adj'?' tv':''}" title="クリックして基準を変更">${r.tr===null?'<span class="tg">'+ti.l+'</span>':`<span class="tg ${r.tm==='adj'?'v':ti.c}" title="トレンド値 ${r.tr.toFixed(2)}">${ti.l}</span>`}${r.tm==='adj'?'<div class="note" style="color:var(--vtx)">除外後</div>':''}${r.tr!==null&&r.tkAlt!==r.tk?`<span class="note" title="${r.tm==='adj'?'除外前':'除外後'}の基準では「${esc(trInfo(r.tAlt).l)}」">⇄</span>`:''}</td>`
+    +`<td data-e="ck" class="ed${r.cl!==r.cls?' chg':''}" title="クリックして区分の扱いを変更"><span class="tg ${cc(r.cl)}" title="${clT(r)}">${r.cl}</span></td>`
 +`</tr>`;
   }).join('');
   lotNote();$('pi').textContent=(V.length?pg*PS+1:0)+'–'+Math.min((pg+1)*PS,V.length)+' / '+fmt(V.length)+'件';
@@ -380,7 +381,9 @@ $('tb2').addEventListener('click',e=>{
   const tr=e.target.closest('tr');
   if(!tr)return;
   if(e.target.closest('td.mc')){const cb=tr.querySelector('[data-my],[data-bk]');if(cb)cb.click();return}   // 品目コード欄＝Myリストの切り替え
-  openD(tr.dataset.c);
+  const te=e.target.closest('td[data-e]');
+  if(te){startEdit(te);return}
+  if(e.target.closest('td.w'))openD(tr.dataset.c);   // 個別画面へ行くのは品名の欄だけ
 });
 $('dv').addEventListener('click',e=>{
   const b=e.target.closest('[data-go]');
@@ -1005,6 +1008,56 @@ $('bkGo').onclick=async()=>{
   const y=window.scrollY;calc();window.scrollTo(0,y);
   alert(n+'件の設定を一括変更しました。\n共有に反映するときは「送信」を押してください。');
 };
+
+/* ============ 一覧での直接変更（方式・LT・最小ロット・区分の扱い・トレンド基準） ============ */
+let EDT=null;   // 編集中のセル {c,k,busy}
+const EDL={md:'手配方式',lt:'納期（LT）',moq:'最小ロット',ck:'区分の扱い',tm:'トレンドの基準'};
+function edCancel(){EDT=null;const y=window.scrollY;render();window.scrollTo(0,y)}
+function startEdit(td){
+  if(EDT)return;
+  const tr=td.closest('tr'),c=tr.dataset.c,k=td.dataset.e,r=R.find(x=>x.c===c);
+  if(!r)return;
+  EDT={c,k,busy:false};
+  const cur0=r[k];
+  let h,el;
+  if(k==='lt'||k==='moq'){
+    td.innerHTML=`<input type="number" min="0" value="${cur0}" style="width:84px">`;
+    el=td.firstChild;
+    el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();edDecide(el.value)}else if(e.key==='Escape'){edCancel()}};
+  }else{
+    const o=BKI.find(x=>x.k===k).o;
+    td.innerHTML=`<select>${o.map(x=>`<option value="${x[0]}"${String(x[0])===String(cur0)?' selected':''}>${x[1]}</option>`).join('')}</select>`;
+    el=td.firstChild;
+    el.onchange=()=>edDecide(el.value);
+    el.onkeydown=e=>{if(e.key==='Escape')edCancel()};
+  }
+  el.onblur=()=>{setTimeout(()=>{if(EDT&&!EDT.busy)edDecide(el.value)},0)};   // 入力して外をクリック＝確認へ（変更がなければそのまま戻る）
+  el.focus();
+  if(el.select)el.select();
+  else{try{el.showPicker()}catch(x){}}
+}
+async function edDecide(raw){
+  if(!EDT||EDT.busy)return;
+  const {c,k}=EDT,r=R.find(x=>x.c===c),d=D.find(x=>x.c===c);
+  if(!r||!d){edCancel();return}
+  let nv=raw,ov=r[k];
+  if(k==='lt'||k==='moq'){
+    if(raw===''||isNaN(+raw)){edCancel();return}
+    nv=Math.max(0,Math.round(+raw));
+  }
+  if(String(nv)===String(ov)){edCancel();return}
+  EDT.busy=true;
+  const lab=v=>k==='lt'?v+'日':k==='moq'?String(v):bkLab(k,v);
+  const i=await ask('品目 '+esc(c)+'（'+esc(r.n)+'）<br><span style="font-weight:400;font-size:13px;line-height:1.7;display:block;margin-top:6px">'+EDL[k]+'：'+esc(lab(ov))+' → <b>'+esc(lab(nv))+'</b>'+(k==='ck'&&nv==='min'?'（下限 '+r.mn+'カ月）':'')+(k==='lt'||k==='moq'?'<br>（データ値 '+d[k]+'）':'')+'</span><br>に変更しますか？',[['変更する',1],['変更せず戻る',0]]);
+  if(i!==0){edCancel();return}
+  J[c]=J[c]||{};
+  const p=Object.assign({},J[c].p);
+  applyP(p,k,nv,d);
+  if(k==='ck'&&nv==='min')applyP(p,'mn',r.mn,d);
+  if(Object.keys(p).length)J[c].p=p;else delete J[c].p;
+  save();EDT=null;calcOne(c);
+  const y=window.scrollY;render();window.scrollTo(0,y);
+}
 $('myOut').onclick=()=>{
   if(!MY.size){alert('Myリストが空です。品目コードの左のチェックボックスで追加してください');return}
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',m=new Map(D.map(d=>[d.c,d]));
