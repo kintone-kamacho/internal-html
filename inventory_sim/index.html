@@ -259,7 +259,7 @@ const mkR=d0=>{
     const p=live?k.a.base:0,mx=live&&md==='op'?p+d.moq:0;
     let stt='適正';
     if(d.st>0&&nz===0)stt='不良在庫候補';
-    else if(d.st>p&&d.st>0)stt='過剰';
+    else if(d.st>p+d.moq&&d.st>0)stt='過剰';   // 最小ロット1回分は発注の都合で必ず余るため、基準在庫＋最小ロットまでは過剰としない
     else if(live&&d.st+d.po<p)stt='不足';
     const cv=cvOf(k.a),tRaw=trOf(d.m),tAdj=trOf(k.cm),tr=tm==='adj'?tAdj:tRaw,tAlt=tm==='adj'?tRaw:tAdj;
     return Object.assign({},d,{md,al,tm,lt0:d0.lt,moq0:d0.moq,chg:Object.keys(o).length>0,nz,ex,cls,cl,live,sx,ck,mn,p,mx,stt,cv,tr,tAlt,tk:tkOf(tr),tkAlt:tkOf(tAlt)});
@@ -484,7 +484,7 @@ function renderD(){
     :`しきい値 ${f1(k.thr)}（中央値 ${f1(k.med)} × ${SP}）を超える月がないため、スパイク除外はありません。`;
   /* 在庫状態の説明 */
   const stx={'不良在庫候補':[`在庫が${fmt(r.st)}${u}ありますが、12カ月の出庫がすべて0です。先に使う、または再発注しない候補です。`,'o'],
-    '過剰':[`在庫${fmt(r.st)}${u}が提案基準在庫${fmt(r.p)}${u}を超えています。`,'r'],
+    '過剰':[`在庫${fmt(r.st)}${u}が、提案基準在庫${fmt(r.p)}${u} ＋ 最小ロット${fmt(r.moq)}${u} ＝ ${fmt(r.p+r.moq)}${u}を超えています。`,'r'],
     '不足':[`在庫${fmt(r.st)}${u} ＋ 発注残${fmt(r.po)}${u} ＝ ${fmt(r.st+r.po)}${u}が、提案基準在庫${fmt(r.p)}${u}に足りません。`,'b'],
     '適正':['在庫と発注残が、提案の範囲内です。','']}[r.stt];
   const neg=r.st<0?'<div class="msg r">在庫数がマイナスです。CSVの入力や登録順を確認してください。</div>':'';
