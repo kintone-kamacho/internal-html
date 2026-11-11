@@ -107,6 +107,10 @@ td input[type=checkbox],#myc{width:16px;height:16px;padding:0;margin:0 4px 0 0;v
 .kb .st-o{background:var(--wnbg);border-color:var(--wn)}.kb .st-o strong{color:var(--wn)}
 .kb .st-r{background:var(--rdbg);border-color:var(--rd)}.kb .st-r strong{color:var(--rd)}
 .kb .st-b{background:var(--lbbg);border-color:var(--lb)}.kb .st-b strong{color:var(--lb)}
+#bkBar{position:sticky;top:0;z-index:20;margin:0 0 8px;padding:10px 12px;border-radius:8px;background:var(--card);border:2px solid #d9480f;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.bkh{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.bks2{margin-top:4px;font-size:13px;font-weight:700}
+.bk td.mc input[data-bk]{accent-color:#d9480f;width:20px;height:20px;outline:2px solid #d9480f;outline-offset:1px;border-radius:3px}
+tr.bks td{background:rgba(224,110,20,.22)!important}
 </style>
 </head>
 <body>
@@ -128,7 +132,7 @@ td input[type=checkbox],#myc{width:16px;height:16px;padding:0;margin:0 4px 0 0;v
       </div>
       <div class="note" style="margin-top:3px">方式・納期・最小ロット・安全係数・スパイク除去・区分の扱い・トレンドの基準は、品目を開いた個別画面で品目ごとに変更できます。</div></div>
     <div><label class="l">あなたの名前（担当者名）</label><input type="text" id="me" style="width:150px" placeholder="例：田中"></div>
-    <div><label class="l">Myリスト（CSV）</label><div class="row" style="gap:6px"><button type="button" class="btn s" id="myIn">Myリスト読取</button><button type="button" class="btn s" id="myOut">Myリスト書出</button><input type="file" id="myf" accept=".csv,.CSV,text/csv" hidden></div></div><datalist id="own"></datalist>
+    <div><label class="l">Myリスト（CSV）</label><div class="row" style="gap:6px"><button type="button" class="btn s" id="myIn">Myリスト読取</button><button type="button" class="btn s" id="myOut">Myリスト書出</button><button type="button" class="btn s" id="myBulk" title="選んだ複数の品目の設定をまとめて変更します">一括変更</button><input type="file" id="myf" accept=".csv,.CSV,text/csv" hidden></div></div><datalist id="own"></datalist>
   </div>
   <div id="hpn" class="hpn" hidden></div>
   <div style="margin-top:8px"><div class="note" id="st" style="display:inline">CSVを読み込むと、全品目を一度に判定します。初期設定では、区分C・D・一品・在庫管理外は在庫0を提案します。</div><span class="note" id="js" style="margin-left:1em"></span></div>
@@ -156,6 +160,11 @@ td input[type=checkbox],#myc{width:16px;height:16px;padding:0;margin:0 4px 0 0;v
 </section>
 
 <section class="card" id="tc" hidden>
+  <div id="bkBar" hidden>
+    <div class="bkh"><b>⚙ 一括変更モード</b><span id="bkN" class="tg o"></span><span class="note">品目コード左の <b style="color:#d9480f">オレンジのチェック</b> を入れた品目が変更対象です（Myリストのチェックはこのモード中は変更対象の選択に使われ、Myリストは変わりません）</span></div>
+    <div class="bks2" id="bkSum"></div>
+    <div class="row" style="gap:6px;margin-top:6px"><button type="button" class="btn s" id="bkAllV">絞り込み結果をすべて選択</button><button type="button" class="btn s" id="bkMy">Myリストの品目を選択</button><button type="button" class="btn s" id="bkNone">全解除</button><button type="button" class="btn" id="bkGo">この内容で一斉変更…</button><button type="button" class="btn s" id="bkEnd">モード終了</button></div>
+  </div>
   <div class="tw"><table><thead><tr>
     <th class="t">品目コード</th><th class="t">品名</th><th>方式</th><th class="sep">LT</th><th>最小ロット</th>
     <th class="sep">提案基準</th><th>提案最大</th><th>現行基準</th><th>現行最大</th><th>在庫</th><th>発注残</th><th>在庫状態</th>
@@ -177,7 +186,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const RS=['','一時的な大口（案件・特需）','入荷遅延が常態化','ロット発注の都合','ついで買いの余剰','長納期のため念のため保有','不良在庫化（動かない）','代替・仕様変更で不使用','提案どおりで問題なし'];
 const PS=100;
 const AL0=1.65,SPK=3,TAK=9,TBK=5,TMK='raw',MNK=5;   // MNK：出庫月数の下限の初期値（Bの下限と同じ）
-let D=[],R=[],V=[],pg=0,J={},P={};
+let D=[],R=[],V=[],pg=0,J={},P={},BK=null;   // BK：一括変更モードの状態（{spec:変更内容, sel:対象品目のSet}）
 const svP=()=>{};
 const ovr=c=>(J[c]&&J[c].p)||{};   // 個別設定（方式・LT・最小ロット・安全係数・トレンド基準）は判定記録(J)の中に持ち、送信で共有する
 try{J=JSON.parse(localStorage.getItem('invJ')||'{}')}catch(e){}
@@ -285,14 +294,14 @@ function rgMk(i){
 }
 function rgUi(i){const m=$(i+'M').value;$(i+'A').hidden=!m;$(i+'S').hidden=m!=='bt';$(i+'B').hidden=m!=='bt'}
 function render(){
-  fillOwn();
+  fillOwn();bkUi();
   const q=$('q').value.trim().toUpperCase(),sf=SF.map(a=>[a[1],$(a[0]).value]).filter(a=>a[1]),rg=RGS.map(a=>[a[1],rgMk(a[0])]).filter(a=>a[1]);
   V=R.filter(r=>(!q||r.c.toUpperCase().includes(q)||r.n.toUpperCase().includes(q))&&lotOk(r)&&myOk(r)&&sf.every(a=>String(a[0](r))===a[1])&&rg.every(a=>a[1](r[a[0]])));
   const np=Math.max(Math.ceil(V.length/PS),1);
   pg=Math.min(pg,np-1);
   $('tb2').innerHTML=V.slice(pg*PS,pg*PS+PS).map(r=>{
     const j=J[r.c]||{},ti=trInfo(r.tr),ci=cvInfo(r.cv);
-    return `<tr data-c="${esc(r.c)}"><td class="t mc" style="cursor:pointer"><input type="checkbox" data-my="${esc(r.c)}"${MY.has(r.c)?' checked':''} title="Myリストに追加"> ${esc(r.c)}${r.chg?' <span class="tg cg">変更有</span>':''}${j.r?' <span class="tg g" title="'+esc(j.r)+'">理由有</span>':''}${j.n?' <span class="tg g" title="'+esc(j.n)+'">備考有</span>':''}</td><td class="t w">${esc(r.n)}<div class="note">${esc(r.s)}</div><div class="note">${[r.k?'メーカー '+esc(r.k):'',r.t?'手配先 '+esc(r.t):'',r.pr?'単価 '+fmt(r.pr)+'円':''].filter(Boolean).join('　／　')}</div></td>`
+    return `<tr data-c="${esc(r.c)}"${BK&&BK.sel.has(r.c)?' class="bks"':''}><td class="t mc" style="cursor:pointer">${BK?`<input type="checkbox" data-bk="${esc(r.c)}"${BK.sel.has(r.c)?' checked':''} title="一括変更の対象にする">`:`<input type="checkbox" data-my="${esc(r.c)}"${MY.has(r.c)?' checked':''} title="Myリストに追加">`} ${esc(r.c)}${r.chg?' <span class="tg cg">変更有</span>':''}${j.r?' <span class="tg g" title="'+esc(j.r)+'">理由有</span>':''}${j.n?' <span class="tg g" title="'+esc(j.n)+'">備考有</span>':''}</td><td class="t w">${esc(r.n)}<div class="note">${esc(r.s)}</div><div class="note">${[r.k?'メーカー '+esc(r.k):'',r.t?'手配先 '+esc(r.t):'',r.pr?'単価 '+fmt(r.pr)+'円':''].filter(Boolean).join('　／　')}</div></td>`
     +`<td><span class="tg ${r.md==='op'?'o':''}">${mdn(r.md)}</span></td>`
     +`<td class="sep${r.lt!==r.lt0?' chg':''}" title="${r.lt!==r.lt0?'データ値 '+r.lt0:''}">${r.lt}</td><td class="${r.moq!==r.moq0?'chg':''}" title="${r.moq!==r.moq0?'データ値 '+r.moq0:''}">${r.moq}</td>`
     +`<td class="sep"><b>${fmt(r.p)}</b></td><td><b>${r.mx?fmt(r.mx):'－'}</b></td><td>${fmt(r.pb)}</td><td>${fmt(r.px)}</td><td>${fmt(r.st)}</td><td>${fmt(r.po)}</td>`
@@ -370,7 +379,7 @@ $('tb2').addEventListener('click',e=>{
   if(e.target.closest('input,select,textarea'))return;
   const tr=e.target.closest('tr');
   if(!tr)return;
-  if(e.target.closest('td.mc')){const cb=tr.querySelector('[data-my]');if(cb)cb.click();return}   // 品目コード欄＝Myリストの切り替え
+  if(e.target.closest('td.mc')){const cb=tr.querySelector('[data-my],[data-bk]');if(cb)cb.click();return}   // 品目コード欄＝Myリストの切り替え
   openD(tr.dataset.c);
 });
 $('dv').addEventListener('click',e=>{
@@ -919,6 +928,83 @@ $('tb2').addEventListener('change',e=>{
   mySave();
   if($('myc').checked)render();else myCnt();
 });
+
+/* ============ 一括変更（選んだ複数品目の個別設定をまとめて変更） ============ */
+const BKI=[
+ {k:'md',l:'手配方式',o:[['req','所要量方式（初期）'],['op','発注点方式']]},
+ {k:'al',l:'安全係数（α）',o:[['2.33','許容率 1%　欠品すると生産ラインが即停止する主要部品'],['2.06','許容率 2%　調達が難しく代替がきかない部品'],['1.65','許容率 5%　通常の標準部品・資材（初期値）'],['1.29','許容率10%　汎用品・即時代替手配が可能な品目']]},
+ {k:'sx',l:'スパイク除去',o:[['on','除去する（初期）'],['off','除去しない']]},
+ {k:'ck',l:'区分の扱い',o:[['cls','区分による提案（初期）'],['min','出庫月数の下限だけ使う'],['off','区分を使わない']]},
+ {k:'tm',l:'トレンドの基準',o:[['raw','除外前：大口の月もそのまま使う（初期）'],['adj','除外後：大口の月を中央値に置き換える']]}
+];
+const bkLab=(k,v)=>{const o=BKI.find(x=>x.k===k).o.find(x=>String(x[0])===String(v));return o?o[1]:v};
+const bkText=s=>BKI.filter(i=>s[i.k]!==undefined).map(i=>i.l+'：'+bkLab(i.k,s[i.k])+(i.k==='ck'&&s.ck==='min'?'（下限 '+s.mn+'カ月）':'')).join('　／　');
+function bkDialog(){return new Promise(ok=>{
+  const o=document.createElement('div');
+  o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px';
+  const rows=BKI.map(i=>`<div style="margin-bottom:10px"><label style="display:flex;gap:6px;align-items:center;font-weight:700;cursor:pointer"><input type="checkbox" data-k="${i.k}" style="width:16px;height:16px">${i.l}</label><div style="margin-top:4px"><select data-s="${i.k}" disabled>${i.o.map(x=>`<option value="${x[0]}"${String(x[0])==='1.65'?' selected':''}>${x[1]}</option>`).join('')}</select>${i.k==='ck'?` <span data-w2 hidden>下限 <input type="number" min="0" max="12" value="${MNK}" data-mn disabled style="width:70px"> カ月</span>`:''}</div></div>`).join('');
+  o.innerHTML='<div class="card" style="max-width:560px;margin:0;max-height:92vh;overflow:auto"><p style="margin:0 0 4px;font-weight:700">一括変更する項目を選んでください</p><p class="note" style="margin:0 0 12px">変更したい項目にだけチェックを入れ、変更後の内容を選びます。チェックのない項目は、各品目の今の設定のままです。</p>'+rows+'<div class="row" style="gap:8px"><button type="button" class="btn" data-a="ok">OK</button><button type="button" class="btn s" data-a="no">キャンセル</button></div></div>';
+  const sync=()=>{BKI.forEach(i=>{const on=o.querySelector('[data-k="'+i.k+'"]').checked;o.querySelector('[data-s="'+i.k+'"]').disabled=!on});
+    const ck=o.querySelector('[data-k="ck"]').checked&&o.querySelector('[data-s="ck"]').value==='min';o.querySelector('[data-w2]').hidden=!ck;o.querySelector('[data-mn]').disabled=!ck};
+  o.addEventListener('change',sync);
+  o.onclick=e=>{
+    const b=e.target.closest('[data-a]');
+    if(e.target===o||(b&&b.dataset.a==='no')){o.remove();ok(null);return}
+    if(b&&b.dataset.a==='ok'){
+      const sp={};
+      BKI.forEach(i=>{if(o.querySelector('[data-k="'+i.k+'"]').checked){const v=o.querySelector('[data-s="'+i.k+'"]').value;sp[i.k]=i.k==='al'?+v:v}});
+      if(!Object.keys(sp).length){alert('変更する項目にチェックを入れてください');return}
+      if(sp.ck==='min'){const n=Math.round(+o.querySelector('[data-mn]').value);sp.mn=isNaN(n)?MNK:Math.min(12,Math.max(0,n))}
+      o.remove();ok(sp);
+    }
+  };
+  document.body.appendChild(o);
+})}
+function bkUi(){
+  const on=!!BK;
+  $('bkBar').hidden=!on;$('tc').classList.toggle('bk',on);
+  if(!on)return;
+  $('bkSum').textContent='変更内容　'+bkText(BK.spec);
+  $('bkN').textContent='変更対象 '+fmt(BK.sel.size)+'件';
+}
+$('myBulk').onclick=async()=>{
+  if(!D.length){alert('先にCSVを読み込んでください');return}
+  if(cur){alert('一覧画面で操作してください');return}
+  const sp=await bkDialog();
+  if(!sp)return;
+  BK={spec:sp,sel:new Set()};
+  pg=0;render();
+};
+$('tb2').addEventListener('change',e=>{
+  const c=e.target.dataset&&e.target.dataset.bk;
+  if(c===undefined||!BK)return;
+  if(e.target.checked)BK.sel.add(c);else BK.sel.delete(c);
+  const tr=e.target.closest('tr');if(tr)tr.classList.toggle('bks',e.target.checked);
+  bkUi();
+});
+$('bkAllV').onclick=()=>{if(!BK)return;V.forEach(r=>BK.sel.add(r.c));render()};
+$('bkMy').onclick=()=>{if(!BK)return;if(!MY.size){alert('Myリストが空です');return}const have=new Set(D.map(d=>d.c));MY.forEach(c=>{if(have.has(c))BK.sel.add(c)});render()};
+$('bkNone').onclick=()=>{if(!BK)return;BK.sel.clear();render()};
+$('bkEnd').onclick=()=>{BK=null;render()};
+$('bkGo').onclick=async()=>{
+  if(!BK)return;
+  const cs=[...BK.sel];
+  if(!cs.length){alert('変更する品目にチェックを入れてください');return}
+  const i=await ask('選んだ '+fmt(cs.length)+'件の品目を、次の内容に一斉変更しますか？<br><span style="font-weight:400;font-size:13px;line-height:1.7;display:block;margin-top:6px">'+esc(bkText(BK.spec)).replace(/　\/　/g,'<br>')+'<br><br>各品目の個別設定が上書きされ、提案値がすぐに再計算されます。元に戻すときは各品目の個別画面で「初期値に戻す」を使います。</span>',[['変更する',1],['キャンセル',0]]);
+  if(i!==0)return;
+  const sp=BK.spec,dm=new Map(D.map(d=>[d.c,d]));let n=0;
+  cs.forEach(c=>{
+    const d=dm.get(c);if(!d)return;
+    J[c]=J[c]||{};
+    const p=Object.assign({},J[c].p);
+    Object.keys(sp).forEach(k=>{if(k==='mn')return;applyP(p,k,sp[k],d);if(k==='ck'&&sp.ck==='min')applyP(p,'mn',sp.mn,d)});
+    if(Object.keys(p).length)J[c].p=p;else delete J[c].p;
+    n++;
+  });
+  save();BK=null;
+  const y=window.scrollY;calc();window.scrollTo(0,y);
+  alert(n+'件の設定を一括変更しました。\n共有に反映するときは「送信」を押してください。');
+};
 $('myOut').onclick=()=>{
   if(!MY.size){alert('Myリストが空です。品目コードの左のチェックボックスで追加してください');return}
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',m=new Map(D.map(d=>[d.c,d]));
