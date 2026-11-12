@@ -397,7 +397,6 @@ $('dv').addEventListener('click',e=>{
   if(b&&b.dataset.go)leave('移動',()=>goTo(b.dataset.go));
   if(e.target.closest('#bk'))leave('戻る',goBack);
   if(e.target.closest('[data-x]')&&cur)xAct(cur);
-  const xd=e.target.closest('[data-xd]');if(xd&&cur)xDel(cur,xd.dataset.xd);
 });
 $('dv').addEventListener('input',e=>{
   const f=e.target.dataset.f,c=cur;
@@ -508,11 +507,10 @@ function renderD(){
     '過剰':[`在庫${fmt(r.st)}${u}が、提案基準在庫${fmt(r.p)}${u} ＋ 最小ロット${fmt(r.moq)}${u} ＝ ${fmt(r.p+r.moq)}${u}を超えています。`,'r'],
     '不足':[`在庫${fmt(r.st)}${u} ＋ 発注残${fmt(r.po)}${u} ＝ ${fmt(r.st+r.po)}${u}が、提案基準在庫${fmt(r.p)}${u}に足りません。`,'b'],
     '適正':['在庫と発注残が、提案の範囲内です。','']}[r.stt];
-  const xhs=(J[r.c]&&J[r.c].xh)||[],dt=t=>new Date(t).toLocaleDateString('ja-JP'),dys=(a,b)=>Math.max(1,Math.round((b-a)/864e5)),xTot=xhs.reduce((a,h)=>a+dys(h.s,h.e),0);
+  const dt=t=>new Date(t).toLocaleDateString('ja-JP'),dys=(a,b)=>Math.max(1,Math.round((b-a)/864e5));
   const xHtml=`<section class="card"><h2 class="d"><b>⏱</b>一時的なLT延長</h2>
     ${r.ext?`<div class="msg b"><b>延長中</b>：通常LT ${r.ltN}日 → <b>${r.ext.l}日</b>（${dt(r.ext.s)}から ${Math.max(1,dys(r.ext.s,Date.now()))}日目）${r.ext.m?'<br>メモ：'+esc(r.ext.m):''}${r.pN!==r.p?'<br>提案基準在庫は、通常LTなら '+fmt(r.pN)+u+'、延長中は '+fmt(r.p)+u+' です。':''}${r.ltN>=r.ext.l?'<br><b>データ側のLTが延長後の日数以上になっています。延長を終了しますか？</b>':''}</div>`:`<p class="wh">LTが一時的に延びたときに入力します。通常LT（${r.ltN}日）の設定は変わらず、戻すときは「通常LTに戻す」を選びます。</p>`}
     <div class="row" style="margin-top:8px"><button type="button" class="btn s" data-x="1">⏱ ${r.ext?'延長の内容変更・通常LTに戻す':'LT延長を入力'}</button></div>
-    ${xhs.length?`<details style="margin-top:8px"><summary class="note" style="cursor:pointer">過去の延長 ${xhs.length}回（合計 ${xTot}日）　▼ 履歴を見る</summary>${xhs.map((h,i)=>`<div class="note" style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap"><span>${dt(h.s)}〜${dt(h.e)}（${dys(h.s,h.e)}日）　延長後LT ${h.l}日${h.m?'　メモ：'+esc(h.m):''}</span><button type="button" class="btn s" data-xd="${i}" style="padding:1px 8px;font-size:11px">削除</button></div>`).reverse().join('')}<div style="margin-top:8px"><button type="button" class="btn s" data-xd="all" style="padding:2px 10px;font-size:12px">履歴をすべて削除</button></div></details>`:''}
   </section>`;
   const neg=r.st<0?'<div class="msg r">在庫数がマイナスです。CSVの入力や登録順を確認してください。</div>':'';
   const old=r.y[3]+r.y[4]===0&&r.st>0?'<div class="msg o">直近2年度の出庫が0で在庫があります。長期滞留の可能性があります。</div>':'';
@@ -734,7 +732,7 @@ document.querySelectorAll('.hp').forEach(b=>{
 const SH_NAME='品目状況一覧_判定記録',E=JSON.stringify(['','','','','']);
 let SD=null,LD=null,CD=null,REM={},CONF=[],SNAP={};const LSG={};
 try{SNAP=JSON.parse(localStorage.getItem('invSnap')||'{}')}catch(e){}
-const sig=j=>{const a=[j.q===undefined?'':j.q,j.r||'',j.n||'',j.o||'',j.t||''];if(j.p&&Object.keys(j.p).length)a.push(j.p);if(j.x)a.push({x:j.x});if(j.xh&&j.xh.length)a.push({xh:j.xh});return JSON.stringify(a)};
+const sig=j=>{const a=[j.q===undefined?'':j.q,j.r||'',j.n||'',j.o||'',j.t||''];if(j.p&&Object.keys(j.p).length)a.push(j.p);if(j.x)a.push({x:j.x});return JSON.stringify(a)};
 for(const c in J)LSG[c]=sig(J[c]);
 const dirty=()=>Object.keys(J).filter(c=>sig(J[c])!==(SNAP[c]===undefined?E:SNAP[c]));
 const persist=()=>{try{localStorage.setItem('invSnap',JSON.stringify(SNAP))}catch(e){}};
@@ -1105,17 +1103,6 @@ function xDialog(c){return new Promise(ok=>{
   document.body.appendChild(o);
   const f=o.querySelector('#xl');f.focus();f.select();
 })}
-async function xDel(c,k){   // LT延長の履歴の削除（1件／すべて）
-  const j=J[c];if(!j||!j.xh||!j.xh.length)return;
-  const all=k==='all',h=all?null:j.xh[+k];
-  if(!all&&!h)return;
-  const dt=t=>new Date(t).toLocaleDateString('ja-JP');
-  const i=await ask('品目 '+esc(c)+'<br><span style="font-weight:400;font-size:13px;line-height:1.7;display:block;margin-top:6px">'+(all?'LT延長の履歴 '+j.xh.length+'件をすべて削除しますか？':'次の履歴を削除しますか？<br>'+dt(h.s)+'〜'+dt(h.e)+'　延長後LT '+h.l+'日'+(h.m?'　メモ：'+esc(h.m):''))+'<br>削除すると元に戻せません。</span>',[['削除する',1],['キャンセル',0]]);
-  if(i!==0)return;
-  if(all)delete j.xh;else{j.xh.splice(+k,1);if(!j.xh.length)delete j.xh}
-  save();
-  if(cur===c)renderD();else render();
-}
 async function xAct(c){
   const res=await xDialog(c);
   if(!res)return;
@@ -1123,9 +1110,8 @@ async function xAct(c){
   J[c]=J[c]||{};
   if(res.a==='rel'){
     const x=J[c].x;if(!x)return;
-    const i=await ask('品目 '+esc(c)+'（'+esc(r.n)+'）<br><span style="font-weight:400;font-size:13px;line-height:1.7;display:block;margin-top:6px">LT延長（'+x.l+'日）を外して、通常LT '+r.ltN+'日に戻しますか？<br>延長した期間は履歴に残ります。</span>',[['通常LTに戻す',1],['キャンセル',0]]);
+    const i=await ask('品目 '+esc(c)+'（'+esc(r.n)+'）<br><span style="font-weight:400;font-size:13px;line-height:1.7;display:block;margin-top:6px">LT延長（'+x.l+'日）を外して、通常LT '+r.ltN+'日に戻しますか？</span>',[['通常LTに戻す',1],['キャンセル',0]]);
     if(i!==0)return;
-    J[c].xh=(J[c].xh||[]).concat([{l:x.l,m:x.m||'',s:x.s,e:Date.now()}]);
     delete J[c].x;
   }else{
     const old=J[c].x;
