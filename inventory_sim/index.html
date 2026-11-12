@@ -1138,16 +1138,11 @@ $('myf').onchange=async e=>{
     const rows=parse(dec(new Uint8Array(await f.arrayBuffer()))),h=rows[0]||[],ix=h.findIndex(x=>x.trim()==='品目コード'),k=ix<0?0:ix;
     const cs=rows.slice(ix<0?0:1).map(r=>(r[k]||'').trim()).filter(Boolean);
     if(!cs.length){alert('品目コードが見つかりませんでした');return}
-    let add=true;
-    if(MY.size){
-      const i=await ask('Myリストを読み込みます（'+cs.length+'件）。現在のMyリスト '+MY.size+'件をどうしますか？',[['追加する',1],['置き換える',0],['キャンセル',0]]);
-      if(i!==0&&i!==1)return;
-      add=i===0;
-    }
-    MY=new Set(add?[...MY,...cs]:cs);mySave();
-    const miss=D.length?cs.filter(c=>!D.some(d=>d.c===c)).length:0;
-    if(!cur)render();
-    alert('Myリストを読み込みました（'+cs.length+'件）'+(miss?'\n※今のCSVに無い品目が '+miss+'件あります':''));
+    if(!D.length){alert('先に在庫データ（CSV）を読み込んでください');return}
+    const have=new Set(D.map(d=>d.c)),hit=[...new Set(cs)].filter(c=>have.has(c));   // 品目コードが同じものだけ印を入れる
+    hit.forEach(c=>MY.add(c));mySave();
+    if(!cur)render();else myCnt();
+    alert('品目コードが一致した '+hit.length+'件にMyリストの印を入れました'+(cs.length>hit.length?'\n※一致しなかったコード '+(cs.length-hit.length)+'件':''));
   }catch(x){alert('読込失敗：'+x.message)}
 };
 
