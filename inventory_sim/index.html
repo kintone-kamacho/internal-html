@@ -155,7 +155,6 @@ td.xe{background:var(--xbg)!important;box-shadow:inset 0 0 0 2px var(--xln)}.tg.
       <div><label class="l">LT（日）</label><div class="rg"><select id="ltM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option><option value="ex">延長中</option></select><input type="number" min="0" id="ltA" hidden><span id="ltS" hidden>〜</span><input type="number" min="0" id="ltB" hidden></div></div>
       <div><label class="l">最小ロット</label><div class="rg"><select id="moqM"><option value="">すべて</option><option value="le">以下</option><option value="bt">範囲</option><option value="ge">以上</option></select><input type="number" min="0" id="moqA" hidden><span id="moqS" hidden>〜</span><input type="number" min="0" id="moqB" hidden></div></div>
       <div><label class="l">在庫状態</label><select id="fs"><option value="">すべて</option><option value="不良在庫候補">不良在庫候補</option><option value="過剰">過剰</option><option value="不足">不足</option><option value="適正">適正</option></select></div>
-      <div><label class="l">LT延長の履歴</label><select id="fx"><option value="">すべて</option><option value="past">過去に延長あり（現在は通常）</option></select></div>
       <div><label class="l">需要変動(CV)</label><select id="fcv"><option value="">すべて</option><option value="安定需要">安定需要</option><option value="軽度の変動">軽度の変動</option><option value="中度の変動">中度の変動</option><option value="変動大">変動大</option><option value="判定不可">判定不可</option></select></div>
       <div><label class="l">トレンド</label><select id="ft"><option value="">すべて</option><option value="u">増加傾向 ↗</option><option value="d">減少傾向 ↘</option><option value="s">安定 →</option><option value="n">判定不可</option></select></div>
       <div><label class="l">区分</label><select id="fc"><option value="">すべて</option><option value="A 定常">A 定常</option><option value="B 変動">B 変動</option><option value="C 間欠">C 間欠</option><option value="D 稀少">D 稀少</option><option value="D 一品">D 一品</option><option value="対象外">対象外</option><option value="下限">下限（個別設定）</option><option value="未使用">未使用（個別設定）</option></select></div>
@@ -291,7 +290,7 @@ const sc=s=>s==='不良在庫候補'?'o':s==='過剰'?'r':s==='不足'?'b':'g';
 const mdn=m=>m==='op'?'発注点':'所要量';
 /* 絞り込み：プルダウン＋LT・最小ロットは「以下／範囲／以上」＋数値入力 */
 const cvk=r=>cvInfo(r.cv).l;
-const SF=[['fx',r=>r.ext?'now':((J[r.c]&&J[r.c].xh&&J[r.c].xh.length)?'past':'')],['fm',r=>r.md],['fcv',cvk],['ft',r=>r.tk||'n'],['fc',r=>r.cl],['fs',r=>r.stt]];
+const SF=[['fm',r=>r.md],['fcv',cvk],['ft',r=>r.tk||'n'],['fc',r=>r.cl],['fs',r=>r.stt]];
 const RGS=[['lt','lt'],['moq','moq']];
 function rgMk(i){
   const m=$(i+'M').value,x=$(i+'A').value,y=$(i+'B').value;
