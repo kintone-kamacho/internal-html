@@ -403,6 +403,8 @@ $('dv').addEventListener('click',e=>{
   if(b&&b.dataset.go)leave('移動',()=>goTo(b.dataset.go));
   if(e.target.closest('#bk'))leave('戻る',goBack);
   if(e.target.closest('[data-x]')&&cur)xAct(cur);
+  const xd=e.target.closest('[data-xd]');
+  if(xd&&cur)xDel(cur,+xd.dataset.xd);
 });
 $('dv').addEventListener('input',e=>{
   const f=e.target.dataset.f,c=cur;
@@ -514,9 +516,11 @@ function renderD(){
     '不足':[`在庫${fmt(r.st)}${u} ＋ 発注残${fmt(r.po)}${u} ＝ ${fmt(r.st+r.po)}${u}が、提案基準在庫${fmt(r.p)}${u}に足りません。`,'b'],
     '適正':['在庫と発注残が、提案の範囲内です。','']}[r.stt];
   const dt=t=>new Date(t).toLocaleDateString('ja-JP'),dys=(a,b)=>Math.max(1,Math.round((b-a)/864e5));
+  const xhs=((J[r.c]&&J[r.c].xh)||[]).map((h,i)=>({h,i})).reverse(),
+    xhHtml=xhs.length?`<details id="xhd" style="margin-top:10px"><summary class="note" style="font-weight:700;cursor:pointer">過去の延長履歴（${xhs.length}件）</summary><table style="margin-top:4px"><tr><th>開始日</th><th>終了日</th><th>延長日数</th><th>延長後LT</th><th>メモ</th><th></th></tr>${xhs.map(({h,i})=>`<tr><td>${dt(h.s)}</td><td>${dt(h.e)}</td><td>${dys(h.s,h.e)}日間</td><td>${h.l}日</td><td>${esc(h.m||'')}</td><td><button type="button" class="btn s" data-xd="${i}" style="padding:1px 8px;color:var(--rd);border-color:var(--rd)">削除</button></td></tr>`).join('')}</table></details>`:'';
   const xHtml=`<section class="card"><h2 class="d"><b>⏱</b>一時的なLT延長</h2>
     ${r.ext?`<div class="msg b"><b>延長中</b>：通常LT ${r.ltN}日 → <b>${r.ext.l}日</b>（${dt(r.ext.s)}から ${Math.max(1,dys(r.ext.s,Date.now()))}日目）${r.ext.m?'<br>メモ：'+esc(r.ext.m):''}${r.pN!==r.p?'<br>提案基準在庫は、通常LTなら '+fmt(r.pN)+u+'、延長中は '+fmt(r.p)+u+' です。':''}${r.ltN>=r.ext.l?'<br><b>データ側のLTが延長後の日数以上になっています。延長を終了しますか？</b>':''}</div>`:`<p class="wh">LTが一時的に延びたときに入力します。通常LT（${r.ltN}日）の設定は変わらず、戻すときは「通常LTに戻す」を選びます。</p>`}
-    <div class="row" style="margin-top:8px"><button type="button" class="btn s" data-x="1">⏱ ${r.ext?'延長の内容変更・通常LTに戻す':'LT延長を入力'}</button></div>
+    <div class="row" style="margin-top:8px"><button type="button" class="btn s" data-x="1">⏱ ${r.ext?'延長の内容変更・通常LTに戻す':'LT延長を入力'}</button></div>${xhHtml}
   </section>`;
   const neg=r.st<0?'<div class="msg r">在庫数がマイナスです。CSVの入力や登録順を確認してください。</div>':'';
   const old=r.y[3]+r.y[4]===0&&r.st>0?'<div class="msg o">直近2年度の出庫が0で在庫があります。長期滞留の可能性があります。</div>':'';
@@ -700,9 +704,9 @@ $('fi').onchange=async e=>{
 /* 書き出し */
 $('bX').onclick=()=>{
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',
-    h=['品目コード','品名','仕様','メーカー','手配先','在庫評価単価','区分','スパイク除去','方式','需要変動','トレンド','LT','最小ロット','安全係数','提案基準','提案最大','現行基準','現行最大','在庫数','発注残数','在庫状態','理由','備考','担当者','記入日時','通常LT','LT延長（延長後日数）','LT延長メモ'],
+    h=['品目コード','品名','仕様','メーカー','手配先','在庫評価単価','区分','スパイク除去','方式','需要変動','トレンド','LT','最小ロット','安全係数','提案基準','提案最大','現行基準','現行最大','在庫数','発注残数','在庫状態','理由','備考','担当者','記入日時','通常LT','LT延長（延長後日数）','LT延長メモ','LT延長履歴'],
     ls=[h.map(q).join(',')];
-  for(const r of V){const j=J[r.c]||{};ls.push([r.c,r.n,r.s,r.k,r.t,r.pr,r.cl,r.sx==='off'?'しない':'する',mdn(r.md),r.cv===null?'':r.cv.toFixed(2),r.tr===null?'':r.tr.toFixed(2),r.lt,r.moq,r.al,r.p,r.mx,r.pb,r.px,r.st,r.po,r.stt,j.r||'',j.n||'',j.o||'',j.t||'',r.ltN,r.ext?r.ext.l:'',r.ext?r.ext.m||'':''].map(q).join(','))}
+  for(const r of V){const j=J[r.c]||{};ls.push([r.c,r.n,r.s,r.k,r.t,r.pr,r.cl,r.sx==='off'?'しない':'する',mdn(r.md),r.cv===null?'':r.cv.toFixed(2),r.tr===null?'':r.tr.toFixed(2),r.lt,r.moq,r.al,r.p,r.mx,r.pb,r.px,r.st,r.po,r.stt,j.r||'',j.n||'',j.o||'',j.t||'',r.ltN,r.ext?r.ext.l:'',r.ext?r.ext.m||'':'',((j.xh||[]).map(h=>{const f=t=>new Date(t).toLocaleDateString('ja-JP');return f(h.s)+'〜'+f(h.e)+' '+h.l+'日'+(h.m?'（'+h.m+'）':'')}).join(' ／ '))].map(q).join(','))}
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['\ufeff'+ls.join('\r\n')],{type:'text/csv'}));
   a.download='在庫判定_'+new Date().toISOString().slice(0,10)+'.csv';
@@ -738,7 +742,7 @@ document.querySelectorAll('.hp').forEach(b=>{
 const SH_NAME='品目状況一覧_判定記録',E=JSON.stringify(['','','','','']);
 let SD=null,LD=null,CD=null,REM={},CONF=[],SNAP={};const LSG={};
 try{SNAP=JSON.parse(localStorage.getItem('invSnap')||'{}')}catch(e){}
-const sig=j=>{const a=[j.q===undefined?'':j.q,j.r||'',j.n||'',j.o||'',j.t||''];if(j.p&&Object.keys(j.p).length)a.push(j.p);if(j.x)a.push({x:j.x});return JSON.stringify(a)};
+const sig=j=>{const a=[j.q===undefined?'':j.q,j.r||'',j.n||'',j.o||'',j.t||''];if(j.p&&Object.keys(j.p).length)a.push(j.p);if(j.x)a.push({x:j.x});if(j.xh&&j.xh.length)a.push({xh:j.xh});return JSON.stringify(a)};
 for(const c in J)LSG[c]=sig(J[c]);
 const dirty=()=>Object.keys(J).filter(c=>sig(J[c])!==(SNAP[c]===undefined?E:SNAP[c]));
 const persist=()=>{try{localStorage.setItem('invSnap',JSON.stringify(SNAP))}catch(e){}};
@@ -771,7 +775,7 @@ function mergeRemote(){ // 品目ごとに更新日時が新しい方を採用
     const dl=sj!==sn;
     if((r.u||0)>(j.u||0)||!dl){
       if(dl&&sj!==E)CONF.push(c);
-      if(JSON.stringify(j.p||null)!==JSON.stringify(r.p||null)||JSON.stringify(j.x||null)!==JSON.stringify(r.x||null))PCH=true;
+      if(JSON.stringify(j.p||null)!==JSON.stringify(r.p||null)||JSON.stringify(j.x||null)!==JSON.stringify(r.x||null)||JSON.stringify(j.xh||null)!==JSON.stringify(r.xh||null))PCH=true;
       J[c]=Object.assign({},r);SNAP[c]=sr;LSG[c]=sr;n++;
     }
   }
@@ -808,6 +812,55 @@ async function pullUI(){
   }catch(e){jm('判定記録の読込失敗：'+e.message)}
   uiS();
 }
+/* ============ 送信前の確認：前回送信時点から変わった部分を一覧で見せる ============ */
+function parseSig(t){
+  let a;try{a=JSON.parse(t)}catch(e){a=['','','','','']}
+  const o={q:a[0],r:a[1],n:a[2],o:a[3],t:a[4],p:{},x:null,xh:[]};
+  for(const v of a.slice(5)){
+    if(v&&typeof v==='object'&&!Array.isArray(v)){
+      const k=Object.keys(v);
+      if(k.length===1&&k[0]==='xh')o.xh=v.xh||[];
+      else if(k.length===1&&k[0]==='x')o.x=v.x;
+      else o.p=v;
+    }
+  }
+  return o;
+}
+function diffItem(c){
+  const a=parseSig(SNAP[c]===undefined?E:SNAP[c]),b=parseSig(sig(J[c]||{})),L=[];
+  const cut=t=>{t=String(t==null?'':t);return t.length>40?t.slice(0,40)+'…':t},
+    v=t=>t===''||t===undefined?'（空欄）':esc(cut(t)),
+    f=t=>new Date(t).toLocaleDateString('ja-JP'),
+    dn=(s0,e0)=>Math.max(1,Math.round((e0-s0)/864e5));
+  [['q','数量'],['o','担当者'],['r','理由'],['n','メモ']].forEach(([k,l])=>{if(a[k]!==b[k])L.push(l+'：'+v(a[k])+' → <b>'+v(b[k])+'</b>')});
+  const fp=(k,x)=>x===undefined?'初期値':k==='al'?String(x):k==='lt'||k==='mn'?x+(k==='lt'?'日':'カ月'):k==='moq'?String(x):esc(bkLab(k,x));
+  Object.keys(PN).forEach(k=>{if(JSON.stringify(a.p[k])!==JSON.stringify(b.p[k]))L.push(PN[k]+'：'+fp(k,a.p[k])+' → <b>'+fp(k,b.p[k])+'</b>')});
+  const ox=a.x,nx=b.x;
+  if(!ox&&nx)L.push('LT延長を開始：<b>'+nx.l+'日</b>（'+f(nx.s)+'〜）'+(nx.m?'　メモ：'+esc(cut(nx.m)):''));
+  else if(ox&&!nx)L.push('LT延長を解除（延長中だった '+ox.l+'日 ／ '+f(ox.s)+'〜）');
+  else if(ox&&nx&&JSON.stringify(ox)!==JSON.stringify(nx)){
+    if(ox.l!==nx.l)L.push('LT延長の日数：'+ox.l+'日 → <b>'+nx.l+'日</b>');
+    if((ox.m||'')!==(nx.m||''))L.push('LT延長のメモ：'+v(ox.m||'')+' → <b>'+v(nx.m||'')+'</b>');
+  }
+  const ks=h=>JSON.stringify(h),oa=a.xh.map(ks),na=b.xh.map(ks);
+  b.xh.filter(h=>!oa.includes(ks(h))).forEach(h=>L.push('延長履歴を<b>追加</b>：'+f(h.s)+'〜'+f(h.e)+'（'+dn(h.s,h.e)+'日間・延長後LT '+h.l+'日）'+(h.m?'　'+esc(cut(h.m)):'')));
+  a.xh.filter(h=>!na.includes(ks(h))).forEach(h=>L.push('延長履歴を<b style="color:var(--rd)">削除</b>：'+f(h.s)+'〜'+f(h.e)+'（'+dn(h.s,h.e)+'日間・延長後LT '+h.l+'日）'+(h.m?'　'+esc(cut(h.m)):'')));
+  if(!L.length)L.push('<span class="note">記入日時などの内部情報のみ</span>');
+  return L;
+}
+function sendConfirm(d){return new Promise(ok=>{
+  const nm=new Map(D.map(x=>[x.c,x.n])),o=document.createElement('div');
+  o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px';
+  const rows=d.map(c=>'<div style="padding:8px 0;border-bottom:1px solid var(--ln)"><a href="#d='+encodeURIComponent(c)+'" data-lk="1" style="font-weight:700">'+esc(c)+'</a> <span class="note">'+esc(nm.get(c)||'')+'</span><ul style="margin:4px 0 0 18px;padding:0;font-size:13px;line-height:1.7">'+diffItem(c).map(l=>'<li>'+l+'</li>').join('')+'</ul></div>').join('');
+  o.innerHTML='<div class="card" style="max-width:640px;width:100%;margin:0;max-height:92vh;display:flex;flex-direction:column"><p style="margin:0 0 4px;font-weight:700">次の '+fmt(d.length)+'件を送信します。内容を確認してください</p><p class="note" style="margin:0 0 8px">前回の送信（または共有から読み込んだ）時点から変わった部分です。間違いがあれば「キャンセル」で戻り、品目コードをクリックして直せます。</p><div style="overflow:auto;flex:1;min-height:0;border-top:1px solid var(--ln)">'+rows+'</div><div class="row" style="gap:8px;margin-top:12px"><button type="button" class="btn" data-a="ok">この内容で送信</button><button type="button" class="btn s" data-a="no">キャンセル</button></div></div>';
+  o.onclick=e=>{
+    if(e.target.closest('[data-lk]')){o.remove();ok(false);return}   // 品目へ移動（リンクの移動はそのまま行う）
+    const b=e.target.closest('[data-a]');
+    if(b){o.remove();ok(b.dataset.a==='ok');return}
+    if(e.target===o){o.remove();ok(false)}
+  };
+  document.body.appendChild(o);
+})}
 async function sendJ(){
   if(!SD){await pickSD();if(!SD)return}
   if(!ME){alert('先に「あなたの名前」を入力してください');return}
@@ -817,6 +870,7 @@ async function sendJ(){
     const n0=await pull();if(PCH){PCH=false;calc()}else if(D.length&&n0>0){if(cur)renderD();else render()}   // 先に他の人の最新を取り込む
     const d=dirty();
     if(!d.length){jm('送信する変更はありません');uiS();return}
+    if(!await sendConfirm(d)){jm('送信を取りやめました（未送信 '+d.length+'件のまま残っています）');uiS();return}
     let own={};try{own=(await rd(SD,myFile())).items||{}}catch(e){}
     for(const c of d){const j=J[c];if(!j.u)j.u=Date.parse(j.t)||Date.now();if(!j.w)j.w=ME;
       if(!own[c]||(own[c].u||0)<=j.u)own[c]=Object.assign({},j)}
@@ -1134,6 +1188,8 @@ async function xAct(c){
     const x=J[c].x;if(!x)return;
     const i=await ask('品目 '+esc(c)+'（'+esc(r.n)+'）<br><span style="font-weight:400;font-size:13px;line-height:1.7;display:block;margin-top:6px">LT延長（'+x.l+'日）を外して、通常LT '+r.ltN+'日に戻しますか？</span>',[['通常LTに戻す',1],['キャンセル',0]]);
     if(i!==0)return;
+    const hx=J[c].xh=Array.isArray(J[c].xh)?J[c].xh:[];
+    hx.push({s:x.s,e:Date.now(),l:x.l,m:x.m||''});   // 延長履歴：開始日・終了日・延長後日数・メモを残す
     delete J[c].x;
   }else{
     const old=J[c].x;
@@ -1141,6 +1197,16 @@ async function xAct(c){
   }
   save();calcOne(c);
   if(cur===c)renderD();else{const y=window.scrollY;render();window.scrollTo(0,y)}
+}
+async function xDel(c,i){
+  const j=J[c],h=j&&j.xh&&j.xh[i];if(!h)return;
+  const f=t=>new Date(t).toLocaleDateString('ja-JP');
+  const k=await ask('この延長履歴を削除しますか？<br><span style="font-weight:400;font-size:13px;line-height:1.7;display:block;margin-top:6px">'+f(h.s)+'〜'+f(h.e)+'　延長後LT '+h.l+'日'+(h.m?'<br>メモ：'+esc(h.m):'')+'<br>削除すると元に戻せません。</span>',[['削除する',1],['キャンセル',0]]);
+  if(k!==0)return;
+  j.xh.splice(i,1);
+  if(!j.xh.length)delete j.xh;
+  save();renderD();
+  const d=document.getElementById('xhd');if(d)d.open=true;
 }
 $('xMode').onclick=e=>{e.stopPropagation();XM=!XM;render()};
 $('myOut').onclick=()=>{
