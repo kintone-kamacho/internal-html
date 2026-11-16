@@ -102,8 +102,6 @@ th{color:var(--sub);font-weight:600;font-size:12px}
   </div>
   <div class="sw"><table>
     <tr><th>区分</th><th>どんな品目か</th></tr>
-    <tr><td><span class="tg k">D 一品</span></td><td>CSVの「一品」が付いた品目（受注ごとの手配）。出庫月数に関係なく在庫を持たない扱い</td></tr>
-    <tr><td><span class="tg k">対象外</span></td><td>CSVの「在庫管理」が空欄の品目</td></tr>
     <tr><td><span class="tg g">A 定常</span></td><td>ほぼ毎月動く。計算式がよく当てはまる</td></tr>
     <tr><td><span class="tg b">B 変動</span></td><td>半年以上は動く。計算式を使うが、スパイク除外が効く</td></tr>
     <tr><td><span class="tg o">C 間欠</span></td><td>年に数回だけ動く。大口が多く、式では過大になりやすい</td></tr>
@@ -122,7 +120,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
     <tr><td><b>出庫月数の下限だけ使う</b></td><td>出庫月数が下限以上（下限は初期5カ月、品目ごとに変更可）</td><td>下限に満たない品目</td><td>下限</td></tr>
     <tr><td><b>区分を使わない</b></td><td>すべて</td><td>なし</td><td>未使用</td></tr>
   </table></div>
-  <p class="w">※ どの扱いでも、一品・在庫管理外の品目は在庫0を提案します（区分欄はD 一品・対象外のまま）。「区分を使わない」では、出庫の少ない品目の基準在庫が過大になりやすい点に注意してください。</p>
+  <p class="w">※ 「区分を使わない」では、出庫の少ない品目の基準在庫が過大になりやすい点に注意してください。</p>
   <p class="what" style="margin-top:12px">たとえば「年に2回だけ30個・25個出る」品目は、「区分を使わない」では基準在庫16個と出ます。「区分による提案」では区分Cになり、提案は0個になります。</p>
   <div class="cols">
     <div><h4>年2回だけ大口の例</h4><div class="ch" id="c7"></div><p class="cap">出庫月数2 → 区分C</p><p class="nums">区分を使わない <b>16個</b>　→　区分による提案 <b>0個</b></p></div>
