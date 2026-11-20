@@ -7,7 +7,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14161a">
 <title>保管場所・写真管理</title>
-<link rel="icon" href="../assets/icons/ebi.png" type="image/png">
 <style>
 :root{--bg:#14161a;--panel:#1f2329;--line:#2f353d;--tx:#eceff2;--mute:#8d96a1;--ac:#f5c400;--ng:#e5484d;box-sizing:border-box}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -62,11 +61,8 @@ label.file{margin-top:8px}
   <div class="hd"><h1>QRスキャン</h1></div>
   <div class="body">
     <div id="vwrap"><video id="vid" playsinline muted></video><div id="frame"></div><div id="vmsg">カメラ準備中…</div></div>
-    <div class="row">
-      <button class="pri" id="bScan">スキャン開始</button>
-      <label class="btn file" style="margin:0">写真から読取<input id="qrPhoto" type="file" accept="image/*" capture="environment" hidden></label>
-    </div>
-    <p class="hint">QRコードを枠に合わせてください。カメラが使えない場合は「写真から読取」、または「一覧」から品番を選べます。</p>
+    <div class="row"><button class="pri" id="bScan">スキャン開始</button></div>
+    <p class="hint">QRコードを枠に合わせてください。カメラが使えない場合は「一覧」から品番を選べます。</p>
   </div>
 </section>
 
@@ -108,7 +104,7 @@ label.file{margin-top:8px}
     </div>
     <div class="card">
       <b>⑤ 写真をスマホに保存</b>
-      <div class="hint">共有画面で「ファイルに保存」→ ドキュメント/品目写真 を選びます。同名ファイルは「置き換える」で上書きできます（1回20枚まで）。</div>
+      <div class="hint">共有画面で「ファイルに保存」→ ドキュメント/品目写真 を選びます。同名ファイルは「置き換える」で上書きできます（1回20枚まで）。アプリ内で写真を削除しても、ドキュメント内のファイルは消えません（そちらは手動で削除してください）。</div>
       <div id="stSave" class="v"></div>
       <div class="row"><button id="bSaveAll">未保存の写真を保存</button></div>
     </div>
@@ -207,9 +203,9 @@ function qrDecode(id,w,h){const l=new Uint8ClampedArray(w*h);for(let i=0,j=0;i<l
     const b=new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(inv?s.invert():s));return new ZXing.QRCodeReader().decode(b,hint).getText()}catch(e){}}return null}
 function vmsg(m){const e=$('#vmsg');e.textContent=m||'';e.style.display=m?'flex':'none'}
 async function startScan(){if(run)return;
-  if(!navigator.mediaDevices?.getUserMedia){vmsg('このページではカメラを使えません（HTTPSで開いてください）。「写真から読取」をご利用ください。');return}
+  if(!navigator.mediaDevices?.getUserMedia){vmsg('このページではカメラを使えません（HTTPSで開いてください）。「一覧」から品番を選べます。');return}
   try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false})}
-  catch(e){vmsg('カメラを使えません：'+e.name+'。許可設定を確認するか「写真から読取」をご利用ください。');return}
+  catch(e){vmsg('カメラを使えません：'+e.name+'。カメラの許可設定を確認してください。');return}
   const v=$('#vid');v.srcObject=stream;await v.play();vmsg('');run=true;
   if('BarcodeDetector' in window)try{det=new BarcodeDetector({formats:['qr_code']})}catch(e){det=null}
   loop()}
@@ -222,12 +218,6 @@ async function loop(){if(!run)return;const v=$('#vid');let text=null;
     if(text){stopScan();onCode(text);return}}
   setTimeout(()=>requestAnimationFrame(loop),100)}
 $('#bScan').onclick=()=>{stopScan();startScan()};
-$('#qrPhoto').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
-  try{const bm=await createImageBitmap(f,{imageOrientation:'from-image'});
-    for(const mx of [1400,900,2000]){const s=Math.min(1,mx/Math.max(bm.width,bm.height)),w=Math.round(bm.width*s),h=Math.round(bm.height*s),p=Math.round(Math.max(w,h)*.08);
-      cv.width=w+p*2;cv.height=h+p*2;cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(bm,p,p,w,h);
-      const t=qrDecode(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height);if(t){onCode(t);return}}
-    toast('QRコードを読み取れませんでした')}catch(err){toast('画像を読み込めません')}};
 let QRX=null;
 function cands(text){const out=[],add=s=>{s=(s||'').trim();if(s&&!out.includes(s))out.push(s)};
   const m=text.match(/(?:品目コード|品番|品目)\s*[:：]\s*([^\s,]+)/);if(m)add(m[1]);
@@ -242,11 +232,12 @@ async function counts(){const s=(await st('photos')).index('code'),m=new Map();
   return new Promise(a=>{const r=s.openKeyCursor();r.onsuccess=()=>{const c=r.result;if(c){m.set(c.key,(m.get(c.key)||0)+1);c.continue()}else a(m)}})}
 let shown=200;
 async function renderList(more){if(!more)shown=200;const q=$('#q').value.trim().toLowerCase(),only=$('#onlyPh').checked,cn=await counts();
-  let arr=[...ITEMS.values()].filter(x=>(!only||cn.get(x.code))&&(!q||(x.code+' '+x.name+' '+x.spec+' '+(LOCS.get(x.code)||'')+' '+metaText(x.code)).toLowerCase().includes(q)));
+  let base=[...ITEMS.values()];cn.forEach((n,c)=>{if(!ITEMS.has(c)){const qr=META.get(c)?.qr||{};base.push({code:c,name:qr.name||'',spec:qr.spec||'',unreg:true})}});
+  let arr=base.filter(x=>(!only||cn.get(x.code))&&(!q||(x.code+' '+x.name+' '+x.spec+' '+(LOCS.get(x.code)||'')+' '+metaText(x.code)).toLowerCase().includes(q)));
   arr.sort((a,b)=>a.code<b.code?-1:1);const tot=arr.length;arr=arr.slice(0,shown);
   $('#lst').innerHTML=(ITEMS.size?'':'<p class="hint">まず「データ」タブでCSVを読み込んでください。</p>')+
     arr.map(x=>`<div class="it" data-c="${esc(x.code)}"><div class="m"><b>${esc(x.code)}</b><small>${esc(x.name)}</small><small>${esc(x.spec)}</small></div>
-    ${LOCS.get(x.code)?`<span class="tag">${esc(LOCS.get(x.code))}</span>`:''}${cn.get(x.code)?`<span class="ph">📷${cn.get(x.code)}</span>`:''}</div>`).join('')+
+    ${x.unreg?'<span class="tag" style="color:var(--ng)">未登録</span>':''}${LOCS.get(x.code)?`<span class="tag">${esc(LOCS.get(x.code))}</span>`:''}${cn.get(x.code)?`<span class="ph">📷${cn.get(x.code)}</span>`:''}</div>`).join('')+
     (tot>shown?`<button style="width:100%;margin-top:12px" id="more">さらに表示（残り${tot-shown}件）</button>`:'');
   $('#lst').querySelectorAll('.it').forEach(e=>e.onclick=()=>openDetail(e.dataset.c));
   const mb=$('#more');if(mb)mb.onclick=()=>{shown+=200;renderList(true)}}
@@ -256,7 +247,7 @@ $('#q').oninput=()=>renderList();$('#onlyPh').onchange=()=>renderList();
 async function photosOf(code){const a=await rq((await st('photos')).index('code').getAll(code));return a.sort((x,y)=>x.seq-y.seq)}
 async function openDetail(code){CUR=code;stopScan();document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));$('#s-det').classList.add('on');
   $('#s-det .body').scrollTop=0;$('#dTitle').textContent=code;await renderDetail()}
-async function renderDetail(){const x=ITEMS.get(CUR)||(QRX&&QRX.code==CUR&&(QRX.name||QRX.spec)?QRX:null),loc=LOCS.get(CUR);
+async function renderDetail(){const qd=QRX&&QRX.code==CUR&&(QRX.name||QRX.spec)?QRX:META.get(CUR)?.qr,x=ITEMS.get(CUR)||(qd&&(qd.name||qd.spec)?qd:null),loc=LOCS.get(CUR);
   $('#dInfo').innerHTML=`<div class="k" style="margin-top:0">品番</div><div class="v"><b>${esc(CUR)}</b></div>
     <div class="k">品名${ITEMS.has(CUR)?'':'（QR記載）'}</div><div class="v">${x?esc(x.name)||'-':'<span style="color:var(--ng)">マスタ未登録</span>'}</div>
     <div class="k">仕様</div><div class="v">${x?esc(x.spec)||'-':'-'}</div>
@@ -273,6 +264,7 @@ async function shrink(file){try{const bm=await createImageBitmap(file,{imageOrie
 $('#cam').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
   const blob=await shrink(f),seq=await nextSeq(CUR);
   await rq((await st('photos','readwrite')).add({code:CUR,seq,name:fsafe(CUR)+'_'+sfx(seq),blob,takenAt:Date.now()}));
+  if(!ITEMS.has(CUR)&&QRX&&QRX.code==CUR&&(QRX.name||QRX.spec))await saveMeta(CUR,{qr:{name:QRX.name,spec:QRX.spec}});
   toast('保存しました');renderDetail()};
 
 /* ---------- viewer ---------- */
@@ -336,7 +328,7 @@ async function mergedMap(all){const m=new Map(),kv=await rq((await st('kv')).get
   (EXIST||[]).forEach(r=>absorb(m,r));(kv?kv.rows:[]).forEach(r=>absorb(m,r));
   const base=new Map();m.forEach((v,k)=>base.set(k,{...v.dates}));
   ITEMS.forEach(x=>absorb(m,{code:x.code,name:x.name,spec:x.spec,loc:LOCS.get(x.code)||''}));
-  META.forEach(x=>{const o=m.get(x.code)||newRow(x.code);o.memo=x.memo||'';o.tags=[...(x.tags||[])];m.set(x.code,o)});
+  META.forEach(x=>{if(x.qr&&!ITEMS.has(x.code))absorb(m,{code:x.code,name:x.qr.name,spec:x.qr.spec});const o=m.get(x.code)||newRow(x.code);o.memo=x.memo||'';o.tags=[...(x.tags||[])];m.set(x.code,o)});
   let clash=0;all.forEach(p=>{const o=m.get(p.code)||newRow(p.code),d=fmt(p.takenAt),b=base.get(p.code);
     if(!p.sentAt&&b&&b[p.seq]&&b[p.seq]!=d)clash++;o.photos[p.seq]=p.name;o.dates[p.seq]=d;m.set(p.code,o)});
   return{m,clash}}
