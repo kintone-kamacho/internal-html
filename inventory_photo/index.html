@@ -52,6 +52,13 @@ input[type=search]{width:100%;font:inherit;padding:13px;border-radius:10px;borde
 .tx{width:100%;font:inherit;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx)}
 .chip{display:inline-block;padding:7px 13px;border:1px solid var(--line);border-radius:99px;margin:0 6px 8px 0;background:var(--bg);font-size:14px}
 .chip.on{background:var(--ac);color:#111;border-color:var(--ac);font-weight:700}
+.flt{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.flt select{font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--tx);max-width:100%}
+.tagsel{position:relative}
+.tagsel>button{padding:10px 12px;font-weight:400}
+#tagPanel{display:none;position:absolute;left:0;top:100%;margin-top:6px;z-index:6;min-width:220px;max-height:50vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+#tagPanel.on{display:block}
+#tagPanel label{display:flex;gap:8px;align-items:center;padding:8px 2px;font-size:15px}
 .card+.card{margin-top:12px}
 label.file{margin-top:8px}
 </style>
@@ -64,6 +71,10 @@ label.file{margin-top:8px}
     <div id="vwrap"><video id="vid" playsinline muted></video><div id="frame"></div><div id="vmsg">カメラ準備中…</div></div>
     <div class="row"><button class="pri" id="bScan">スキャン開始</button></div>
     <p class="hint">QRコードを枠に合わせてください。カメラが使えない場合は「一覧」から品番を選べます。</p>
+    <div class="row">
+      <input type="search" id="manual" placeholder="品番を手入力" enterkeyhint="go" autocomplete="off" autocapitalize="off">
+      <button class="pri" id="bManual" style="flex:0 0 auto">開く</button>
+    </div>
   </div>
 </section>
 
@@ -71,7 +82,14 @@ label.file{margin-top:8px}
   <div class="hd"><h1>品番一覧 <span class="hint" id="lcnt"></span></h1></div>
   <div class="body">
     <input type="search" id="q" placeholder="品番・品名・仕様・保管場所で検索">
-    <label class="hint" style="display:block;margin:10px 0"><input type="checkbox" id="onlyPh"> 写真ありのみ</label>
+    <div class="flt">
+    <label class="hint"><input type="checkbox" id="onlyPh"> 写真ありのみ</label>
+    <select id="selLoc"><option value="">保管場所を選択</option></select>
+    <div class="tagsel">
+      <button type="button" id="tagBtn">タグを選択 ▼</button>
+      <div id="tagPanel"></div>
+    </div>
+  </div>
     <div id="lst"></div>
   </div>
 </section>
@@ -100,8 +118,7 @@ label.file{margin-top:8px}
       <div class="hint">出力保存.csv に前回分を残したまま追記・上書きします。ZIPには出力保存.csv と「品目写真/品番_001.jpg」が入ります。PCで展開して品目写真フォルダに重ねればOKです。</div>
       <div id="stSend" class="v"></div>
       <label class="hint" style="display:block;margin:6px 0"><input type="checkbox" id="inclSent"> 送信済みの写真もZIPに含める</label>
-      <div class="row"><button class="pri" id="bZipShare">ZIPを共有して送る</button><button id="bZipDl">ZIPをダウンロード</button></div>
-      <div class="row"><button id="bCsv">出力保存.csv のみ</button></div>
+      <div class="row"><button class="pri" id="bZipDl">ZIPをダウンロード</button></div>
     </div>
     <div class="card">
       <b>⑤ 写真をスマホに保存</b>
@@ -117,6 +134,7 @@ label.file{margin-top:8px}
   <div class="hd"><button id="bBack" style="padding:8px 14px">← 戻る</button><h1 id="dTitle"></h1></div>
   <div class="body">
     <div class="card" id="dInfo"></div>
+    <div class="card" id="addBox" style="display:none;margin-top:12px"></div>
     <div class="card" style="margin-top:12px"><div class="k" style="margin-top:0">タグ（タップで付け外し）</div><div id="chips" style="margin-top:8px"></div>
       <div class="row" style="margin-top:0"><input type="text" id="tagIn" class="tx" placeholder="タグを追加（例：青い箱）"><button id="tagAdd" style="flex:0 0 auto">追加</button></div>
       <div class="k">メモ</div><textarea id="memo" class="tx" rows="3" placeholder="例：L字／青い箱に入っている"></textarea></div>
@@ -219,6 +237,16 @@ async function loop(){if(!run)return;const v=$('#vid');let text=null;
     if(text){stopScan();onCode(text);return}}
   setTimeout(()=>requestAnimationFrame(loop),100)}
 $('#bScan').onclick=()=>{stopScan();startScan()};
+function manualOpen(){
+  const v=$('#manual').value.trim();if(!v)return;
+  const lc=v.toLowerCase();
+  const c=ITEMS.has(v)?v:[...ITEMS.keys()].find(k=>k.toLowerCase()==lc);
+  if(c){QRX=null;$('#manual').value='';openDetail(c);return}
+  if([...ITEMS.values()].some(x=>(x.code+' '+x.name).toLowerCase().includes(lc))){
+    $('#q').value=v;$('#manual').value='';tab('list');toast('完全一致なし。一覧で検索しました');return}
+  QRX=null;toast('マスタに未登録の品番です：'+v);openDetail(v)}
+$('#bManual').onclick=manualOpen;
+$('#manual').onkeydown=e=>{if(e.key=='Enter'){e.preventDefault();manualOpen()}};
 let QRX=null;
 function cands(text){const out=[],add=s=>{s=(s||'').trim();if(s&&!out.includes(s))out.push(s)};
   const m=text.match(/(?:品目コード|品番|品目)\s*[:：]\s*([^\s,]+)/);if(m)add(m[1]);
@@ -231,10 +259,24 @@ function onCode(text){const cs=cands(text);let c=cs.find(t=>ITEMS.has(t));QRX=nu
 /* ---------- list ---------- */
 async function counts(){const s=(await st('photos')).index('code'),m=new Map();
   return new Promise(a=>{const r=s.openKeyCursor();r.onsuccess=()=>{const c=r.result;if(c){m.set(c.key,(m.get(c.key)||0)+1);c.continue()}else a(m)}})}
+  let TAGSEL=new Set();
+  const locList=c=>(LOCS.get(c)||'').split(' / ').filter(Boolean);
+  function fillFilters(){
+    const ls=new Set();LOCS.forEach(v=>v.split(' / ').forEach(x=>x&&ls.add(x)));
+    const sel=$('#selLoc'),cur=sel.value;
+    sel.innerHTML='<option value="">保管場所を選択</option>'+[...ls].sort().map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join('');
+    sel.value=ls.has(cur)?cur:'';
+    const ts=new Set();META.forEach(m=>(m.tags||[]).forEach(t=>ts.add(t)));
+    [...TAGSEL].forEach(t=>{if(!ts.has(t))TAGSEL.delete(t)});
+    $('#tagPanel').innerHTML=ts.size?[...ts].sort().map(t=>`<label><input type="checkbox" value="${esc(t)}"${TAGSEL.has(t)?' checked':''}> ${esc(t)}</label>`).join(''):'<span class="hint">タグはまだありません</span>';
+    $('#tagBtn').textContent=TAGSEL.size?`タグ：${TAGSEL.size}件選択 ▼`:'タグを選択 ▼';
+  }
 let shown=200;
-async function renderList(more){if(!more)shown=200;const q=$('#q').value.trim().toLowerCase(),only=$('#onlyPh').checked,cn=await counts();
-  let base=[...ITEMS.values()];cn.forEach((n,c)=>{if(!ITEMS.has(c)){const qr=META.get(c)?.qr||{};base.push({code:c,name:qr.name||'',spec:qr.spec||'',unreg:true})}});
-  let arr=base.filter(x=>(!only||cn.get(x.code))&&(!q||(x.code+' '+x.name+' '+x.spec+' '+(LOCS.get(x.code)||'')+' '+metaText(x.code)).toLowerCase().includes(q)));
+async function renderList(more){if(!more)shown=200;fillFilters();const q=$('#q').value.trim().toLowerCase(),only=$('#onlyPh').checked,loc=$('#selLoc').value,tg=[...TAGSEL],cn=await counts();
+  let base=[...ITEMS.values()];
+  const extra=new Set([...cn.keys(),...[...META].filter(([c,m])=>m.qr).map(([c])=>c)]);
+  extra.forEach(c=>{if(!ITEMS.has(c)){const qr=META.get(c)?.qr||{};base.push({code:c,name:qr.name||'',spec:qr.spec||'',unreg:true})}});
+  let arr=base.filter(x=>(!only||cn.get(x.code))&&(!loc||locList(x.code).includes(loc))&&(!tg.length||tg.every(t=>(META.get(x.code)?.tags||[]).includes(t)))&&(!q||(x.code+' '+x.name+' '+x.spec+' '+(LOCS.get(x.code)||'')+' '+metaText(x.code)).toLowerCase().includes(q)));
   arr.sort((a,b)=>a.code<b.code?-1:1);const tot=arr.length;arr=arr.slice(0,shown);
   $('#lst').innerHTML=(ITEMS.size?'':'<p class="hint">まず「データ」タブでCSVを読み込んでください。</p>')+
     arr.map(x=>`<div class="it" data-c="${esc(x.code)}"><div class="m"><b>${esc(x.code)}</b><small>${esc(x.name)}</small><small>${esc(x.spec)}</small></div>
@@ -243,6 +285,11 @@ async function renderList(more){if(!more)shown=200;const q=$('#q').value.trim().
   $('#lst').querySelectorAll('.it').forEach(e=>e.onclick=()=>openDetail(e.dataset.c));
   const mb=$('#more');if(mb)mb.onclick=()=>{shown+=200;renderList(true)}}
 $('#q').oninput=()=>renderList();$('#onlyPh').onchange=()=>renderList();
+$('#selLoc').onchange=()=>renderList();
+$('#tagBtn').onclick=e=>{e.stopPropagation();$('#tagPanel').classList.toggle('on')};
+$('#tagPanel').onclick=e=>e.stopPropagation();
+$('#tagPanel').onchange=e=>{const t=e.target.value;e.target.checked?TAGSEL.add(t):TAGSEL.delete(t);renderList()};
+document.addEventListener('click',()=>$('#tagPanel').classList.remove('on'));
 
 /* ---------- detail ---------- */
 async function photosOf(code){const a=await rq((await st('photos')).index('code').getAll(code));return a.sort((x,y)=>x.seq-y.seq)}
@@ -250,15 +297,34 @@ async function openDetail(code){CUR=code;stopScan();document.querySelectorAll('.
   $('#s-det .body').scrollTop=0;$('#dTitle').textContent=code;await renderDetail()}
 async function renderDetail(){const qd=QRX&&QRX.code==CUR&&(QRX.name||QRX.spec)?QRX:META.get(CUR)?.qr,x=ITEMS.get(CUR)||(qd&&(qd.name||qd.spec)?qd:null),loc=LOCS.get(CUR);
   $('#dInfo').innerHTML=`<div class="k" style="margin-top:0">品番</div><div class="v"><b>${esc(CUR)}</b></div>
-    <div class="k">品名${ITEMS.has(CUR)?'':'（QR記載）'}</div><div class="v">${x?esc(x.name)||'-':'<span style="color:var(--ng)">マスタ未登録</span>'}</div>
+    <div class="k">品名${ITEMS.has(CUR)?'':'（追加登録・QR記載）'}</div><div class="v">${x?esc(x.name)||'-':'<span style="color:var(--ng)">マスタ未登録</span>'}</div>
     <div class="k">仕様</div><div class="v">${x?esc(x.spec)||'-':'-'}</div>
     <div class="k">保管場所</div><div class="loc">${loc?esc(loc):'<span class="hint">未登録</span>'}</div>`;
   urls.forEach(u=>URL.revokeObjectURL(u));urls=[];const ps=await photosOf(CUR);
   $('#pCnt').textContent=ps.length?`登録写真 ${ps.length}枚（タップで拡大）`:'写真はまだありません';
   $('#grid').innerHTML='';ps.forEach(p=>{const u=URL.createObjectURL(p.blob);urls.push(u);
     const f=document.createElement('figure');f.innerHTML=`<img src="${u}" alt=""><figcaption>${esc(p.name)}<span>${fmt(p.takenAt)}</span></figcaption>`;
-    f.onclick=()=>openViewer(p,u);$('#grid').appendChild(f)});renderMeta();$('#bSavePh').style.display=ps.length?'block':'none'}
+    f.onclick=()=>openViewer(p,u);$('#grid').appendChild(f)});renderMeta();renderAdd();$('#bSavePh').style.display=ps.length?'block':'none'}
 $('#bBack').onclick=()=>{$('#s-det').classList.remove('on');tab('list')};
+const NOQR='QRコード無';
+function renderAdd(){
+  const b=$('#addBox'),qd=QRX&&QRX.code==CUR&&(QRX.name||QRX.spec);
+  if(ITEMS.has(CUR)||META.get(CUR)?.qr||qd){b.style.display='none';return}
+  b.style.display='block';
+  b.innerHTML=`<b>マスタにもQRにも登録がありません。追加登録しますか？</b>
+    <div class="k">品番</div><input class="tx" id="aCode" value="${esc(CUR)}">
+    <div class="k">品名</div><input class="tx" id="aName" placeholder="必須">
+    <div class="k">仕様</div><input class="tx" id="aSpec">
+    <div class="hint" style="margin-top:8px">登録すると「${NOQR}」タグが付きます。</div>
+    <div class="row"><button class="pri" id="aSave">登録する</button></div>`;
+  $('#aSave').onclick=async()=>{
+    const code=$('#aCode').value.trim(),name=$('#aName').value.trim(),spec=$('#aSpec').value.trim();
+    if(!code||!name){toast('品番と品名を入力してください');return}
+    if(ITEMS.has(code)){toast('その品番はマスタに既にあります');QRX=null;openDetail(code);return}
+    const cur=META.get(code)?.tags||[];
+    await saveMeta(code,{qr:{name,spec},tags:cur.includes(NOQR)?cur:[...cur,NOQR]});
+    QRX=null;toast('登録しました');openDetail(code)}
+}
 async function shrink(file){try{const bm=await createImageBitmap(file,{imageOrientation:'from-image'}),s=Math.min(1,1600/Math.max(bm.width,bm.height));
   const c=document.createElement('canvas');c.width=Math.round(bm.width*s);c.height=Math.round(bm.height*s);c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
   return await new Promise(r=>c.toBlob(r,'image/jpeg',.85))}catch(e){return file}}
@@ -350,7 +416,7 @@ async function doExport(mode){
   t.objectStore('kv').put({key:'csv',rows:[...m.values()]});
   m.forEach(r=>Object.entries(r.photos).forEach(([n,nm])=>t.objectStore('known').put({name:nm,code:r.code,seq:+n})));
   await done(t);EXIST=null;toast(mode=='csv'?'CSVを出力しました':`写真${send.length}枚を出力しました`);refreshStats()}
-$('#bZipShare').onclick=()=>doExport('zipshare');$('#bZipDl').onclick=()=>doExport('zip');$('#bCsv').onclick=()=>doExport('csv');
+$('#bZipDl').onclick=()=>doExport('zip');
 $('#fPrev').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
   EXIST=parseOut(await readCSV(f));const t=(await DB).transaction(['known','meta'],'readwrite');let n=0;
   EXIST.forEach(r=>{Object.entries(r.photos).forEach(([k,nm])=>{t.objectStore('known').put({name:nm,code:r.code,seq:+k});n++});
